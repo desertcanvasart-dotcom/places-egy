@@ -49,14 +49,14 @@ export default function GlossaryPage() {
       <Navbar />
 
       {/* Hero Header */}
-      <div className="bg-[#8b5cf6] py-20 px-4 text-center relative overflow-hidden">
+      <div className="bg-primary py-20 px-4 text-center relative overflow-hidden">
         {/* Abstract shape for visual interest */}
         <div className="absolute top-[-50%] left-[-10%] w-[50%] h-[200%] bg-white/5 rotate-12 rounded-[100px]" />
         
         <div className="relative z-10 max-w-4xl mx-auto">
           {/* Icon/Logo Placeholder */}
           <div className="flex justify-center mb-6">
-            <div className="w-16 h-16 bg-[#fbbf24] rounded-full flex items-center justify-center text-3xl font-bold text-black rotate-12 shadow-lg">
+            <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center text-3xl font-bold text-primary rotate-12 shadow-lg">
               *
             </div>
           </div>
@@ -68,12 +68,12 @@ export default function GlossaryPage() {
           {/* Search Bar */}
           <div className="relative max-w-2xl mx-auto mb-12">
             <Input 
-              className="h-14 pl-6 pr-14 rounded-full bg-white border-0 shadow-xl text-lg placeholder:text-gray-400"
+              className="h-14 pl-6 pr-14 rounded-full bg-white border-0 shadow-xl text-lg placeholder:text-gray-400 text-foreground"
               placeholder="What are you looking for?"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <div className="absolute right-2 top-2 h-10 w-10 bg-black rounded-full flex items-center justify-center text-white">
+            <div className="absolute right-2 top-2 h-10 w-10 bg-primary rounded-full flex items-center justify-center text-white">
               <Search className="w-5 h-5" />
             </div>
           </div>
@@ -84,7 +84,7 @@ export default function GlossaryPage() {
               <button
                 key={char}
                 onClick={() => setSelectedLetter(selectedLetter === char ? null : char)}
-                className={`hover:text-white transition-colors uppercase ${selectedLetter === char ? "text-[#fbbf24] font-bold scale-125" : ""}`}
+                className={`hover:text-white transition-colors uppercase ${selectedLetter === char ? "text-accent font-bold scale-125" : ""}`}
               >
                 {char}
               </button>
@@ -101,8 +101,8 @@ export default function GlossaryPage() {
               <div key={letter} className="relative">
                 {/* Letter Header */}
                 <div className="flex items-start gap-2 mb-8 border-b border-gray-100 pb-4">
-                  <h2 className="text-6xl font-serif text-black leading-none">{letter}</h2>
-                  <Badge className="bg-[#fbbf24] text-black hover:bg-[#fbbf24] rounded-full h-6 min-w-6 flex items-center justify-center text-xs font-bold border-0">
+                  <h2 className="text-6xl font-serif text-primary leading-none">{letter}</h2>
+                  <Badge className="bg-accent text-primary hover:bg-accent rounded-full h-6 min-w-6 flex items-center justify-center text-xs font-bold border-0">
                     {filteredTerms.grouped[letter].length}
                   </Badge>
                 </div>
@@ -111,10 +111,10 @@ export default function GlossaryPage() {
                 <div className="space-y-8">
                   {filteredTerms.grouped[letter].map((item) => (
                     <div key={item.term} className="group">
-                      <h3 className="font-bold text-lg text-gray-900 mb-2 group-hover:text-primary transition-colors cursor-pointer">
+                      <h3 className="font-bold text-lg text-foreground mb-2 group-hover:text-primary transition-colors cursor-pointer">
                         {item.term}
                       </h3>
-                      <p className="text-gray-500 text-sm leading-relaxed">
+                      <p className="text-muted-foreground text-sm leading-relaxed">
                         {item.definition}
                       </p>
                     </div>
