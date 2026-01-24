@@ -75,11 +75,6 @@ export function Navbar() {
                         </a>
                       </Link>
                     </li>
-                    <li className="col-span-1 mt-2">
-                       <Link href="/admin-offices">
-                        <a className="flex items-center text-sm font-medium text-accent hover:text-primary transition-colors pl-3">Explore Admin Offices →</a>
-                      </Link>
-                    </li>
                   </ul>
                 </NavigationMenuContent>
               </NavigationMenuItem>
@@ -136,9 +131,24 @@ export function Navbar() {
               </NavigationMenuItem>
 
               <NavigationMenuItem>
-                <Link href="/locations">
-                  <a className={cn(navigationMenuTriggerStyle(), "bg-transparent text-base text-white hover:text-accent hover:bg-white/10 transition-colors", isActive("/locations") && "text-accent font-medium")}>Resources</a>
-                </Link>
+                <NavigationMenuTrigger className="bg-transparent text-base text-white hover:text-accent hover:bg-white/10">Resources</NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="grid w-[300px] gap-3 p-4">
+                    {[
+                      { title: "Blog", href: "/resources/blog" },
+                      { title: "FAQs", href: "/resources/faqs" },
+                      { title: "Glossary", href: "/resources/glossary" },
+                    ].map((item) => (
+                      <li key={item.title}>
+                        <Link href={item.href}>
+                           <a className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                            <div className="text-sm font-medium leading-none">{item.title}</div>
+                           </a>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </NavigationMenuContent>
               </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
