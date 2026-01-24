@@ -137,9 +137,7 @@ export function Navbar() {
 
               <NavigationMenuItem>
                 <Link href="/locations">
-                  <a className={cn(navigationMenuTriggerStyle(), "bg-transparent text-base text-white hover:text-accent hover:bg-white/10 transition-colors", isActive("/locations") && "text-accent font-medium")}>
-                    Locations
-                  </a>
+                  <a className={cn(navigationMenuTriggerStyle(), "bg-transparent text-base text-white hover:text-accent hover:bg-white/10 transition-colors", isActive("/locations") && "text-accent font-medium")}>Resources</a>
                 </Link>
               </NavigationMenuItem>
             </NavigationMenuList>
