@@ -4,6 +4,13 @@ import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Building2, TrendingUp, Handshake, Search } from "lucide-react";
 
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+
 export default function Home() {
   return (
     <div className="min-h-screen font-sans flex flex-col">
@@ -164,6 +171,64 @@ export default function Home() {
           </div>
         </div>
       </section>
+      
+      {/* FAQ Section */}
+      <section className="py-24 bg-gray-50">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-4">Frequently Asked Questions</h2>
+            <p className="text-muted-foreground">Find answers to common questions about buying, renting, and investing in administrative offices.</p>
+          </div>
+          
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="item-1" className="border-b border-gray-200">
+              <AccordionTrigger className="text-lg font-medium text-primary hover:text-accent hover:no-underline">
+                What types of administrative offices do you list?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground text-base leading-relaxed">
+                We specialize in three main types of administrative properties: Standalone Business Buildings for corporate headquarters, units within comprehensive Business Parks, and flexible offices in Mixed-Use developments that combine commercial and administrative spaces.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-2" className="border-b border-gray-200">
+              <AccordionTrigger className="text-lg font-medium text-primary hover:text-accent hover:no-underline">
+                Which locations do you cover in Egypt?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground text-base leading-relaxed">
+                Our primary focus is on Egypt's key business districts, including East Cairo (New Cairo), Sheikh Zayed & West Cairo, the New Administrative Capital, and prime locations in Central Cairo. We select locations based on their infrastructure, accessibility, and investment potential.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-3" className="border-b border-gray-200">
+              <AccordionTrigger className="text-lg font-medium text-primary hover:text-accent hover:no-underline">
+                Do you offer consultation for real estate investments?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground text-base leading-relaxed">
+                Yes, our Investment Consultation service is designed to help you make informed decisions. We provide market analysis, ROI projections, and portfolio strategy to ensure your real estate investments align with your financial goals.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-4" className="border-b border-gray-200">
+              <AccordionTrigger className="text-lg font-medium text-primary hover:text-accent hover:no-underline">
+                Can I list my property for resale on PLACES?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground text-base leading-relaxed">
+                Absolutely. Our Unit Resale service connects sellers with a network of serious buyers. We handle the valuation, marketing, and negotiation processes to ensure a seamless transaction for your premium office space.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-5" className="border-b border-gray-200">
+              <AccordionTrigger className="text-lg font-medium text-primary hover:text-accent hover:no-underline">
+                Who are the developers you partner with?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground text-base leading-relaxed">
+                We partner with Egypt's top-tier developers known for their quality and reliability, including SODIC, Emaar Misr, Al Futtaim Group, The Waterway, and other leading names in the real estate industry.
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </div>
+      </section>
+
       <Footer />
     </div>
   );
