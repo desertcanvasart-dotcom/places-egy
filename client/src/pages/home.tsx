@@ -80,7 +80,7 @@ export default function Home() {
             <p className="text-muted-foreground max-w-2xl mx-auto">We provide end-to-end solutions for all your administrative real estate needs.</p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-4 gap-8">
             {[
               { 
                 icon: Building2, 
@@ -91,6 +91,11 @@ export default function Home() {
                 icon: TrendingUp, 
                 title: "Investment Consultation", 
                 desc: "Data-driven insights to maximize returns on your commercial real estate portfolio." 
+              },
+              { 
+                icon: Building2, 
+                title: "Income Property", 
+                desc: "Identify and acquire high-yield properties that generate consistent revenue streams." 
               },
               { 
                 icon: Handshake, 
