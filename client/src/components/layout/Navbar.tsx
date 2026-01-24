@@ -173,13 +173,51 @@ export function Navbar() {
       </div>
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden absolute top-20 left-0 w-full bg-primary border-b border-white/10 shadow-xl py-4 px-4 flex flex-col gap-4 animate-in slide-in-from-top-5 text-white">
+        <div className="lg:hidden absolute top-20 left-0 w-full bg-primary border-b border-white/10 shadow-xl py-4 px-4 flex flex-col gap-4 animate-in slide-in-from-top-5 text-white h-[calc(100vh-5rem)] overflow-y-auto pb-20">
            <Link href="/listings"><a className="text-lg font-medium py-2 border-b border-white/10 hover:text-accent">Listings</a></Link>
-           <Link href="/admin-offices"><a className="text-lg font-medium py-2 border-b border-white/10 hover:text-accent">Admin Offices</a></Link>
-           <Link href="/services"><a className="text-lg font-medium py-2 border-b border-white/10 hover:text-accent">Services</a></Link>
-           <Link href="/locations"><a className="text-lg font-medium py-2 border-b border-white/10 hover:text-accent">Locations</a></Link>
+           
+           <div className="py-2 border-b border-white/10">
+             <div className="text-lg font-medium mb-2 text-white/80">Admin Offices</div>
+             <div className="pl-4 flex flex-col gap-2">
+               <Link href="/admin-offices/business-building"><a className="text-sm hover:text-accent">Business Building</a></Link>
+               <Link href="/admin-offices/business-park"><a className="text-sm hover:text-accent">Business Parks</a></Link>
+               <Link href="/admin-offices/mixed-use"><a className="text-sm hover:text-accent">Mixed Use</a></Link>
+               <Link href="/admin-offices"><a className="text-sm font-medium text-accent mt-1">View All &rarr;</a></Link>
+             </div>
+           </div>
+
+           <div className="py-2 border-b border-white/10">
+             <div className="text-lg font-medium mb-2 text-white/80">Services</div>
+             <div className="pl-4 flex flex-col gap-2">
+               <Link href="/services/corporate-leasing"><a className="text-sm hover:text-accent">Corporate Leasing</a></Link>
+               <Link href="/services/investment-consultation"><a className="text-sm hover:text-accent">Investment Consultation</a></Link>
+               <Link href="/services/income-property"><a className="text-sm hover:text-accent">Income Property</a></Link>
+               <Link href="/services/unit-resale"><a className="text-sm hover:text-accent">Unit Resale</a></Link>
+             </div>
+           </div>
+
+           <div className="py-2 border-b border-white/10">
+             <div className="text-lg font-medium mb-2 text-white/80">Developers</div>
+             <div className="pl-4 flex flex-col gap-2">
+               <Link href="/developers/sodic"><a className="text-sm hover:text-accent">SODIC</a></Link>
+               <Link href="/developers/emaar"><a className="text-sm hover:text-accent">Emaar</a></Link>
+               <Link href="/developers/al-futtaim"><a className="text-sm hover:text-accent">Al Futtaim</a></Link>
+               <Link href="/developers/waterway"><a className="text-sm hover:text-accent">The Waterway</a></Link>
+               <Link href="/developers"><a className="text-sm font-medium text-accent mt-1">View All &rarr;</a></Link>
+             </div>
+           </div>
+
+           <div className="py-2 border-b border-white/10">
+             <div className="text-lg font-medium mb-2 text-white/80">Resources</div>
+             <div className="pl-4 flex flex-col gap-2">
+               <Link href="/resources/blog"><a className="text-sm hover:text-accent">Blog</a></Link>
+               <Link href="/resources/faqs"><a className="text-sm hover:text-accent">FAQs</a></Link>
+               <Link href="/resources/glossary"><a className="text-sm hover:text-accent">Glossary</a></Link>
+             </div>
+           </div>
+
            <Link href="/contact">
-             <Button className="w-full mt-2 bg-accent text-primary hover:bg-accent/90">Contact Us</Button>
+             <Button className="w-full mt-4 bg-accent text-primary hover:bg-accent/90">Contact Us</Button>
            </Link>
         </div>
       )}
