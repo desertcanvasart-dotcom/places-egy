@@ -38,9 +38,7 @@ export default function Home() {
                 </Button>
               </Link>
               <Link href="/contact">
-                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-primary font-medium px-8 h-14 rounded-full text-lg backdrop-blur-sm">
-                  List Your Property
-                </Button>
+                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-primary font-medium px-8 h-14 rounded-full text-lg backdrop-blur-sm">Explore Services</Button>
               </Link>
             </div>
           </div>
