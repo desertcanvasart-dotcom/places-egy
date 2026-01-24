@@ -8,7 +8,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           {/* Brand */}
           <div className="space-y-4">
-            <h3 className="font-serif text-3xl font-bold tracking-tight">PLACES</h3>
+            <img src="/src/assets/places-logo.png" alt="PLACES" className="h-12 w-auto brightness-0 invert" />
             <p className="text-gray-300 text-sm leading-relaxed max-w-xs">
               Egypt's premier marketplace for administrative offices. Buying, renting, and resale made professional and seamless.
             </p>
