@@ -45,16 +45,6 @@ export function Navbar() {
                 <NavigationMenuTrigger className="bg-transparent text-base text-white hover:text-accent hover:bg-white/10">Admin Offices</NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <ul className="grid gap-3 p-6 w-[400px]">
-                    <li className="row-span-3">
-                      <div className="flex h-full w-full select-none flex-col justify-end rounded-md bg-linear-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md">
-                        <div className="mb-2 mt-4 text-lg font-medium">
-                          Workspace Hubs
-                        </div>
-                        <p className="text-sm leading-tight text-muted-foreground">
-                          Explore our curated collection of administrative spaces.
-                        </p>
-                      </div>
-                    </li>
                     <li>
                       <Link href="/admin-offices/business-building">
                         <a className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
