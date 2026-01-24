@@ -8,7 +8,6 @@ export default function Home() {
   return (
     <div className="min-h-screen font-sans flex flex-col">
       <Navbar />
-
       {/* Hero Section */}
       <section className="relative h-[85vh] min-h-[600px] flex items-center justify-center overflow-hidden">
         {/* Background Image with Overlay */}
@@ -25,7 +24,7 @@ export default function Home() {
         {/* Content */}
         <div className="relative z-10 container mx-auto px-4 text-center text-white">
           <div className="animate-in fade-in zoom-in duration-1000 slide-in-from-bottom-10">
-            <h1 className="font-serif text-5xl md:text-7xl font-bold mb-6 tracking-tight leading-tight">
+            <h1 className="font-serif text-5xl md:text-7xl font-bold mb-6 tracking-tight leading-tight text-[#dddee2]">
               Elevate Your <span className="text-accent italic">Business</span> Space
             </h1>
             <p className="text-lg md:text-xl text-gray-200 mb-10 max-w-2xl mx-auto font-light">
@@ -52,7 +51,6 @@ export default function Home() {
           <div className="w-px h-16 bg-gradient-to-b from-transparent via-white to-transparent" />
         </div>
       </section>
-
       {/* Stats / Trust Bar */}
       <section className="bg-white py-12 border-b">
         <div className="container mx-auto px-4">
@@ -76,7 +74,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
       {/* Featured Services */}
       <section className="py-24 bg-secondary/30">
         <div className="container mx-auto px-4">
@@ -121,7 +118,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
       {/* Locations Preview */}
       <section className="py-24">
         <div className="container mx-auto px-4">
@@ -165,7 +161,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
       <Footer />
     </div>
   );
