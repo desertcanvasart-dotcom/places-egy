@@ -56,6 +56,16 @@ export function Navbar() {
                       </div>
                     </li>
                     <li>
+                      <Link href="/admin-offices/business-building">
+                        <a className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                          <div className="text-sm font-medium leading-none">Business Building</div>
+                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                            Standalone corporate towers
+                          </p>
+                        </a>
+                      </Link>
+                    </li>
+                    <li>
                       <Link href="/admin-offices/business-park">
                         <a className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
                           <div className="text-sm font-medium leading-none">Business Parks</div>
@@ -72,6 +82,13 @@ export function Navbar() {
                           <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                             Retail and office combinations
                           </p>
+                        </a>
+                      </Link>
+                    </li>
+                    <li className="col-span-1 mt-2">
+                       <Link href="/admin-offices">
+                        <a className="flex items-center text-sm font-medium text-accent hover:text-primary transition-colors pl-3">
+                           View All Admin Offices &rarr;
                         </a>
                       </Link>
                     </li>
@@ -97,6 +114,35 @@ export function Navbar() {
                         </Link>
                       </li>
                     ))}
+                  </ul>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+              
+              <NavigationMenuItem>
+                <NavigationMenuTrigger className="bg-transparent text-base text-white hover:text-accent hover:bg-white/10">Developers</NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
+                    {[
+                      { title: "SODIC", href: "/developers/sodic" },
+                      { title: "Emaar", href: "/developers/emaar" },
+                      { title: "Al Futtaim", href: "/developers/al-futtaim" },
+                      { title: "The Waterway", href: "/developers/waterway" },
+                    ].map((item) => (
+                      <li key={item.title}>
+                        <Link href={item.href}>
+                           <a className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                            <div className="text-sm font-medium leading-none">{item.title}</div>
+                           </a>
+                        </Link>
+                      </li>
+                    ))}
+                    <li className="col-span-2 mt-2 border-t pt-2">
+                       <Link href="/developers">
+                        <a className="flex items-center justify-center text-sm font-medium text-accent hover:text-primary transition-colors">
+                           View All Developers &rarr;
+                        </a>
+                      </Link>
+                    </li>
                   </ul>
                 </NavigationMenuContent>
               </NavigationMenuItem>
