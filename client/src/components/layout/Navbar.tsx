@@ -20,12 +20,12 @@ export function Navbar() {
   const isActive = (path: string) => location === path;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-primary/95 backdrop-blur supports-[backdrop-filter]:bg-primary/95 text-white">
       <div className="container mx-auto px-4 h-20 flex items-center justify-between">
         {/* Logo */}
         <Link href="/">
           <a className="flex items-center gap-2">
-            <img src="/src/assets/places-logo.png" alt="PLACES" className="h-10 w-auto" />
+            <img src="/src/assets/places-logo.png" alt="PLACES" className="h-10 w-auto brightness-0 invert" />
           </a>
         </Link>
 
@@ -35,14 +35,14 @@ export function Navbar() {
             <NavigationMenuList>
               <NavigationMenuItem>
                 <Link href="/listings">
-                  <a className={cn(navigationMenuTriggerStyle(), "bg-transparent text-base hover:text-accent transition-colors", isActive("/listings") && "text-accent font-medium")}>
+                  <a className={cn(navigationMenuTriggerStyle(), "bg-transparent text-base text-white hover:text-accent hover:bg-white/10 transition-colors", isActive("/listings") && "text-accent font-medium")}>
                     Listings
                   </a>
                 </Link>
               </NavigationMenuItem>
 
               <NavigationMenuItem>
-                <NavigationMenuTrigger className="bg-transparent text-base hover:text-accent">Admin Offices</NavigationMenuTrigger>
+                <NavigationMenuTrigger className="bg-transparent text-base text-white hover:text-accent hover:bg-white/10">Admin Offices</NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <ul className="grid gap-3 p-6 w-[400px]">
                     <li className="row-span-3">
@@ -80,7 +80,7 @@ export function Navbar() {
               </NavigationMenuItem>
 
               <NavigationMenuItem>
-                <NavigationMenuTrigger className="bg-transparent text-base hover:text-accent">Services</NavigationMenuTrigger>
+                <NavigationMenuTrigger className="bg-transparent text-base text-white hover:text-accent hover:bg-white/10">Services</NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
                     {[
@@ -103,7 +103,7 @@ export function Navbar() {
 
               <NavigationMenuItem>
                 <Link href="/locations">
-                  <a className={cn(navigationMenuTriggerStyle(), "bg-transparent text-base hover:text-accent transition-colors", isActive("/locations") && "text-accent font-medium")}>
+                  <a className={cn(navigationMenuTriggerStyle(), "bg-transparent text-base text-white hover:text-accent hover:bg-white/10 transition-colors", isActive("/locations") && "text-accent font-medium")}>
                     Locations
                   </a>
                 </Link>
@@ -115,7 +115,7 @@ export function Navbar() {
         {/* CTA */}
         <div className="hidden lg:flex items-center gap-4">
           <Link href="/contact">
-            <Button className="rounded-full px-6 font-medium bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20">
+            <Button className="rounded-full px-6 font-medium bg-accent hover:bg-accent/90 text-primary hover:text-primary shadow-lg shadow-accent/20">
               Contact Us
             </Button>
           </Link>
@@ -123,7 +123,7 @@ export function Navbar() {
 
         {/* Mobile Menu Toggle */}
         <button
-          className="lg:hidden p-2"
+          className="lg:hidden p-2 text-white"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         >
           {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -132,13 +132,13 @@ export function Navbar() {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden absolute top-20 left-0 w-full bg-white border-b shadow-xl py-4 px-4 flex flex-col gap-4 animate-in slide-in-from-top-5">
-           <Link href="/listings"><a className="text-lg font-medium py-2 border-b">Listings</a></Link>
-           <Link href="/admin-offices"><a className="text-lg font-medium py-2 border-b">Admin Offices</a></Link>
-           <Link href="/services"><a className="text-lg font-medium py-2 border-b">Services</a></Link>
-           <Link href="/locations"><a className="text-lg font-medium py-2 border-b">Locations</a></Link>
+        <div className="lg:hidden absolute top-20 left-0 w-full bg-primary border-b border-white/10 shadow-xl py-4 px-4 flex flex-col gap-4 animate-in slide-in-from-top-5 text-white">
+           <Link href="/listings"><a className="text-lg font-medium py-2 border-b border-white/10 hover:text-accent">Listings</a></Link>
+           <Link href="/admin-offices"><a className="text-lg font-medium py-2 border-b border-white/10 hover:text-accent">Admin Offices</a></Link>
+           <Link href="/services"><a className="text-lg font-medium py-2 border-b border-white/10 hover:text-accent">Services</a></Link>
+           <Link href="/locations"><a className="text-lg font-medium py-2 border-b border-white/10 hover:text-accent">Locations</a></Link>
            <Link href="/contact">
-             <Button className="w-full mt-2">Contact Us</Button>
+             <Button className="w-full mt-2 bg-accent text-primary hover:bg-accent/90">Contact Us</Button>
            </Link>
         </div>
       )}
