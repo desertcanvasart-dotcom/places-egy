@@ -37,6 +37,7 @@ export function Footer() {
             <ul className="space-y-2 text-sm text-gray-300">
               <li><Link href="/services/corporate-leasing"><a className="hover:text-white transition-colors">Corporate Leasing</a></Link></li>
               <li><Link href="/services/investment-consultation"><a className="hover:text-white transition-colors">Investment Consultation</a></Link></li>
+              <li><Link href="/services/income-property"><a className="hover:text-white transition-colors">Income Property</a></Link></li>
               <li><Link href="/services/unit-resale"><a className="hover:text-white transition-colors">Unit Resale</a></Link></li>
             </ul>
           </div>
