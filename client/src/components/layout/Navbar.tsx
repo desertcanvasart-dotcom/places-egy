@@ -77,9 +77,7 @@ export function Navbar() {
                     </li>
                     <li className="col-span-1 mt-2">
                        <Link href="/admin-offices">
-                        <a className="flex items-center text-sm font-medium text-accent hover:text-primary transition-colors pl-3">
-                           View All Admin Offices &rarr;
-                        </a>
+                        <a className="flex items-center text-sm font-medium text-accent hover:text-primary transition-colors pl-3">Explore Admin Offices →</a>
                       </Link>
                     </li>
                   </ul>
@@ -165,7 +163,6 @@ export function Navbar() {
           {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
       </div>
-
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
         <div className="lg:hidden absolute top-20 left-0 w-full bg-primary border-b border-white/10 shadow-xl py-4 px-4 flex flex-col gap-4 animate-in slide-in-from-top-5 text-white">
