@@ -54,12 +54,6 @@ export default function GlossaryPage() {
         <div className="absolute top-[-50%] left-[-10%] w-[50%] h-[200%] bg-white/5 rotate-12 rounded-[100px]" />
         
         <div className="relative z-10 max-w-4xl mx-auto">
-          {/* Icon/Logo Placeholder */}
-          <div className="flex justify-center mb-6">
-            <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center text-3xl font-bold text-primary rotate-12 shadow-lg">
-              *
-            </div>
-          </div>
           
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-8 tracking-tight font-serif">
             Real Estate Glossary
