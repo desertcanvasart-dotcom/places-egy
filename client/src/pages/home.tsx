@@ -74,7 +74,7 @@ export default function Home() {
             </div>
             <div>
               <p className="text-3xl font-serif font-bold text-primary mb-1">500+</p>
-              <p className="text-sm text-muted-foreground uppercase tracking-widest">Support</p>
+              <p className="text-sm text-muted-foreground uppercase tracking-widest">Businesses</p>
             </div>
           </div>
         </div>
