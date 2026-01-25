@@ -69,7 +69,7 @@ export default function Home() {
               <p className="text-sm text-muted-foreground uppercase tracking-widest">Listings</p>
             </div>
             <div>
-              <p className="text-3xl font-serif font-bold text-primary mb-1">4</p>
+              <p className="text-3xl font-serif font-bold text-primary mb-1">10</p>
               <p className="text-sm text-muted-foreground uppercase tracking-widest">Key Locations</p>
             </div>
             <div>
