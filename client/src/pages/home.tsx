@@ -61,7 +61,7 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center divide-x divide-gray-100">
             <div>
-              <p className="text-3xl font-serif font-bold text-primary mb-1">50+</p>
+              <p className="text-3xl font-serif font-bold text-primary mb-1">300+</p>
               <p className="text-sm text-muted-foreground uppercase tracking-widest">Developers</p>
             </div>
             <div>
@@ -171,7 +171,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-      
       {/* FAQ Section */}
       <section className="py-24 bg-gray-50">
         <div className="container mx-auto px-4 max-w-4xl">
@@ -228,7 +227,6 @@ export default function Home() {
           </Accordion>
         </div>
       </section>
-
       <Footer />
     </div>
   );
