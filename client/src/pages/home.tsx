@@ -73,7 +73,7 @@ export default function Home() {
               <p className="text-sm text-muted-foreground uppercase tracking-widest">Key Locations</p>
             </div>
             <div>
-              <p className="text-3xl font-serif font-bold text-primary mb-1">24/7</p>
+              <p className="text-3xl font-serif font-bold text-primary mb-1">500+</p>
               <p className="text-sm text-muted-foreground uppercase tracking-widest">Support</p>
             </div>
           </div>
