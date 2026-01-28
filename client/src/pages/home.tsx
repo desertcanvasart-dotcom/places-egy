@@ -81,7 +81,7 @@ export default function Home() {
         </div>
       </section>
       {/* Property Types Section */}
-      <section className="py-24 bg-white border-b border-gray-100">
+      <section className="py-24 bg-white border-b border-gray-100 pt-[40px] pb-[40px]">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
              <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-4">Discover Our Properties</h2>
@@ -133,7 +133,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
       {/* Featured Services */}
       <section className="py-24 bg-secondary/30 pt-[50px] pb-[50px]">
         <div className="container mx-auto px-4">
