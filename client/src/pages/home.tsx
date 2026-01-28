@@ -80,7 +80,7 @@ export default function Home() {
         </div>
       </section>
       {/* Featured Services */}
-      <section className="py-24 bg-secondary/30">
+      <section className="py-24 bg-secondary/30 pt-[50px] pb-[50px]">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-4">Comprehensive Real Estate Services</h2>
