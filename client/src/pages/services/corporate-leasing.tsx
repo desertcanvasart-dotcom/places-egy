@@ -160,7 +160,7 @@ export default function CorporateLeasing() {
               <div key={i} className="relative p-6 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
                 <div className="text-4xl font-serif font-bold text-white/10 mb-4 absolute top-4 right-4">{item.step}</div>
                 <item.icon className="w-8 h-8 text-accent mb-4" />
-                <h3 className="font-bold text-lg mb-2">{item.title}</h3>
+                <h3 className="font-bold text-lg mb-2 text-[#f6f6f6]">{item.title}</h3>
                 <p className="text-sm text-white/70 leading-relaxed">{item.desc}</p>
               </div>
             ))}
