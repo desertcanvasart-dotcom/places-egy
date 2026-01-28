@@ -13,7 +13,8 @@ import {
   HelpCircle,
   FileSearch,
   Users,
-  Target
+  Target,
+  Calculator
 } from "lucide-react";
 import {
   Accordion,
@@ -167,19 +168,37 @@ export default function CorporateLeasing() {
         </div>
       </section>
       {/* 5. Evaluate Unit CTA (Mid-page) */}
-      <section className="py-20 bg-accent/10 border-y border-accent/20">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-2xl md:text-3xl font-serif font-bold text-primary mb-3">
-            Unsure about the fair market value?
-          </h2>
-          <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
-            Get a preliminary assessment from our experts before making any commitments.
-          </p>
-          <Link href="/contact">
-            <Button size="lg" className="bg-primary text-white hover:bg-primary/90 rounded-full px-8 shadow-lg">
-              Evaluate Your Unit’s Worth
-            </Button>
-          </Link>
+      <section className="py-16">
+        <div className="container mx-auto px-4">
+          <div className="bg-primary rounded-3xl p-8 md:p-12 relative overflow-hidden shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8 group border border-white/10">
+             {/* Decorative Elements */}
+             <div className="absolute top-0 right-0 w-64 h-64 bg-accent/10 rounded-full blur-3xl transform translate-x-1/3 -translate-y-1/3" />
+             <div className="absolute bottom-0 left-0 w-40 h-40 bg-accent/10 rounded-full blur-2xl transform -translate-x-1/3 translate-y-1/3" />
+             
+             <div className="relative z-10 max-w-2xl text-center md:text-left md:pl-4">
+               <div className="flex flex-col md:flex-row items-center gap-6">
+                 <div className="shrink-0 w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center border border-accent/20 shadow-inner">
+                    <Calculator className="w-8 h-8 text-accent" />
+                 </div>
+                 <div>
+                   <h2 className="text-2xl md:text-3xl font-serif font-bold text-white mb-2">
+                     Unsure about the fair market value?
+                   </h2>
+                   <p className="text-white/80 text-lg font-light leading-relaxed">
+                     Get a preliminary, data-backed assessment from our experts before making any commitments.
+                   </p>
+                 </div>
+               </div>
+             </div>
+
+             <div className="relative z-10 shrink-0">
+                <Link href="/contact">
+                  <Button className="bg-transparent border-2 border-accent text-accent hover:bg-accent hover:text-primary h-14 px-8 rounded-full text-lg font-bold transition-all duration-300 shadow-[0_0_20px_rgba(212,175,55,0.1)] hover:shadow-[0_0_30px_rgba(212,175,55,0.3)]">
+                    Evaluate Your Unit’s Worth
+                  </Button>
+                </Link>
+             </div>
+          </div>
         </div>
       </section>
       {/* 6. Assets & Spaces */}
