@@ -200,7 +200,7 @@ export default function Home() {
       <section className="py-24 bg-primary text-white pt-[50px] pb-[50px]">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16 max-w-2xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-serif font-bold mb-6">More Than Just Listings</h2>
+            <h2 className="text-3xl md:text-4xl font-serif font-bold mb-6 text-[#f6f6f6]">More Than Just Listings</h2>
             <p className="text-white/70 text-lg">
               We go beyond the search to ensure your business finds its perfect home through a structured, professional process.
             </p>
