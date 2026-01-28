@@ -42,40 +42,83 @@ export function Navbar() {
               </NavigationMenuItem>
 
               <NavigationMenuItem>
-                <NavigationMenuTrigger className="bg-transparent text-base text-white hover:text-accent hover:bg-white/10">Admin Offices</NavigationMenuTrigger>
+                <NavigationMenuTrigger className="bg-transparent text-base text-white hover:text-accent hover:bg-white/10">Commercial & Admin</NavigationMenuTrigger>
                 <NavigationMenuContent>
-                  <ul className="grid gap-3 p-6 w-[400px]">
-                    <li>
-                      <Link href="/admin-offices/business-building">
-                        <a className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                          <div className="text-sm font-medium leading-none">Business Building</div>
-                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                            Standalone corporate towers
-                          </p>
-                        </a>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link href="/admin-offices/business-park">
-                        <a className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                          <div className="text-sm font-medium leading-none">Business Parks</div>
-                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                            Integrated corporate communities
-                          </p>
-                        </a>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link href="/admin-offices/mixed-use">
-                        <a className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                          <div className="text-sm font-medium leading-none">Mixed Use</div>
-                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                            Retail and office combinations
-                          </p>
-                        </a>
-                      </Link>
-                    </li>
-                  </ul>
+                  <div className="grid grid-cols-2 gap-3 p-6 w-[600px]">
+                    {/* Commercial Column */}
+                    <div>
+                      <h4 className="mb-3 text-sm font-medium leading-none text-accent">Commercial</h4>
+                      <ul className="grid gap-3">
+                        <li>
+                          <Link href="/commercial/mega-malls">
+                            <a className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                              <div className="text-sm font-medium leading-none">Mega Malls</div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                Large-scale retail destinations
+                              </p>
+                            </a>
+                          </Link>
+                        </li>
+                        <li>
+                          <Link href="/commercial/strip-malls">
+                            <a className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                              <div className="text-sm font-medium leading-none">Strip Malls</div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                Convenient open-air shopping centers
+                              </p>
+                            </a>
+                          </Link>
+                        </li>
+                        <li>
+                          <Link href="/commercial/drive-through">
+                            <a className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                              <div className="text-sm font-medium leading-none">Drive Through</div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                Quick-service commercial units
+                              </p>
+                            </a>
+                          </Link>
+                        </li>
+                      </ul>
+                    </div>
+
+                    {/* Admin Offices Column */}
+                    <div>
+                      <h4 className="mb-3 text-sm font-medium leading-none text-accent">Admin Offices</h4>
+                      <ul className="grid gap-3">
+                        <li>
+                          <Link href="/admin-offices/business-park">
+                            <a className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                              <div className="text-sm font-medium leading-none">Business Parks</div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                Integrated corporate communities
+                              </p>
+                            </a>
+                          </Link>
+                        </li>
+                        <li>
+                          <Link href="/admin-offices/business-building">
+                            <a className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                              <div className="text-sm font-medium leading-none">Business Building</div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                Standalone corporate towers
+                              </p>
+                            </a>
+                          </Link>
+                        </li>
+                        <li>
+                          <Link href="/admin-offices/mixed-use">
+                            <a className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                              <div className="text-sm font-medium leading-none">Mixed Use</div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                Retail and office combinations
+                              </p>
+                            </a>
+                          </Link>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
                 </NavigationMenuContent>
               </NavigationMenuItem>
 
@@ -177,12 +220,24 @@ export function Navbar() {
            <Link href="/listings"><a className="text-lg font-medium py-2 border-b border-white/10 hover:text-accent">Listings</a></Link>
            
            <div className="py-2 border-b border-white/10">
-             <div className="text-lg font-medium mb-2 text-white/80">Admin Offices</div>
-             <div className="pl-4 flex flex-col gap-2">
-               <Link href="/admin-offices/business-building"><a className="text-sm hover:text-accent">Business Building</a></Link>
-               <Link href="/admin-offices/business-park"><a className="text-sm hover:text-accent">Business Parks</a></Link>
-               <Link href="/admin-offices/mixed-use"><a className="text-sm hover:text-accent">Mixed Use</a></Link>
-               <Link href="/admin-offices"><a className="text-sm font-medium text-accent mt-1">View All &rarr;</a></Link>
+             <div className="text-lg font-medium mb-2 text-white/80">Commercial & Admin</div>
+             <div className="pl-4 flex flex-col gap-4">
+               <div>
+                 <div className="text-sm font-bold text-accent mb-2 uppercase tracking-wide">Commercial</div>
+                 <div className="pl-2 flex flex-col gap-2 border-l border-white/10">
+                    <Link href="/commercial/mega-malls"><a className="text-sm hover:text-accent pl-2">Mega Malls</a></Link>
+                    <Link href="/commercial/strip-malls"><a className="text-sm hover:text-accent pl-2">Strip Malls</a></Link>
+                    <Link href="/commercial/drive-through"><a className="text-sm hover:text-accent pl-2">Drive Through</a></Link>
+                 </div>
+               </div>
+               <div>
+                 <div className="text-sm font-bold text-accent mb-2 uppercase tracking-wide">Admin Offices</div>
+                 <div className="pl-2 flex flex-col gap-2 border-l border-white/10">
+                    <Link href="/admin-offices/business-park"><a className="text-sm hover:text-accent pl-2">Business Parks</a></Link>
+                    <Link href="/admin-offices/business-building"><a className="text-sm hover:text-accent pl-2">Business Building</a></Link>
+                    <Link href="/admin-offices/mixed-use"><a className="text-sm hover:text-accent pl-2">Mixed Use</a></Link>
+                 </div>
+               </div>
              </div>
            </div>
 

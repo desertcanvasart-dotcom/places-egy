@@ -14,6 +14,14 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/listings" component={ListingsPage} />
       <Route path="/resources/glossary" component={GlossaryPage} />
+      
+      {/* Route categories to Listings Page for prototype */}
+      <Route path="/commercial/:type" component={ListingsPage} />
+      <Route path="/admin-offices/:type" component={ListingsPage} />
+      <Route path="/developers/:name" component={ListingsPage} />
+      <Route path="/services/:type" component={ListingsPage} />
+      <Route path="/resources/:type" component={ListingsPage} />
+      <Route path="/contact" component={Home} /> {/* Scroll to contact or just home for now */}
       {/* 
         For the prototype, other routes will fall back to 404 
         or we can map them to the listings page with different pre-sets 
