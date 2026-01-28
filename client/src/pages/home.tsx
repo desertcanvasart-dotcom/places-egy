@@ -196,7 +196,7 @@ export default function Home() {
         </div>
       </section>
       {/* How It Works Section */}
-      <section className="py-24 bg-primary text-white">
+      <section className="py-24 bg-primary text-white pt-[50px] pb-[50px]">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16 max-w-2xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-serif font-bold mb-6">More Than Just Listings</h2>
