@@ -42,7 +42,7 @@ export function Navbar() {
               </NavigationMenuItem>
 
               <NavigationMenuItem>
-                <NavigationMenuTrigger className="bg-transparent text-base text-white hover:text-accent hover:bg-white/10">Commercial & Admin</NavigationMenuTrigger>
+                <NavigationMenuTrigger className="bg-transparent text-base text-white hover:text-accent hover:bg-white/10">Properties</NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <div className="grid grid-cols-2 gap-3 p-6 w-[600px]">
                     {/* Commercial Column */}
