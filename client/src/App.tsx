@@ -8,11 +8,14 @@ import Home from "@/pages/home";
 import ListingsPage from "@/pages/listings";
 import GlossaryPage from "@/pages/resources/glossary";
 
+import CorporateLeasing from "@/pages/services/corporate-leasing";
+
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/listings" component={ListingsPage} />
+      <Route path="/services/corporate-leasing" component={CorporateLeasing} />
       <Route path="/resources/glossary" component={GlossaryPage} />
       
       {/* Route categories to Listings Page for prototype */}

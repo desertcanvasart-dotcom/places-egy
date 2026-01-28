@@ -1,0 +1,231 @@
+## 2️⃣Who is this for
+
+- **Guidelines**
+    
+    ### Purpose
+    
+    - Show deep understanding of **different user profiles**.
+    - Validate the problem and positioning what PLACES offers as a solution
+    - Why it matters:
+        - Users subconsciously ask:
+        
+        > “Is this meant for someone like me?”
+        > 
+        
+        This section answers that early.
+        
+    
+    ### Structure
+    
+    - 2 columns:
+        - **1st column:** Heading in the form of a question (Who is this for? Is this for you? Does this sound familiar?)
+        - **2nd column:** 3–4 short personas (bulleted points):
+            
+            Examples:
+            
+        - Businesses expanding or relocating
+        - Founders making their first space decision
+        - Investors evaluating risk
+        - Companies exiting or restructuring
+
+## 3️⃣ What businesses often struggle with (validate the problem)
+
+- **Guidelines**
+    
+    ### Purpose
+    
+    Demonstrate the experience of PLACES by naming **real risks that businesses face while [buying](http://buying.re), renting , reselling** 
+    
+    ### Structure
+    
+    Short intro + bullet points.
+    
+    Examples:
+    
+    - Unclear pricing
+    - Hidden risks
+    - Poor location fit
+    - Overpaying or underselling
+    - Choosing the wrong asset type
+
+## 4️⃣ Core values / solution section
+
+- **Guidelines**
+    
+    ### Purpose
+    
+    Explain **how PLACES thinks and works**, not what it “offers”
+    
+    - Communicates care
+    - Builds trust
+    - Reinforces PLACES as an advisor not just sales people
+    
+    ### Structure
+    
+    4–5 step advisory flow 
+    
+    **This structure must appear on ALL service pages, but the copy needs to be curated based on the service page:**
+    
+    1. **Understanding Your Objective**
+        
+        Business goal, timeline, constraints
+        
+    2. **Market Survey**
+        
+        Supply, demand, alternatives, positioning
+        
+    3. **Professional Unit Evaluation**
+        
+        Pricing logic, suitability, benchmarks
+        
+    4. **Due Diligence**
+        
+        Commercial, operational, and risk checks
+        
+    5. **Execution Support**
+        
+        Leasing, buying, resale, or investment guidance
+        
+
+## 5️⃣ Evaluate your unit (ACTION FOCUSED SECTION)
+
+- **guidelines**
+    
+    ### Purpose
+    
+    Offer **immediate, concrete value** without commitment.
+    
+    ### Placement
+    
+    **Mid-page AND again near the bottom**
+    
+    ### Structure
+    
+    - Short headline
+    - 1–2 line explanation
+    - CTA button
+    
+    ### CTA button:
+    
+    **“Evaluate Your Unit’s Worth”**
+    
+    → `/contact/` 
+    
+    ### Why this converts
+    
+    - It’s specific
+    - It’s useful
+    - It doesn’t feel like “sales”
+    
+    This becomes one of your **highest-intent actions**.
+    
+
+## 6️⃣ Assets & spaces this service applies to
+
+- **guidelines**
+    
+    ### Purpose
+    
+    Connect services → assets → listings.
+    
+    ### Structure
+    
+    - Headline
+    - Brief explanatory text/ subheading
+    - Two grouped blocks:
+        1. Admin Offices → *links to: Admin offices*
+        2. Commercial areas → *links to: Commercial Areas*
+
+## 7️⃣ RELATED AVAILABLE SPACES (SECONDARY, FILTERED)
+
+- **guidelines**
+    
+    ### Purpose
+    
+    Give browsing users an option - but it’s a secondary part of the page
+    
+    ### Structure
+    
+    Short section with CTA button:
+    
+    Examples for different service pages:
+    
+    - “View available spaces for leasing”
+    - “View resale opportunities”
+    - “View income-generating units”
+    
+    ### Linking rule
+    
+    Links go to:
+    
+    ```
+    /listings?service=leasing
+    /listings?service=resale
+    
+    ```
+    
+    BUT:
+    
+    - Filtered URLs = **noindex**
+    - Canonical = `/listings/`
+
+## 8️⃣ WHY PLACES (SERVICE-SPECIFIC TRUST)
+
+- **guidelines**
+    
+    ### Purpose
+    
+    Answer:
+    
+    > “Why should I do this with PLACES?”
+    > 
+    
+    ### Structure
+    
+    3–5 short bullets:
+    
+    - Advisory-first approach
+    - Admin & commercial focus
+    - Market knowledge
+    - Developer relationships
+    - Risk-aware decision making
+    
+    No hype. No guarantees.
+    
+
+## 9️⃣ FAQ
+
+- **guidelines**
+    
+    ### Purpose
+    
+    Remove hesitation **before conversion**.
+    
+    ### Placement
+    
+    **Before the final CTA**
+    
+    ### FAQ examples (service-specific):
+    
+    - How do you evaluate a unit?
+    - Do you work with both buyers and sellers?
+    - Is this service only for large companies?
+    - Can I get advice without committing?
+
+## 🔟 FINAL CTA
+
+- **guidelines**
+    
+    ### Purpose
+    
+    Give clarity-ready users a next step.
+    
+    ### Structure
+    
+    - Reassuring headline
+    - Clear CTA
+    
+    ### CTA options
+    
+    - “Talk to a PLACES Advisor”
+    - “Evaluate Your Unit’s Worth”
