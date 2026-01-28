@@ -2,7 +2,7 @@ import { Link } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Building2, TrendingUp, Handshake, Search, ClipboardList, BarChart3, ShieldCheck, CheckCircle2, MapPin, Maximize2 } from "lucide-react";
+import { ArrowRight, Building2, TrendingUp, Handshake, Search, ClipboardList, BarChart3, ShieldCheck, CheckCircle2, MapPin, Maximize2, Store } from "lucide-react";
 import { LISTINGS } from "@/lib/mock-data";
 
 import {
@@ -80,6 +80,60 @@ export default function Home() {
           </div>
         </div>
       </section>
+      {/* Property Types Section */}
+      <section className="py-24 bg-white border-b border-gray-100">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+             <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-4">Discover Our Properties</h2>
+             <p className="text-muted-foreground max-w-2xl mx-auto">Specialized real estate solutions designed for your success.</p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Admin Offices Card */}
+            <Link href="/admin-offices/business-building">
+              <a className="group relative h-[400px] rounded-2xl overflow-hidden cursor-pointer block">
+                <div className="absolute inset-0 bg-primary/90 transition-colors duration-500 group-hover:bg-primary/80" />
+                <img src="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000" alt="Admin Offices" className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-40 transition-transform duration-700 group-hover:scale-105" />
+                
+                <div className="relative h-full flex flex-col justify-end p-8 md:p-12">
+                  <div className="mb-4 w-16 h-16 bg-accent rounded-full flex items-center justify-center text-primary transform transition-transform duration-300 group-hover:-translate-y-2">
+                    <Building2 className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-3xl font-serif font-bold text-white mb-3">Admin Offices</h3>
+                  <p className="text-white/80 text-lg mb-6 max-w-md">
+                    Premium workspaces including business parks, standalone buildings, and mixed-use developments.
+                  </p>
+                  <span className="inline-flex items-center text-accent font-bold uppercase tracking-wider text-sm">
+                    View Admin Properties <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  </span>
+                </div>
+              </a>
+            </Link>
+
+            {/* Commercial Properties Card */}
+            <Link href="/commercial/mega-malls">
+              <a className="group relative h-[400px] rounded-2xl overflow-hidden cursor-pointer block">
+                <div className="absolute inset-0 bg-primary/90 transition-colors duration-500 group-hover:bg-primary/80" />
+                 <img src="https://images.unsplash.com/photo-1519567241046-7f570eee3ce9?auto=format&fit=crop&q=80&w=1000" alt="Commercial Properties" className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-40 transition-transform duration-700 group-hover:scale-105" />
+
+                <div className="relative h-full flex flex-col justify-end p-8 md:p-12">
+                  <div className="mb-4 w-16 h-16 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full flex items-center justify-center text-white transform transition-transform duration-300 group-hover:-translate-y-2">
+                    <Store className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-3xl font-serif font-bold text-white mb-3">Commercial</h3>
+                  <p className="text-white/80 text-lg mb-6 max-w-md">
+                    High-potential retail spaces in mega malls, strip malls, and drive-through locations.
+                  </p>
+                  <span className="inline-flex items-center text-white font-bold uppercase tracking-wider text-sm group-hover:text-accent transition-colors">
+                    View Commercial Properties <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  </span>
+                </div>
+              </a>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Featured Services */}
       <section className="py-24 bg-secondary/30 pt-[50px] pb-[50px]">
         <div className="container mx-auto px-4">
