@@ -217,8 +217,8 @@ export default function Home() {
                    <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center mb-6 text-accent">
                       <step.icon className="w-6 h-6" />
                    </div>
-                   <h3 className="text-xl font-bold mb-3 font-serif">{step.title}</h3>
-                   <p className="text-white/60 text-sm leading-relaxed">{step.desc}</p>
+                   <h3 className="text-xl font-bold mb-3 font-serif text-white">{step.title}</h3>
+                   <p className="text-white/80 text-sm leading-relaxed">{step.desc}</p>
                 </div>
              ))}
           </div>
