@@ -293,6 +293,22 @@ export default function Home() {
           </Accordion>
         </div>
       </section>
+
+      {/* Final CTA Section */}
+      <section className="py-24 bg-white border-t border-gray-100">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-6">Need personalized guidance?</h2>
+          <p className="text-lg text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">
+            Our team is ready to listen to your requirements and offer tailored advice for your business needs. No pressure, just expert support.
+          </p>
+          <Link href="/contact">
+            <Button size="lg" variant="outline" className="border-primary/30 text-primary hover:bg-primary hover:text-white hover:border-primary px-10 h-14 rounded-full text-lg font-medium transition-all duration-300">
+              Talk to an Advisor
+            </Button>
+          </Link>
+        </div>
+      </section>
+
       <Footer />
     </div>
   );
