@@ -172,7 +172,7 @@ export default function Home() {
         </div>
       </section>
       {/* Developer Trust Section */}
-      <section className="py-20 bg-white border-y border-gray-100">
+      <section className="py-20 bg-white border-y border-gray-100 pt-[20px] pb-[20px]">
         <div className="container mx-auto px-4 text-center">
           <h3 className="text-sm font-bold text-accent uppercase tracking-widest mb-10">Trusted Partners</h3>
           <div className="flex flex-wrap justify-center items-center gap-12 md:gap-16 opacity-80 hover:opacity-100 transition-opacity duration-500">
@@ -195,7 +195,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
       {/* How It Works Section */}
       <section className="py-24 bg-primary text-white">
         <div className="container mx-auto px-4">
@@ -224,7 +223,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
       {/* Listings Entry Point - Exploration */}
       <section className="py-20 bg-gray-50 border-b border-gray-200">
         <div className="container mx-auto px-4 text-center">
@@ -236,7 +234,6 @@ export default function Home() {
             </Link>
         </div>
       </section>
-
       {/* FAQ Section */}
       <section className="py-24 bg-gray-50">
         <div className="container mx-auto px-4 max-w-4xl">
@@ -293,7 +290,6 @@ export default function Home() {
           </Accordion>
         </div>
       </section>
-
       {/* Final CTA Section */}
       <section className="py-24 bg-white border-t border-gray-100">
         <div className="container mx-auto px-4 text-center">
@@ -308,7 +304,6 @@ export default function Home() {
           </Link>
         </div>
       </section>
-
       <Footer />
     </div>
   );
