@@ -26,7 +26,6 @@ export default function CorporateLeasing() {
   return (
     <div className="min-h-screen font-sans flex flex-col">
       <Navbar />
-      
       {/* 1. Hero Section */}
       <section className="relative h-[70vh] min-h-[500px] flex items-center justify-center overflow-hidden">
         {/* Background Image with Overlay */}
@@ -55,7 +54,6 @@ export default function CorporateLeasing() {
           </Link>
         </div>
       </section>
-
       {/* 2. Who is this for */}
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4">
@@ -90,7 +88,6 @@ export default function CorporateLeasing() {
           </div>
         </div>
       </section>
-
       {/* 3. Struggles / Risks */}
       <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-4 max-w-4xl">
@@ -116,12 +113,11 @@ export default function CorporateLeasing() {
           </div>
         </div>
       </section>
-
       {/* 4. Core Values / Solution Process */}
       <section className="py-24 bg-primary text-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4">Our Advisory Process</h2>
+            <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4">Why Choose your office with PLACES?</h2>
             <p className="text-white/70 max-w-2xl mx-auto">
               How PLACES thinks and works to secure your ideal space.
             </p>
@@ -170,7 +166,6 @@ export default function CorporateLeasing() {
           </div>
         </div>
       </section>
-
       {/* 5. Evaluate Unit CTA (Mid-page) */}
       <section className="py-20 bg-accent/10 border-y border-accent/20">
         <div className="container mx-auto px-4 text-center">
@@ -187,7 +182,6 @@ export default function CorporateLeasing() {
           </Link>
         </div>
       </section>
-
       {/* 6. Assets & Spaces */}
       <section className="py-24 bg-white">
         <div className="container mx-auto px-4 max-w-5xl">
@@ -229,7 +223,6 @@ export default function CorporateLeasing() {
           </div>
         </div>
       </section>
-
       {/* 7. Related Available Spaces */}
       <section className="py-16 bg-primary/5">
         <div className="container mx-auto px-4 text-center">
@@ -241,7 +234,6 @@ export default function CorporateLeasing() {
           </Link>
         </div>
       </section>
-
       {/* 8. Why PLACES */}
       <section className="py-24 bg-white">
         <div className="container mx-auto px-4 max-w-4xl">
@@ -265,7 +257,6 @@ export default function CorporateLeasing() {
           </div>
         </div>
       </section>
-
       {/* 9. FAQ */}
       <section className="py-24 bg-gray-50">
         <div className="container mx-auto px-4 max-w-3xl">
@@ -312,7 +303,6 @@ export default function CorporateLeasing() {
           </Accordion>
         </div>
       </section>
-
       {/* 10. Final CTA */}
       <section className="py-24 bg-primary text-white text-center">
         <div className="container mx-auto px-4">
@@ -327,7 +317,6 @@ export default function CorporateLeasing() {
           </Link>
         </div>
       </section>
-
       <Footer />
     </div>
   );
