@@ -129,7 +129,7 @@ export default function Home() {
         </div>
       </section>
       {/* Locations Preview */}
-      <section className="py-24">
+      <section className="py-24 pt-[50px] pb-[50px]">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-end mb-12">
             <div>
