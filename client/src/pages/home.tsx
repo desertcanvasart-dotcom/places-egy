@@ -146,22 +146,26 @@ export default function Home() {
               { 
                 icon: Building2, 
                 title: "Corporate Leasing", 
-                desc: "Strategic leasing solutions tailored for multinational corporations and growing startups." 
+                desc: "Strategic leasing solutions tailored for multinational corporations and growing startups.",
+                link: "/services/corporate-leasing"
               },
               { 
                 icon: TrendingUp, 
                 title: "Investment Consultation", 
-                desc: "Data-driven insights to maximize returns on your commercial real estate portfolio." 
+                desc: "Data-driven insights to maximize returns on your commercial real estate portfolio.",
+                link: "/services/investment-consultation"
               },
               { 
                 icon: Building2, 
                 title: "Income Property", 
-                desc: "Identify and acquire high-yield properties that generate consistent revenue streams." 
+                desc: "Identify and acquire high-yield properties that generate consistent revenue streams.",
+                link: "/services/income-property"
               },
               { 
                 icon: Handshake, 
                 title: "Unit Resale", 
-                desc: "Seamless resale process connecting sellers with serious buyers in the market." 
+                desc: "Seamless resale process connecting sellers with serious buyers in the market.",
+                link: "/services/unit-resale"
               }
             ].map((service, i) => (
               <div key={i} className="bg-white p-8 rounded-xl shadow-xs border hover:shadow-lg hover:border-accent/50 transition-all duration-300 group">
@@ -172,7 +176,7 @@ export default function Home() {
                 <p className="text-muted-foreground leading-relaxed mb-6">
                   {service.desc}
                 </p>
-                <Link href="/services">
+                <Link href={service.link}>
                   <a className="inline-flex items-center text-accent font-medium hover:text-primary transition-colors">
                     Learn more <ArrowRight className="ml-2 w-4 h-4" />
                   </a>
