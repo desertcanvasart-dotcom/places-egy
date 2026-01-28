@@ -40,7 +40,7 @@ export default function CorporateLeasing() {
         </div>
 
         <div className="relative z-10 container mx-auto px-4 text-center text-white max-w-4xl">
-          <h1 className="font-serif text-4xl md:text-6xl font-bold mb-6 tracking-tight leading-tight">
+          <h1 className="font-serif text-4xl md:text-6xl font-bold mb-6 tracking-tight leading-tight text-[#f6f6f6]">
             Leasing Admin & Commercial <br/> Spaces with <span className="text-accent italic">Confidence</span>
           </h1>
           <p className="text-lg md:text-xl text-gray-200 mb-10 max-w-2xl mx-auto font-light leading-relaxed">
