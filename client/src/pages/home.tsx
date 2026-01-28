@@ -2,7 +2,7 @@ import { Link } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Building2, TrendingUp, Handshake, Search } from "lucide-react";
+import { ArrowRight, Building2, TrendingUp, Handshake, Search, ClipboardList, BarChart3, ShieldCheck, CheckCircle2 } from "lucide-react";
 
 import {
   Accordion,
@@ -171,6 +171,72 @@ export default function Home() {
           </div>
         </div>
       </section>
+      {/* Developer Trust Section */}
+      <section className="py-20 bg-white border-y border-gray-100">
+        <div className="container mx-auto px-4 text-center">
+          <h3 className="text-sm font-bold text-accent uppercase tracking-widest mb-10">Trusted Partners</h3>
+          <div className="flex flex-wrap justify-center items-center gap-12 md:gap-16 opacity-80 hover:opacity-100 transition-opacity duration-500">
+            {['SODIC', 'Emaar', 'Al Futtaim', 'The Waterway', 'Palm Hills'].map((dev) => (
+              <Link key={dev} href={`/developers/${dev.toLowerCase().replace(' ', '-')}`}>
+                <a className="group">
+                  <span className="text-2xl md:text-3xl font-serif font-bold text-gray-400 group-hover:text-primary transition-colors">
+                    {dev}
+                  </span>
+                </a>
+              </Link>
+            ))}
+          </div>
+          <div className="mt-12">
+            <Link href="/developers">
+              <a className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors group">
+                View all developers <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </a>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section className="py-24 bg-primary text-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16 max-w-2xl mx-auto">
+            <h2 className="text-3xl md:text-4xl font-serif font-bold mb-6">More Than Just Listings</h2>
+            <p className="text-white/70 text-lg">
+              We go beyond the search to ensure your business finds its perfect home through a structured, professional process.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-4 gap-6">
+             {[
+               { icon: ClipboardList, title: "Understand", desc: "We start by deeply understanding your business needs, culture, and operational requirements." },
+               { icon: BarChart3, title: "Analyze", desc: "We conduct comprehensive market surveys and due diligence to identify the best opportunities." },
+               { icon: ShieldCheck, title: "Advise", desc: "Our experts provide objective, transparent recommendations to guide your decision-making." },
+               { icon: CheckCircle2, title: "Execute", desc: "We manage the entire transaction process, ensuring a safe and seamless acquisition." }
+             ].map((step, i) => (
+                <div key={i} className="bg-white/5 border border-white/10 rounded-xl p-8 hover:bg-white/10 transition-colors duration-300">
+                   <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center mb-6 text-accent">
+                      <step.icon className="w-6 h-6" />
+                   </div>
+                   <h3 className="text-xl font-bold mb-3 font-serif">{step.title}</h3>
+                   <p className="text-white/60 text-sm leading-relaxed">{step.desc}</p>
+                </div>
+             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Listings Entry Point - Exploration */}
+      <section className="py-20 bg-gray-50 border-b border-gray-200">
+        <div className="container mx-auto px-4 text-center">
+            <p className="text-lg text-muted-foreground mb-6 font-medium">Ready to find your perfect office?</p>
+            <Link href="/listings">
+              <Button size="lg" className="bg-primary text-white hover:bg-primary/90 px-8 rounded-full shadow-lg shadow-primary/20 h-12 text-base">
+                Browse Available Spaces
+              </Button>
+            </Link>
+        </div>
+      </section>
+
       {/* FAQ Section */}
       <section className="py-24 bg-gray-50">
         <div className="container mx-auto px-4 max-w-4xl">
