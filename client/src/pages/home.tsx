@@ -2,7 +2,8 @@ import { Link } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Building2, TrendingUp, Handshake, Search, ClipboardList, BarChart3, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Building2, TrendingUp, Handshake, Search, ClipboardList, BarChart3, ShieldCheck, CheckCircle2, MapPin, Maximize2 } from "lucide-react";
+import { LISTINGS } from "@/lib/mock-data";
 
 import {
   Accordion,
@@ -224,14 +225,77 @@ export default function Home() {
         </div>
       </section>
       {/* Listings Entry Point - Exploration */}
-      <section className="py-20 bg-gray-50 border-b border-gray-200">
-        <div className="container mx-auto px-4 text-center">
-            <p className="text-lg text-muted-foreground mb-6 font-medium">Ready to find your perfect office?</p>
-            <Link href="/listings">
-              <Button size="lg" className="bg-primary text-white hover:bg-primary/90 px-8 rounded-full shadow-lg shadow-primary/20 h-12 text-base">
-                Browse Available Spaces
-              </Button>
-            </Link>
+      <section className="py-24 bg-gray-50 border-b border-gray-200">
+        <div className="container mx-auto px-4">
+            <div className="flex flex-col md:flex-row justify-between items-end mb-12">
+              <div>
+                 <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-3">Curated Opportunities</h2>
+                 <p className="text-muted-foreground text-lg max-w-xl">Explore our handpicked selection of premium administrative spaces.</p>
+              </div>
+              <Link href="/listings">
+                <a className="hidden md:inline-flex items-center text-primary font-medium hover:text-accent transition-colors group">
+                  View all listings <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </a>
+              </Link>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8">
+              {LISTINGS.slice(0, 3).map((listing) => (
+                <Link key={listing.id} href={`/listings`}> {/* In a real app, this would link to /listings/${listing.id} */}
+                  <a className="group block bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                    <div className="relative h-64 overflow-hidden">
+                      <img 
+                        src={listing.image} 
+                        alt={listing.title} 
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                      />
+                      <div className="absolute top-4 left-4 bg-primary/90 text-white text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">
+                        {listing.transactionType}
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/80 to-transparent p-6 pt-12 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                         <span className="text-white text-sm font-medium flex items-center gap-2">
+                           View Details <ArrowRight className="w-4 h-4" />
+                         </span>
+                      </div>
+                    </div>
+                    <div className="p-6">
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-accent text-xs font-bold uppercase tracking-widest">{listing.developer}</span>
+                        <span className="text-muted-foreground text-sm">{listing.officeType}</span>
+                      </div>
+                      <h3 className="text-xl font-serif font-bold text-primary mb-3 line-clamp-1 group-hover:text-accent transition-colors">{listing.title}</h3>
+                      
+                      <div className="flex items-center gap-4 text-muted-foreground text-sm mb-4">
+                        <div className="flex items-center gap-1">
+                          <MapPin className="w-4 h-4" />
+                          {listing.location}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Maximize2 className="w-4 h-4" />
+                          {listing.area} m²
+                        </div>
+                      </div>
+                      
+                      <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
+                         <span className="text-primary font-bold text-lg">
+                           {listing.transactionType === 'Rent' 
+                             ? `${listing.price.toLocaleString()} EGP/mo` 
+                             : `${listing.price.toLocaleString()} EGP`}
+                         </span>
+                      </div>
+                    </div>
+                  </a>
+                </Link>
+              ))}
+            </div>
+            
+            <div className="mt-12 text-center md:hidden">
+              <Link href="/listings">
+                <Button variant="outline" className="w-full border-primary text-primary hover:bg-primary hover:text-white">
+                  View all listings
+                </Button>
+              </Link>
+            </div>
         </div>
       </section>
       {/* FAQ Section */}
