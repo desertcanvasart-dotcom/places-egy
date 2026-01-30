@@ -242,6 +242,42 @@ export default function CorporateLeasing() {
           </div>
         </div>
       </section>
+      {/* Leasing Listings (Filtered) */}
+      <section className="py-10 bg-white">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <div className="grid md:grid-cols-[180px_1fr] gap-6 items-center rounded-2xl border border-gray-100 bg-gray-50 p-5 md:p-6 shadow-sm hover:shadow-md transition-shadow">
+            <div className="relative h-28 md:h-32 rounded-xl overflow-hidden bg-primary">
+              <img
+                src="/src/assets/images/leasing-unit-card.png"
+                alt="Leasing opportunities"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-linear-to-t from-black/35 to-transparent" />
+            </div>
+
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h3 className="text-xl md:text-2xl font-serif font-bold text-primary">
+                  Browse Leasing Opportunities
+                </h3>
+                <p className="text-muted-foreground mt-1">
+                  Curated admin & commercial units available for rent—updated regularly.
+                </p>
+              </div>
+
+              <Link href="/listings?service=leasing">
+                <Button
+                  variant="outline"
+                  className="bg-white border-primary/30 text-primary hover:bg-primary hover:text-white hover:border-primary rounded-full h-11 px-6 w-full md:w-auto"
+                >
+                  View Leasing Listings
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* 8. Why PLACES */}
       <section className="py-24 bg-white pt-[30px] pb-[30px]">
         <div className="container mx-auto px-4 max-w-4xl">
