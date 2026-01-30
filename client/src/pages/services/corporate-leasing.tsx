@@ -115,7 +115,7 @@ export default function CorporateLeasing() {
         </div>
       </section>
       {/* 4. Core Values / Solution Process */}
-      <section className="py-24 bg-primary text-white">
+      <section className="py-24 bg-primary text-white pt-[40px] pb-[40px]">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4 text-[#f6f6f6]">Why Choose your office with PLACES?</h2>
