@@ -242,17 +242,6 @@ export default function CorporateLeasing() {
           </div>
         </div>
       </section>
-      {/* 7. Related Available Spaces */}
-      <section className="py-16 bg-primary/5 pt-[30px] pb-[30px]">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-2xl font-serif font-bold text-primary mb-8">Ready to browse options?</h2>
-          <Link href="/listings?transactionType=Rent">
-            <Button variant="outline" size="lg" className="bg-white border-primary text-primary hover:bg-primary hover:text-white px-8 rounded-full h-12">
-              View Available Leasing Opportunities
-            </Button>
-          </Link>
-        </div>
-      </section>
       {/* 8. Why PLACES */}
       <section className="py-24 bg-white pt-[30px] pb-[30px]">
         <div className="container mx-auto px-4 max-w-4xl">
