@@ -277,7 +277,7 @@ export default function CorporateLeasing() {
         </div>
       </section>
       {/* 9. FAQ */}
-      <section className="py-24 bg-gray-50">
+      <section className="py-24 bg-gray-50 pt-[30px] pb-[30px]">
         <div className="container mx-auto px-4 max-w-3xl">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-serif font-bold text-primary mb-4">Frequently Asked Questions</h2>
