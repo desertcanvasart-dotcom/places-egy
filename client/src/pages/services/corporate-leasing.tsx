@@ -254,7 +254,7 @@ export default function CorporateLeasing() {
         </div>
       </section>
       {/* 8. Why PLACES */}
-      <section className="py-24 bg-white">
+      <section className="py-24 bg-white pt-[30px] pb-[30px]">
         <div className="container mx-auto px-4 max-w-4xl">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-6">Why PLACES?</h2>
