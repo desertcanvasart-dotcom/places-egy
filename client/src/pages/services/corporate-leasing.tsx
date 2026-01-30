@@ -243,7 +243,7 @@ export default function CorporateLeasing() {
         </div>
       </section>
       {/* 7. Related Available Spaces */}
-      <section className="py-16 bg-primary/5">
+      <section className="py-16 bg-primary/5 pt-[30px] pb-[30px]">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-2xl font-serif font-bold text-primary mb-8">Ready to browse options?</h2>
           <Link href="/listings?transactionType=Rent">
