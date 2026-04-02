@@ -12,7 +12,6 @@ export default function App() {
       textAlign: "center"
     }}>
       <h1 style={{ fontSize: "48px", marginBottom: "16px" }}>PLACES</h1>
-      <p style={{ fontSize: "18px", opacity: 0.6 }}>Something new is coming. Stay tuned.</p>
+      <p style={{ fontSize: "18px", opacity: 0.6 }}>Something new is coming soon. Stay tuned.</p>
     </div>
   )
-}
