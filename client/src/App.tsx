@@ -1,18 +1,49 @@
-export default function App() {
+import { Switch, Route } from "wouter";
+import { queryClient } from "./lib/queryClient";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import NotFound from "@/pages/not-found";
+import Home from "@/pages/home";
+import ListingsPage from "@/pages/listings";
+import GlossaryPage from "@/pages/resources/glossary";
+
+import CorporateLeasing from "@/pages/services/corporate-leasing";
+
+function Router() {
   return (
-    <div style={{
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      height: "100vh",
-      backgroundColor: "#000000",
-      color: "#ffffff",
-      fontFamily: "Arial, sans-serif",
-      textAlign: "center"
-    }}>
-      <h1 style={{ fontSize: "48px", marginBottom: "16px" }}>PLACES</h1>
-      <p style={{ fontSize: "18px", opacity: 0.6 }}>Something new is coming. Stay tuned.</p>
-    </div>
-  )
+    <Switch>
+      <Route path="/" component={Home} />
+      <Route path="/listings" component={ListingsPage} />
+      <Route path="/services/corporate-leasing" component={CorporateLeasing} />
+      <Route path="/resources/glossary" component={GlossaryPage} />
+      
+      {/* Route categories to Listings Page for prototype */}
+      <Route path="/commercial/:type" component={ListingsPage} />
+      <Route path="/admin-offices/:type" component={ListingsPage} />
+      <Route path="/developers/:name" component={ListingsPage} />
+      <Route path="/services/:type" component={ListingsPage} />
+      <Route path="/resources/:type" component={ListingsPage} />
+      <Route path="/contact" component={Home} /> {/* Scroll to contact or just home for now */}
+      {/* 
+        For the prototype, other routes will fall back to 404 
+        or we can map them to the listings page with different pre-sets 
+        if we wanted to go deeper.
+      */}
+      <Route component={NotFound} />
+    </Switch>
+  );
 }
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Router />
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
+
+export default App;
