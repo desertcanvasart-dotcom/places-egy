@@ -1,63 +1,116 @@
 import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { FilterSidebar } from "@/components/listings/FilterSidebar";
+import { FilterSidebar, DEFAULT_FILTERS, type Filters } from "@/components/listings/FilterSidebar";
 import { ListingCard } from "@/components/listings/ListingCard";
-import { LISTINGS } from "@/lib/mock-data";
+import { supabase, type Listing } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { SlidersHorizontal, Search, Map } from "lucide-react";
+import { SlidersHorizontal, Search, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+type SortOption = "newest" | "price-low" | "price-high" | "area-large" | "area-small";
+
+const SORT_LABELS: Record<SortOption, string> = {
+  "newest": "Newest First",
+  "price-low": "Price: Low to High",
+  "price-high": "Price: High to Low",
+  "area-large": "Area: Large to Small",
+  "area-small": "Area: Small to Large",
+};
 
 export default function ListingsPage() {
-  const [filters, setFilters] = useState<any>({});
+  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
+
+  const { data: listings = [], isLoading, error } = useQuery<Listing[]>({
+    queryKey: ["listings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("listings")
+        .select("*")
+        .order("id", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const filteredListings = useMemo(() => {
-    return LISTINGS.filter((listing) => {
-      // Search Query
+    return listings.filter((listing) => {
       if (searchQuery && !listing.title.toLowerCase().includes(searchQuery.toLowerCase())) {
         return false;
       }
-      
-      // Transaction Type
-      if (filters.transactionType && listing.transactionType !== filters.transactionType) {
+      // Transaction type (always one selected)
+      if (listing.transaction_type?.toLowerCase() !== filters.transactionType.toLowerCase()) {
         return false;
       }
-
-      // Location
-      if (filters.location?.length && !filters.location.includes(listing.location)) {
+      // Property type (always one selected)
+      if (listing.property_type?.toLowerCase() !== filters.propertyType.toLowerCase()) {
         return false;
       }
-
-      // Developer
-      if (filters.developer?.length && !filters.developer.includes(listing.developer)) {
+      // Subtype (multi, no selection = no filter)
+      if (filters.subtype.length > 0 && !filters.subtype.some(s => s.toLowerCase() === listing.subtype?.toLowerCase())) {
         return false;
       }
-
-      // Office Type
-      if (filters.officeType?.length && !filters.officeType.includes(listing.officeType)) {
+      // Location (single, null = no filter)
+      if (filters.location && listing.location?.toLowerCase() !== filters.location.toLowerCase()) {
         return false;
       }
-
-      // Furnish Level
-      if (filters.furnishLevel?.length && !filters.furnishLevel.includes(listing.furnishLevel)) {
+      // Price range
+      if (listing.price < filters.priceRange[0] || listing.price > filters.priceRange[1]) {
         return false;
       }
-
+      // Furnishing (multi, no selection = no filter)
+      if (filters.furnishing.length > 0 && !filters.furnishing.some(f => f.toLowerCase() === listing.furnishing?.toLowerCase())) {
+        return false;
+      }
+      // Developer (single, null = no filter)
+      if (filters.developer && listing.developer?.toLowerCase() !== filters.developer.toLowerCase()) {
+        return false;
+      }
       return true;
     });
-  }, [filters, searchQuery]);
+  }, [listings, filters, searchQuery]);
+
+  const sortedListings = useMemo(() => {
+    const sorted = [...filteredListings];
+    switch (sortBy) {
+      case "price-low":
+        return sorted.sort((a, b) => (a.price ?? 0) - (b.price ?? 0));
+      case "price-high":
+        return sorted.sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
+      case "area-large":
+        return sorted.sort((a, b) => (b.area_sqm ?? 0) - (a.area_sqm ?? 0));
+      case "area-small":
+        return sorted.sort((a, b) => (a.area_sqm ?? 0) - (b.area_sqm ?? 0));
+      case "newest":
+      default:
+        return sorted.sort((a, b) => b.id - a.id);
+    }
+  }, [filteredListings, sortBy]);
 
   return (
     <div className="min-h-screen flex flex-col bg-secondary/20 font-sans">
       <Navbar />
 
       {/* Header */}
-      <div className="bg-primary text-white py-16">
-        <div className="container mx-auto px-4">
-          <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">Find Your Perfect Workspace</h1>
-          <p className="text-lg text-gray-300 max-w-2xl">
+      <div className="relative text-white py-24 overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <img src="/src/assets/images/general-office.png" alt="Office" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-primary/80" />
+        </div>
+        <div className="relative z-10 container mx-auto px-4 pt-8">
+          <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4 text-white">Find Your Perfect Workspace</h1>
+          <p className="text-lg text-white/80 max-w-2xl">
             Browse our curated collection of premium administrative offices across Egypt's top business hubs.
           </p>
         </div>
@@ -81,7 +134,7 @@ export default function ListingsPage() {
               <Button variant="outline" className="bg-white"><SlidersHorizontal className="h-4 w-4 mr-2" /> Filters</Button>
             </SheetTrigger>
             <SheetContent side="left" className="overflow-y-auto">
-              <FilterSidebar filters={filters} setFilters={setFilters} className="mt-6" />
+              <FilterSidebar filters={filters} setFilters={setFilters} listings={listings} className="mt-6" />
             </SheetContent>
           </Sheet>
         </div>
@@ -90,7 +143,7 @@ export default function ListingsPage() {
           {/* Sidebar - Desktop */}
           <aside className="hidden lg:block w-72 shrink-0">
             <div className="bg-white p-6 rounded-lg shadow-xs sticky top-24 border border-border/60">
-              <FilterSidebar filters={filters} setFilters={setFilters} />
+              <FilterSidebar filters={filters} setFilters={setFilters} listings={listings} />
             </div>
           </aside>
 
@@ -107,17 +160,36 @@ export default function ListingsPage() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span className="font-medium text-foreground">{filteredListings.length}</span> Results Found
-                <div className="h-4 w-px bg-border mx-2" />
-                <Button variant="ghost" size="sm" className="h-8">Sort by: Featured</Button>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="font-medium text-foreground">{sortedListings.length}</span> Results
+                <div className="h-3 w-px bg-border mx-1.5" />
+                <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+                  <SelectTrigger className="w-40 h-7 bg-white text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(Object.entries(SORT_LABELS) as [SortOption, string][]).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
             {/* Grid */}
-            {filteredListings.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredListings.map((listing) => (
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-20">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">Loading listings...</p>
+              </div>
+            ) : error ? (
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <p className="text-destructive mb-2">Failed to load listings</p>
+                <p className="text-muted-foreground text-sm">Please try again later.</p>
+              </div>
+            ) : sortedListings.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {sortedListings.map((listing) => (
                   <ListingCard key={listing.id} listing={listing} />
                 ))}
               </div>
@@ -130,7 +202,7 @@ export default function ListingsPage() {
                 <p className="text-muted-foreground max-w-sm mx-auto mb-6">
                   Try adjusting your filters or search terms to find what you're looking for.
                 </p>
-                <Button onClick={() => setFilters({})} variant="outline">Clear all filters</Button>
+                <Button onClick={() => setFilters(DEFAULT_FILTERS)} variant="outline">Clear all filters</Button>
               </div>
             )}
           </div>
