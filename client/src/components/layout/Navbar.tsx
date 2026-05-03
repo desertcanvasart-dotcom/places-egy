@@ -221,7 +221,7 @@ export function Navbar() {
         <div className="lg:hidden absolute top-20 left-0 w-full bg-primary border-b border-white/10 shadow-xl py-4 px-4 flex flex-col gap-2 animate-in slide-in-from-top-5 text-white h-[calc(100vh-5rem)] overflow-y-auto pb-20">
           {/* Browse Listings — primary CTA at top */}
           <Link href="/listings" onClick={closeMobile}>
-            <Button className="w-full bg-accent text-primary hover:bg-accent/90 font-semibold py-6 text-base">
+            <Button className="w-full bg-accent text-primary hover:bg-accent/90 font-semibold py-4 text-sm">
               Browse Listings
             </Button>
           </Link>

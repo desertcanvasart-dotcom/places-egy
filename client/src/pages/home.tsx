@@ -98,12 +98,12 @@ export default function Home() {
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link href="/listings">
-                <Button size="lg" className="bg-accent text-white hover:bg-accent/90 font-bold px-8 h-14 text-lg shadow-xl shadow-accent/30 transition-all hover:scale-105">
+                <Button size="lg" className="bg-accent text-white hover:bg-accent/90 font-bold px-6 h-12 text-base md:px-8 md:h-14 md:text-lg shadow-xl shadow-accent/30 transition-all hover:scale-105">
                   Find an Office
                 </Button>
               </Link>
               <Link href="/contact">
-                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-primary font-medium px-8 h-14 text-lg backdrop-blur-sm bg-white/10">
+                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-primary font-medium px-6 h-12 text-base md:px-8 md:h-14 md:text-lg backdrop-blur-sm bg-white/10">
                   Talk to Us
                 </Button>
               </Link>
@@ -123,25 +123,25 @@ export default function Home() {
             <div className="bg-white rounded-2xl shadow-md shadow-primary/5 p-7 md:p-10">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-7 text-center">
                 <div>
-                  <p className="text-4xl md:text-[2.75rem] font-serif font-bold text-primary hover:text-accent transition-colors cursor-default mb-1">
+                  <p className="text-3xl md:text-[2.75rem] font-serif font-bold text-primary hover:text-accent transition-colors cursor-default mb-1">
                     <CountUp end={50} duration={3500} suffix="+" />
                   </p>
                   <p className="text-xs text-muted-foreground uppercase tracking-widest">Developers</p>
                 </div>
                 <div>
-                  <p className="text-4xl md:text-[2.75rem] font-serif font-bold text-primary hover:text-accent transition-colors cursor-default mb-1">
+                  <p className="text-3xl md:text-[2.75rem] font-serif font-bold text-primary hover:text-accent transition-colors cursor-default mb-1">
                     <CountUp end={1000} duration={3500} suffix="+" />
                   </p>
                   <p className="text-xs text-muted-foreground uppercase tracking-widest">Listings</p>
                 </div>
                 <div>
-                  <p className="text-4xl md:text-[2.75rem] font-serif font-bold text-primary hover:text-accent transition-colors cursor-default mb-1">
+                  <p className="text-3xl md:text-[2.75rem] font-serif font-bold text-primary hover:text-accent transition-colors cursor-default mb-1">
                     <CountUp end={6} duration={3500} />
                   </p>
                   <p className="text-xs text-muted-foreground uppercase tracking-widest">Key Locations</p>
                 </div>
                 <div>
-                  <p className="text-4xl md:text-[2.75rem] font-serif font-bold text-primary hover:text-accent transition-colors cursor-default mb-1">
+                  <p className="text-3xl md:text-[2.75rem] font-serif font-bold text-primary hover:text-accent transition-colors cursor-default mb-1">
                     <CountUp end={7000} duration={3500} suffix="+" />
                   </p>
                   <p className="text-xs text-muted-foreground uppercase tracking-widest">Businesses Helped</p>
@@ -303,7 +303,7 @@ export default function Home() {
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
-              <Link href="/locations/new-cairo" className="group relative h-[420px] rounded-2xl overflow-hidden cursor-pointer shadow-lg shadow-primary/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 block">
+              <Link href="/locations/new-cairo" className="group relative h-72 md:h-105 rounded-2xl overflow-hidden cursor-pointer shadow-lg shadow-primary/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 block">
                 <img src="/images/new-cairo.jpg" alt="New Cairo" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/20 to-transparent" />
                 <div className="absolute bottom-0 left-0 p-8">
@@ -313,7 +313,7 @@ export default function Home() {
                 </div>
               </Link>
 
-              <div className="grid grid-rows-2 gap-6">
+              <div className="grid grid-rows-2 gap-6 min-h-105">
                 <Link href="/locations/sheikh-zayed" className="group relative rounded-2xl overflow-hidden cursor-pointer shadow-lg shadow-primary/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 block">
                   <img src="/images/Sheikh-zayed.jpg" alt="Sheikh Zayed" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                   <div className="absolute inset-0 bg-linear-to-t from-black/80 to-transparent" />
@@ -399,7 +399,7 @@ export default function Home() {
                 Our team is ready to listen to your requirements and offer tailored advice for your business. No pressure, just expert support.
               </p>
               <Link href="/contact">
-                <Button size="lg" className="bg-accent hover:bg-accent/90 text-white px-10 h-14 text-lg font-medium shadow-lg shadow-accent/30 transition-all hover:scale-105">
+                <Button size="lg" className="bg-accent hover:bg-accent/90 text-white px-6 h-12 text-base md:px-10 md:h-14 md:text-lg font-medium shadow-lg shadow-accent/30 transition-all hover:scale-105">
                   Talk to an Advisor
                 </Button>
               </Link>

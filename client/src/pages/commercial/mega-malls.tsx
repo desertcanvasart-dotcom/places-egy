@@ -113,10 +113,9 @@ export default function MegaMalls() {
           <div className="container mx-auto px-6 md:px-10">
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
               {megaMallProjects.map(({ name, developer, location, image }, i) => (
-                <Link
+                <div
                   key={`${name}-${i}`}
-                  href={`/listings?developer=${developer}`}
-                  className="relative h-64 rounded-2xl overflow-hidden group bg-primary/80 block hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
+                  className="relative h-64 rounded-2xl overflow-hidden group bg-primary/80"
                 >
                   {image && (
                     <img
@@ -124,7 +123,7 @@ export default function MegaMalls() {
                       alt={name}
                       loading="lazy"
                       decoding="async"
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      className="absolute inset-0 w-full h-full object-cover"
                     />
                   )}
                   <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/30 to-black/10" />
@@ -145,7 +144,7 @@ export default function MegaMalls() {
                       )}
                     </div>
                   </div>
-                </Link>
+                </div>
               ))}
             </div>
             <div className="mt-10 flex justify-center">

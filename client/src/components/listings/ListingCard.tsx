@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { type Listing } from "@/lib/supabase";
 import { DEVELOPER_OPTIONS, FURNISHING_OPTIONS, getEnumLabel } from "@/lib/enums";
@@ -50,6 +50,18 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
   const [current, setCurrent] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalImage, setModalImage] = useState(0);
+
+  // Prefetch the next + previous modal image so arrow clicks render instantly
+  // instead of waiting for a fresh network round-trip.
+  useEffect(() => {
+    if (!modalOpen || !hasMultiple) return;
+    const nextIdx = (modalImage + 1) % images.length;
+    const prevIdx = (modalImage - 1 + images.length) % images.length;
+    [images[nextIdx], images[prevIdx]].forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, [modalOpen, modalImage, images, hasMultiple]);
 
   const prev = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -180,7 +192,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
                 </div>
               ) : (
                 <>
-                  <img src={images[modalImage]} alt={listing.title} loading="lazy" decoding="async" className="w-full h-full object-cover transition-all duration-500" />
+                  <img src={images[modalImage]} alt={listing.title} fetchPriority="high" decoding="async" className="w-full h-full object-cover transition-all duration-500" />
                   {hasMultiple && (
                     <>
                       <button onClick={() => setModalImage((c: number) => (c === 0 ? images.length - 1 : c - 1))} className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white opacity-0 group-hover/modal:opacity-100 transition-opacity hover:bg-black/60"><ChevronLeft className="w-5 h-5" /></button>
@@ -380,7 +392,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
                 <img
                   src={images[modalImage]}
                   alt={listing.title}
-                  loading="lazy"
+                  fetchPriority="high"
                   decoding="async"
                   className="w-full h-full object-cover transition-all duration-500"
                 />

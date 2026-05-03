@@ -84,15 +84,15 @@ export default function WhyPlaces() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 text-center pt-10 border-t border-border/40">
             <div>
-              <p className="text-4xl md:text-5xl font-serif font-bold text-accent mb-1">7,000+</p>
+              <p className="text-3xl md:text-5xl font-serif font-bold text-accent mb-1">7,000+</p>
               <p className="text-xs text-primary/60 uppercase tracking-widest">Happy clients</p>
             </div>
             <div>
-              <p className="text-4xl md:text-5xl font-serif font-bold text-accent mb-1">10+</p>
+              <p className="text-3xl md:text-5xl font-serif font-bold text-accent mb-1">10+</p>
               <p className="text-xs text-primary/60 uppercase tracking-widest">Years experience</p>
             </div>
             <div>
-              <p className="text-4xl md:text-5xl font-serif font-bold text-accent mb-1">50K+</p>
+              <p className="text-3xl md:text-5xl font-serif font-bold text-accent mb-1">50K+</p>
               <p className="text-xs text-primary/60 uppercase tracking-widest">Successful deals</p>
             </div>
           </div>
