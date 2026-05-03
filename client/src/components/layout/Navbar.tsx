@@ -66,13 +66,13 @@ export function Navbar() {
         ? "bg-primary/95 backdrop-blur-lg border-b border-white/5 shadow-sm shadow-primary/5"
         : "bg-transparent border-b border-transparent"
     )}>
-      <div className="container mx-auto px-6 md:px-10 h-20 flex items-center justify-between relative">
-        <Link href="/" className="flex items-center gap-2 shrink-0 relative z-10">
+      <div className="container mx-auto px-6 md:px-10 h-20 flex items-center gap-4">
+        <Link href="/" className="flex items-center gap-2 shrink-0">
           <img src="/images/places-logo.png" alt="PLACES" className="h-10 w-auto brightness-0 invert shrink-0" />
         </Link>
 
-        {/* Desktop Navigation — absolutely centered relative to header */}
-        <div className="hidden lg:flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
+        {/* Desktop Navigation — flex-grow centers it between logo and CTAs without overlap */}
+        <div className="hidden lg:flex items-center gap-2 flex-1 justify-center min-w-0">
           <NavigationMenu delayDuration={0} skipDelayDuration={0}>
             <NavigationMenuList className="gap-0">
               {/* Properties */}
@@ -193,7 +193,7 @@ export function Navbar() {
         </div>
 
         {/* Desktop CTAs */}
-        <div className="hidden lg:flex items-center gap-3">
+        <div className="hidden lg:flex items-center gap-3 shrink-0">
           <Link href="/contact">
             <Button variant="outline" className="rounded-full px-5 font-medium bg-transparent border-white/30 text-white hover:bg-white/10 hover:text-white hover:border-white/50">
               Contact

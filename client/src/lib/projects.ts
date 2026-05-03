@@ -113,7 +113,7 @@ export const PROJECTS: Project[] = [
   { name: "City Centre Maadi", type: "mixed-use", location: "Maadi · Maadi – on the Ring Road", developer: "majid-al-futtaim", image: "/images/city-centre-maadi.jpeg" },
 
   // ─── The Waterway Developments ───────────────────────────────────
-  { name: "5A", type: "business-park", location: "New Cairo · Ring Road", developer: "the-waterway", image: "/images/5A.jpg" },
+  { name: "5A", type: "mixed-use", location: "New Cairo · Ring Road", developer: "the-waterway", image: "/images/5A.jpg" },
   { name: "Waterway The Hub", type: "mixed-use", location: "New Cairo · Mohamed Naguib Axis", developer: "the-waterway", image: "/images/Waterway-the-hub.jpg" },
   { name: "Waterway The View", type: "business-park", location: "New Cairo · South 90 Street", developer: "the-waterway", image: "/images/the-view.webp" },
   { name: "Waterway Villas – Gentle Turquoise", type: "mixed-use", location: "New Cairo · Golden Square", developer: "the-waterway", image: "/images/gentle-turqouise.webp" },
