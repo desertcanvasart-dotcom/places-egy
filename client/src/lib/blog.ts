@@ -1,0 +1,235 @@
+// Blog data layer.
+//
+// Fetches posts from WordPress via our Express proxy at /api/blog/*. The proxy
+// hides the WP URL from the client, forwards X-WP-Total / X-WP-TotalPages for
+// pagination, and adds short-lived edge caching.
+//
+// WP REST shape is normalized into the BlogPost type via mapWpPost() so the
+// component code consumes a clean, internal type rather than WP's quirky
+// `{ rendered: "..." }` envelope shape.
+
+export type BlogCategory = {
+  name: string;
+  slug: string;
+};
+
+export type BlogTag = BlogCategory;
+
+export type BlogAuthor = {
+  name: string;
+  avatar?: string;
+};
+
+export type BlogImage = {
+  url: string;
+  alt: string;
+  width?: number;
+  height?: number;
+};
+
+export type BlogPost = {
+  id: number;
+  slug: string;
+  title: string;
+  excerpt: string; // rendered HTML — strip for plain-text uses
+  content: string; // rendered HTML for the detail page body
+  date: string;    // ISO timestamp
+  readingTimeMinutes: number;
+  author: BlogAuthor;
+  featuredImage?: BlogImage;
+  categories: BlogCategory[];
+  tags: BlogTag[];
+  seo: {
+    title?: string;
+    description?: string;
+  };
+};
+
+export type FetchPostsOptions = {
+  page?: number;
+  perPage?: number;
+  category?: string;
+};
+
+export type PostsResponse = {
+  posts: BlogPost[];
+  totalPosts: number;
+  totalPages: number;
+  page: number;
+};
+
+const POSTS_PER_PAGE = 9;
+const READING_WPM = 200;
+
+// Minimal subset of the WP REST `/posts?_embed=true` response shape — only the
+// fields we actually consume.
+type WpEmbeddedTerm = { id: number; name: string; slug: string; taxonomy: string };
+type WpEmbeddedAuthor = { name: string; avatar_urls?: Record<string, string> };
+type WpEmbeddedMedia = {
+  source_url: string;
+  alt_text?: string;
+  media_details?: { width?: number; height?: number };
+};
+
+type WpPost = {
+  id: number;
+  date: string;
+  slug: string;
+  title: { rendered: string };
+  content: { rendered: string };
+  excerpt: { rendered: string };
+  meta?: Record<string, unknown>;
+  // Yoast SEO injects this when the plugin is active.
+  yoast_head_json?: {
+    title?: string;
+    description?: string;
+    og_title?: string;
+    og_description?: string;
+  };
+  _embedded?: {
+    author?: WpEmbeddedAuthor[];
+    "wp:featuredmedia"?: WpEmbeddedMedia[];
+    "wp:term"?: WpEmbeddedTerm[][];
+  };
+};
+
+// Decodes WP-rendered HTML entities like "It&#8217;s" → "It's". Used for plain-
+// text uses (page title, meta description) — content/excerpt that goes through
+// dangerouslySetInnerHTML doesn't need this since the browser decodes it.
+function decodeHtmlEntities(s: string): string {
+  if (typeof document === "undefined") return s;
+  const el = document.createElement("textarea");
+  el.innerHTML = s;
+  return el.value;
+}
+
+function mapWpPost(wp: WpPost): BlogPost {
+  const featuredMedia = wp._embedded?.["wp:featuredmedia"]?.[0];
+  const author = wp._embedded?.author?.[0];
+  const allTerms = (wp._embedded?.["wp:term"] ?? []).flat();
+  const categories = allTerms.filter((t) => t.taxonomy === "category");
+  const tags = allTerms.filter((t) => t.taxonomy === "post_tag");
+
+  const plainContent = wp.content.rendered.replace(/<[^>]*>/g, " ");
+  const wordCount = plainContent.split(/\s+/).filter(Boolean).length;
+
+  // Rank Math exposes its meta under `meta.rank_math_*` when REST is enabled
+  // in plugin settings; Yoast uses `yoast_head_json`. We fall back through
+  // both before defaulting to the excerpt.
+  const meta = wp.meta ?? {};
+  const seoTitle =
+    (meta.rank_math_title as string | undefined) ||
+    wp.yoast_head_json?.title ||
+    undefined;
+  const seoDescription =
+    (meta.rank_math_description as string | undefined) ||
+    wp.yoast_head_json?.description ||
+    undefined;
+
+  return {
+    id: wp.id,
+    slug: wp.slug,
+    title: decodeHtmlEntities(wp.title.rendered),
+    excerpt: wp.excerpt.rendered,
+    content: wp.content.rendered,
+    date: wp.date,
+    readingTimeMinutes: Math.max(1, Math.round(wordCount / READING_WPM)),
+    author: {
+      name: author?.name ?? "PLACES Team",
+      avatar: author?.avatar_urls?.["96"],
+    },
+    featuredImage: featuredMedia
+      ? {
+          url: featuredMedia.source_url,
+          alt: featuredMedia.alt_text || decodeHtmlEntities(wp.title.rendered),
+          width: featuredMedia.media_details?.width,
+          height: featuredMedia.media_details?.height,
+        }
+      : undefined,
+    categories: categories.map((c) => ({ name: c.name, slug: c.slug })),
+    tags: tags.map((t) => ({ name: t.name, slug: t.slug })),
+    seo: {
+      title: seoTitle ? decodeHtmlEntities(seoTitle) : undefined,
+      description: seoDescription ? decodeHtmlEntities(seoDescription) : undefined,
+    },
+  };
+}
+
+export async function fetchPosts(opts: FetchPostsOptions = {}): Promise<PostsResponse> {
+  const page = opts.page ?? 1;
+  const perPage = opts.perPage ?? POSTS_PER_PAGE;
+
+  const params = new URLSearchParams();
+  params.set("page", String(page));
+  params.set("per_page", String(perPage));
+  if (opts.category) params.set("category", opts.category);
+
+  const res = await fetch(`/api/blog/posts?${params.toString()}`);
+  if (!res.ok) {
+    // 400 means the page is past the last page — WP returns this for empty
+    // pages. Treat as "no results" so the UI can render gracefully.
+    if (res.status === 400) {
+      return { posts: [], totalPosts: 0, totalPages: 1, page };
+    }
+    throw new Error(`Failed to fetch posts: ${res.status}`);
+  }
+
+  const data = (await res.json()) as WpPost[];
+  const totalPosts = Number(res.headers.get("X-WP-Total") ?? data.length);
+  const totalPages = Number(res.headers.get("X-WP-TotalPages") ?? 1);
+
+  return {
+    posts: data.map(mapWpPost),
+    totalPosts,
+    totalPages,
+    page,
+  };
+}
+
+export async function fetchPost(slug: string): Promise<BlogPost | null> {
+  const res = await fetch(`/api/blog/posts/${encodeURIComponent(slug)}`);
+  if (!res.ok) {
+    if (res.status === 404) return null;
+    throw new Error(`Failed to fetch post: ${res.status}`);
+  }
+  // /posts?slug=X returns an array (WP doesn't have a /posts/by-slug endpoint),
+  // so [] here means the slug doesn't exist.
+  const data = (await res.json()) as WpPost[];
+  if (!Array.isArray(data) || data.length === 0) return null;
+  return mapWpPost(data[0]);
+}
+
+export async function fetchRelatedPosts(post: BlogPost, limit = 3): Promise<BlogPost[]> {
+  const firstCategory = post.categories[0]?.slug;
+  if (!firstCategory) return [];
+
+  const params = new URLSearchParams();
+  params.set("category", firstCategory);
+  params.set("per_page", String(limit + 1)); // +1 so we can drop the current post
+
+  const res = await fetch(`/api/blog/posts?${params.toString()}`);
+  if (!res.ok) return [];
+  const data = (await res.json()) as WpPost[];
+  return data
+    .map(mapWpPost)
+    .filter((p) => p.id !== post.id)
+    .slice(0, limit);
+}
+
+export async function fetchCategories(): Promise<BlogCategory[]> {
+  const res = await fetch("/api/blog/categories");
+  if (!res.ok) return [];
+  const data = (await res.json()) as Array<{ name: string; slug: string }>;
+  return data.map((c) => ({ name: c.name, slug: c.slug }));
+}
+
+// Strip basic HTML tags — used for plain-text excerpts in cards and the
+// meta description fallback. WP's excerpt field is HTML by default.
+export function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+}
+
+export function formatPostDate(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+}
