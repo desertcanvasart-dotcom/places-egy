@@ -385,7 +385,7 @@ export default function LocationDetail() {
                 </span>
               </div>
               <div className="mb-6">
-                <div className="text-5xl md:text-6xl font-serif font-bold text-primary leading-none mb-2">
+                <div className="text-3xl md:text-6xl font-serif font-bold text-primary leading-none mb-2">
                   {content.why.operators.stat}
                 </div>
                 <div className="text-xs font-medium uppercase tracking-wider text-primary/60">
@@ -418,7 +418,7 @@ export default function LocationDetail() {
                 </span>
               </div>
               <div className="mb-6">
-                <div className="text-5xl md:text-6xl font-serif font-bold text-accent leading-none mb-2">
+                <div className="text-3xl md:text-6xl font-serif font-bold text-accent leading-none mb-2">
                   {content.why.investors.stat}
                 </div>
                 <div className="text-xs font-medium uppercase tracking-wider text-primary/60">

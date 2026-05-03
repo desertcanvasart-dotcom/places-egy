@@ -1,5 +1,6 @@
 import { Switch, Route, useLocation } from "wouter";
-import { useEffect, useLayoutEffect } from "react";
+import { useEffect, useLayoutEffect, lazy, Suspense } from "react";
+import { Loader2 } from "lucide-react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -8,71 +9,76 @@ import { CookieBanner } from "@/components/CookieBanner";
 import { MobileBottomBar } from "@/components/layout/MobileBottomBar";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { organizationSchema, websiteSchema } from "@/lib/schema";
-import NotFound from "@/pages/not-found";
-import Home from "@/pages/home";
-import ListingsPage from "@/pages/listings";
-import ListingDetailPage from "@/pages/listings/detail";
-import GlossaryPage from "@/pages/resources/glossary";
-import FAQIndexPage from "@/pages/resources/faqs";
-import FAQSectionPage from "@/pages/resources/faqs-section";
-import BlogIndexPage from "@/pages/resources/blog";
-import BlogPostPage from "@/pages/resources/blog-post";
 
-import LeasingPage from "@/pages/services/leasing";
-import PrimaryProperty from "@/pages/services/primary-property";
-import PropertyResale from "@/pages/services/property-resale";
-import InvestmentConsultation from "@/pages/services/investment-consultation";
-import IncomeGeneratingProperty from "@/pages/services/income-generating-property";
-import ServicesIndex from "@/pages/services";
-import WhyPlaces from "@/pages/why-places";
-import Commercial from "@/pages/commercial";
-import AdminOffices from "@/pages/admin";
-import MegaMalls from "@/pages/commercial/mega-malls";
-import StripMalls from "@/pages/commercial/strip-malls";
-import DriveThrough from "@/pages/commercial/drive-through";
-import BusinessBuilding from "@/pages/admin/business-building";
-import BusinessPark from "@/pages/admin/business-park";
-import MixedUseMall from "@/pages/admin/mixed-use";
-import Contact from "@/pages/contact";
-import Developers from "@/pages/developers";
-import EmaarPage from "@/pages/developers/emaar";
-import ArabellaPage from "@/pages/developers/arabella";
-import AlFuttaimPage from "@/pages/developers/al-futtaim";
-import MajidAlFuttaimPage from "@/pages/developers/majid-al-futtaim";
-import LmdPage from "@/pages/developers/lmd";
-import SodicPage from "@/pages/developers/sodic";
-import TheWaterwayPage from "@/pages/developers/the-waterway";
-import MarakezPage from "@/pages/developers/marakez";
-import ImkanMisrPage from "@/pages/developers/imkan-misr";
-import TheArkDevelopmentsPage from "@/pages/developers/the-ark-developments";
-import KvrdPage from "@/pages/developers/kvrd";
-import PreDevelopmentsPage from "@/pages/developers/pre-developments";
-import AlRabatPropertiesPage from "@/pages/developers/al-rabat-properties";
-import AlJaziPage from "@/pages/developers/al-jazi";
-import HorizonEgyptPage from "@/pages/developers/horizon-egypt";
-import CatalystPage from "@/pages/developers/catalyst";
-import AfaaqPage from "@/pages/developers/afaaq";
-import TownWritersPage from "@/pages/developers/town-writers";
-import LarzPage from "@/pages/developers/larz";
-import MorshedyPage from "@/pages/developers/morshedy";
-import ElSewedyPage from "@/pages/developers/el-sewedy";
-import InmaPage from "@/pages/developers/inma-developments";
-import AmerGroupPage from "@/pages/developers/amer-group";
-import MadinetMasrPage from "@/pages/developers/madinet-masr";
-import RaslanGroupPage from "@/pages/developers/raslan-group";
-import UpwydePage from "@/pages/developers/upwyde";
-import PalmHillsPage from "@/pages/developers/palm-hills";
-import SkyPage from "@/pages/developers/sky";
-import OraPage from "@/pages/developers/ora";
-import AkoyaPage from "@/pages/developers/akoya";
-import ElHazekPage from "@/pages/developers/el-hazek";
-import WealthPage from "@/pages/developers/wealth";
-import Locations from "@/pages/locations";
-import ProjectsPage from "@/pages/projects";
-import LocationDetail from "@/pages/locations/detail";
-import AdminPage from "@/pages/dashboard";
-import PrivacyPolicy from "@/pages/privacy-policy";
-import TermsOfService from "@/pages/terms-of-service";
+// Eager imports — Home loads on first paint, NotFound is imported as a
+// component by faqs-section + locations/detail (React.lazy can't be used
+// when the result is rendered as <NotFound /> instead of routed).
+import Home from "@/pages/home";
+import NotFound from "@/pages/not-found";
+
+// All other pages are code-split — each becomes its own chunk loaded on demand.
+const ListingsPage = lazy(() => import("@/pages/listings"));
+const ListingDetailPage = lazy(() => import("@/pages/listings/detail"));
+const GlossaryPage = lazy(() => import("@/pages/resources/glossary"));
+const FAQIndexPage = lazy(() => import("@/pages/resources/faqs"));
+const FAQSectionPage = lazy(() => import("@/pages/resources/faqs-section"));
+const BlogIndexPage = lazy(() => import("@/pages/resources/blog"));
+const BlogPostPage = lazy(() => import("@/pages/resources/blog-post"));
+const LeasingPage = lazy(() => import("@/pages/services/leasing"));
+const PrimaryProperty = lazy(() => import("@/pages/services/primary-property"));
+const PropertyResale = lazy(() => import("@/pages/services/property-resale"));
+const InvestmentConsultation = lazy(() => import("@/pages/services/investment-consultation"));
+const IncomeGeneratingProperty = lazy(() => import("@/pages/services/income-generating-property"));
+const ServicesIndex = lazy(() => import("@/pages/services"));
+const WhyPlaces = lazy(() => import("@/pages/why-places"));
+const Commercial = lazy(() => import("@/pages/commercial"));
+const AdminOffices = lazy(() => import("@/pages/admin"));
+const MegaMalls = lazy(() => import("@/pages/commercial/mega-malls"));
+const StripMalls = lazy(() => import("@/pages/commercial/strip-malls"));
+const DriveThrough = lazy(() => import("@/pages/commercial/drive-through"));
+const BusinessBuilding = lazy(() => import("@/pages/admin/business-building"));
+const BusinessPark = lazy(() => import("@/pages/admin/business-park"));
+const MixedUseMall = lazy(() => import("@/pages/admin/mixed-use"));
+const Contact = lazy(() => import("@/pages/contact"));
+const Developers = lazy(() => import("@/pages/developers"));
+const EmaarPage = lazy(() => import("@/pages/developers/emaar"));
+const ArabellaPage = lazy(() => import("@/pages/developers/arabella"));
+const AlFuttaimPage = lazy(() => import("@/pages/developers/al-futtaim"));
+const MajidAlFuttaimPage = lazy(() => import("@/pages/developers/majid-al-futtaim"));
+const LmdPage = lazy(() => import("@/pages/developers/lmd"));
+const SodicPage = lazy(() => import("@/pages/developers/sodic"));
+const TheWaterwayPage = lazy(() => import("@/pages/developers/the-waterway"));
+const MarakezPage = lazy(() => import("@/pages/developers/marakez"));
+const ImkanMisrPage = lazy(() => import("@/pages/developers/imkan-misr"));
+const TheArkDevelopmentsPage = lazy(() => import("@/pages/developers/the-ark-developments"));
+const KvrdPage = lazy(() => import("@/pages/developers/kvrd"));
+const PreDevelopmentsPage = lazy(() => import("@/pages/developers/pre-developments"));
+const AlRabatPropertiesPage = lazy(() => import("@/pages/developers/al-rabat-properties"));
+const AlJaziPage = lazy(() => import("@/pages/developers/al-jazi"));
+const HorizonEgyptPage = lazy(() => import("@/pages/developers/horizon-egypt"));
+const CatalystPage = lazy(() => import("@/pages/developers/catalyst"));
+const AfaaqPage = lazy(() => import("@/pages/developers/afaaq"));
+const TownWritersPage = lazy(() => import("@/pages/developers/town-writers"));
+const LarzPage = lazy(() => import("@/pages/developers/larz"));
+const MorshedyPage = lazy(() => import("@/pages/developers/morshedy"));
+const ElSewedyPage = lazy(() => import("@/pages/developers/el-sewedy"));
+const InmaPage = lazy(() => import("@/pages/developers/inma-developments"));
+const AmerGroupPage = lazy(() => import("@/pages/developers/amer-group"));
+const MadinetMasrPage = lazy(() => import("@/pages/developers/madinet-masr"));
+const RaslanGroupPage = lazy(() => import("@/pages/developers/raslan-group"));
+const UpwydePage = lazy(() => import("@/pages/developers/upwyde"));
+const PalmHillsPage = lazy(() => import("@/pages/developers/palm-hills"));
+const SkyPage = lazy(() => import("@/pages/developers/sky"));
+const OraPage = lazy(() => import("@/pages/developers/ora"));
+const AkoyaPage = lazy(() => import("@/pages/developers/akoya"));
+const ElHazekPage = lazy(() => import("@/pages/developers/el-hazek"));
+const WealthPage = lazy(() => import("@/pages/developers/wealth"));
+const Locations = lazy(() => import("@/pages/locations"));
+const ProjectsPage = lazy(() => import("@/pages/projects"));
+const LocationDetail = lazy(() => import("@/pages/locations/detail"));
+const AdminPage = lazy(() => import("@/pages/dashboard"));
+const PrivacyPolicy = lazy(() => import("@/pages/privacy-policy"));
+const TermsOfService = lazy(() => import("@/pages/terms-of-service"));
 
 function ScrollToTop() {
   const [location] = useLocation();
@@ -106,8 +112,17 @@ function PageViewTracker() {
   return null;
 }
 
+function PageLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <Loader2 className="w-8 h-8 animate-spin text-accent" />
+    </div>
+  );
+}
+
 function Router() {
   return (
+    <Suspense fallback={<PageLoader />}>
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/listings" component={ListingsPage} />
@@ -189,6 +204,7 @@ function Router() {
       */}
       <Route component={NotFound} />
     </Switch>
+    </Suspense>
   );
 }
 

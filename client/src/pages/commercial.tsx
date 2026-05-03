@@ -63,7 +63,7 @@ export default function Commercial() {
       <Navbar />
 
       {/* Section 1 — Hero */}
-      <section className="relative h-[50vh] md:h-[85vh] flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-[60vh] md:h-[85vh] pt-28 md:pt-0 pb-12 md:pb-0 flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img
             src="/images/commercial.jpg"
@@ -84,12 +84,12 @@ export default function Commercial() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 items-start mb-10">
             <a href="#listings">
-              <Button size="lg" className="bg-accent hover:bg-accent/90 text-white font-bold px-8 h-14 text-lg shadow-xl shadow-accent/30 transition-all hover:scale-105">
+              <Button size="lg" className="bg-accent hover:bg-accent/90 text-white font-bold px-6 h-12 text-base md:px-8 md:h-14 md:text-lg shadow-xl shadow-accent/30 transition-all hover:scale-105">
                 Explore Available Units
               </Button>
             </a>
             <Link href="/contact">
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-primary font-medium px-8 h-14 text-lg backdrop-blur-sm bg-white/10">
+              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-primary font-medium px-6 h-12 text-base md:px-8 md:h-14 md:text-lg backdrop-blur-sm bg-white/10">
                 Talk to an Advisor
               </Button>
             </Link>
@@ -385,7 +385,7 @@ export default function Commercial() {
             <Link href="/contact">
               <Button
                 size="lg"
-                className="bg-accent hover:bg-accent/90 text-white px-10 h-14 text-lg font-medium shadow-lg shadow-accent/30 transition-all hover:scale-105"
+                className="bg-accent hover:bg-accent/90 text-white px-6 h-12 text-base md:px-10 md:h-14 md:text-lg font-medium shadow-lg shadow-accent/30 transition-all hover:scale-105"
               >
                 Talk to an Advisor
               </Button>

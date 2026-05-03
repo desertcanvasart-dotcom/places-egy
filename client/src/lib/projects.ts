@@ -163,7 +163,7 @@ export const PROJECTS: Project[] = [
   { name: "North Plus", type: "business-building", location: "New Cairo · North 90 Street", developer: "catalyst", image: "/images/catalyst-community-development.jpeg" },
   { name: "Treble C", type: "business-building", location: "New Cairo · South 90 Street", developer: "catalyst", image: "/images/business-park.jpg" },
   { name: "O Zone", type: "business-building", tag: "Medical Hub", location: "New Cairo · El Narges", developer: "catalyst", image: "/images/o-zone.webp" },
-  { name: "Elegantry Mall", type: "business-building", tag: "Medical Hub", location: "New Cairo · El Mahkama", developer: "catalyst", image: "/images/business-park.jpg" },
+  { name: "Elegantry Mall", type: "business-building", tag: "Medical Hub", location: "New Cairo · El Mahkama", developer: "catalyst", image: "/images/Elegantry-mall.jpg" },
 
   // ─── Afaaq Developments ──────────────────────────────────────────
   { name: "Amorada Hub", type: "strip-mall", location: "New Cairo · Middle Ring Road", developer: "afaaq", image: "/images/Amorada-Hub.jpg" },
