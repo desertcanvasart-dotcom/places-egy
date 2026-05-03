@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { GLOSSARY_TERMS, GlossaryTerm } from "@/lib/glossary-data";
 import { Badge } from "@/components/ui/badge";
+import { SchemaMarkup } from "@/components/SchemaMarkup";
+import { breadcrumbSchema, glossarySchema } from "@/lib/schema";
 
 export default function GlossaryPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -46,10 +48,17 @@ export default function GlossaryPage() {
 
   return (
     <div className="min-h-screen font-sans flex flex-col bg-white">
+      <SchemaMarkup
+        schema={breadcrumbSchema([
+          { name: "Home", url: "/" },
+          { name: "Glossary", url: "/glossary" },
+        ])}
+      />
+      <SchemaMarkup schema={glossarySchema(GLOSSARY_TERMS)} />
       <Navbar />
 
       {/* Hero Header */}
-      <div className="bg-primary py-20 px-4 text-center relative overflow-hidden">
+      <div className="bg-primary pt-32 pb-20 px-4 text-center relative overflow-hidden">
         {/* Abstract shape for visual interest */}
         <div className="absolute top-[-50%] left-[-10%] w-[50%] h-[200%] bg-white/5 rotate-12 rounded-[100px]" />
         

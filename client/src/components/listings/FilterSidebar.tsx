@@ -12,10 +12,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RotateCcw } from "lucide-react";
+import { FURNISHING_OPTIONS } from "@/lib/enums";
 
 export type Filters = {
-  transactionType: "Sale" | "Rent";
-  propertyType: "Admin" | "Commercial";
+  transactionType: "Sale" | "Rent" | null;
+  propertyType: "Admin" | "Commercial" | null;
   subtype: string[];
   location: string | null;
   priceRange: [number, number];
@@ -24,8 +25,8 @@ export type Filters = {
 };
 
 export const DEFAULT_FILTERS: Filters = {
-  transactionType: "Sale",
-  propertyType: "Admin",
+  transactionType: null,
+  propertyType: null,
   subtype: [],
   location: null,
   priceRange: [0, 20000000],
@@ -35,8 +36,7 @@ export const DEFAULT_FILTERS: Filters = {
 
 const ADMIN_SUBTYPES = ["Business Park", "Business Building", "Mixed Use"];
 const COMMERCIAL_SUBTYPES = ["Mega Mall", "Strip Mall", "Drive Through"];
-const DEVELOPERS = ["AL FUTTAIM", "EMAAR", "LMD", "MARAKEZ", "MISR ITALIA", "Palm Hills", "SODIC", "The Waterway"];
-const LOCATIONS = ["6th October", "Downtown Cairo", "Heliopolis", "Maadi", "New Cairo", "Sheikh Zayed"];
+const LOCATIONS = ["New Cairo", "Sheikh Zayed", "6th October", "Downtown Cairo", "Sheraton", "Maadi"];
 
 const PRICE_MIN = 0;
 const PRICE_MAX = 20000000;
@@ -58,19 +58,29 @@ function formatPrice(value: number): string {
 export function FilterSidebar({ filters, setFilters, listings, className }: FilterSidebarProps) {
 
   const locations = useMemo(
-    () => [...new Set([...LOCATIONS, ...listings.map(l => l.location).filter(Boolean)])].sort(),
+    () => Array.from(new Set([...LOCATIONS, ...listings.map(l => l.location).filter(Boolean)])).sort(),
     [listings]
   );
 
-  const subtypeOptions = filters.propertyType === "Admin" ? ADMIN_SUBTYPES : COMMERCIAL_SUBTYPES;
+  const subtypeOptions = filters.propertyType === "Admin"
+    ? ADMIN_SUBTYPES
+    : filters.propertyType === "Commercial"
+      ? COMMERCIAL_SUBTYPES
+      : [...ADMIN_SUBTYPES, ...COMMERCIAL_SUBTYPES];
 
   const setTransactionType = (type: "Sale" | "Rent") => {
-    setFilters((prev) => ({ ...prev, transactionType: type }));
+    setFilters((prev) => ({
+      ...prev,
+      transactionType: prev.transactionType === type ? null : type,
+    }));
   };
 
   const setPropertyType = (type: "Admin" | "Commercial") => {
-    // Clear subtype when switching property type since options change
-    setFilters((prev) => ({ ...prev, propertyType: type, subtype: [] }));
+    setFilters((prev) => ({
+      ...prev,
+      propertyType: prev.propertyType === type ? null : type,
+      subtype: [],
+    }));
   };
 
   const toggleSubtype = (value: string) => {
@@ -95,19 +105,16 @@ export function FilterSidebar({ filters, setFilters, listings, className }: Filt
     setFilters((prev) => ({ ...prev, location: value === "all" ? null : value }));
   };
 
-  const setDeveloper = (value: string) => {
-    setFilters((prev) => ({ ...prev, developer: value === "all" ? null : value }));
-  };
-
   const setPriceRange = (range: number[]) => {
     setFilters((prev) => ({ ...prev, priceRange: [range[0], range[1]] as [number, number] }));
   };
 
-  const furnishingOptions = ["Core & Shell", "Finished", "Semi-Finished", "Fully Finished", "Furnished", "Serviced"];
+  // Use slug values (matching Supabase) — labels are the user-visible text.
+  const furnishingOptions = FURNISHING_OPTIONS;
 
   return (
     <div className={`space-y-8 ${className}`}>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-3 border-b border-accent/20">
         <h3 className="font-serif text-xl font-semibold text-primary">Filters</h3>
         <Button
           variant="ghost"
@@ -224,44 +231,27 @@ export function FilterSidebar({ filters, setFilters, listings, className }: Filt
         </div>
       </div>
 
-      <Separator />
-
-      {/* Developer dropdown */}
-      <div className="space-y-3">
-        <Label className="block mb-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">Developer</Label>
-        <Select value={filters.developer ?? "all"} onValueChange={setDeveloper}>
-          <SelectTrigger className="w-full bg-white">
-            <SelectValue placeholder="All developers" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All developers</SelectItem>
-            {DEVELOPERS.map((dev) => (
-              <SelectItem key={dev} value={dev}>{dev}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
 
       <Separator />
 
       {/* Filter 6 — Furnishing (compact pills) */}
       <div className="space-y-3">
-        <Label className="block mb-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">Furnishing</Label>
+        <Label className="block mb-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">Handover condition</Label>
         <div className="flex flex-wrap gap-2">
           {furnishingOptions.map((opt) => {
-            const isSelected = filters.furnishing.includes(opt);
+            const isSelected = filters.furnishing.includes(opt.value);
             return (
               <button
-                key={opt}
+                key={opt.value}
                 type="button"
-                onClick={() => toggleFurnishing(opt)}
+                onClick={() => toggleFurnishing(opt.value)}
                 className={`text-xs font-medium px-3 py-1.5 rounded-full border transition-all ${
                   isSelected
                     ? "bg-primary text-white border-primary shadow-sm"
                     : "bg-white text-foreground/70 border-border hover:border-accent hover:text-accent"
                 }`}
               >
-                {opt}
+                {opt.label}
               </button>
             );
           })}

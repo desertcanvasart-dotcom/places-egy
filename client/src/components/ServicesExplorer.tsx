@@ -6,31 +6,31 @@ const services = [
   {
     icon: Handshake,
     title: "Leasing",
-    desc: "Strategic leasing solutions tailored for corporations and startups. We match your operational needs with the right space, terms, and location.",
+    desc: "Find the right space on the right terms. We match your operational needs with available units across Cairo's top commercial and administrative developments.",
     link: "/services/leasing",
   },
   {
     icon: Building2,
     title: "Primary Property",
-    desc: "Acquire premium developer-direct properties in prime locations. First-hand units with competitive pricing and flexible payment plans.",
+    desc: "Buy directly from the developer. We give you access to off-plan and newly launched units across Egypt's most active developments.",
     link: "/services/primary-property",
   },
   {
     icon: Repeat,
-    title: "Primary Resale",
-    desc: "Seamless resale process connecting sellers with serious buyers. We handle valuation, marketing, and negotiation end to end.",
-    link: "/services/primary-resale",
+    title: "Property Resale",
+    desc: "Buy or sell a unit that has already been transacted. We connect serious buyers with motivated sellers and provide full market context on both sides.",
+    link: "/services/property-resale",
   },
   {
     icon: TrendingUp,
     title: "Investment Consultation",
-    desc: "Data-driven insights to maximize your real estate returns. Market analysis, ROI projections, and portfolio strategy tailored to your goals.",
+    desc: "Not sure where to put your money? We analyze yield potential, vacancy risk, and capital appreciation across commercial and administrative assets in Egypt.",
     link: "/services/investment-consultation",
   },
   {
     icon: Coins,
     title: "Income Generating Property",
-    desc: "High-yield properties that generate consistent revenue streams. We identify and evaluate assets based on tenant quality, occupancy, and yield.",
+    desc: "Find units that generate consistent rental income. We identify assets with strong tenant demand and sustainable yield in Egypt's most active business districts.",
     link: "/services/income-generating-property",
   },
 ];

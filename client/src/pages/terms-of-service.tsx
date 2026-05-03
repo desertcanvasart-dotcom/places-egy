@@ -170,7 +170,6 @@ export default function TermsOfService() {
                 <p className="font-semibold text-primary">PLACES Real Estate</p>
                 <p>info@places-egy.com</p>
                 <p>01063618217</p>
-                <p>Tolip Hotel, New Cairo</p>
               </address>
             </section>
           </div>

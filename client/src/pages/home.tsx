@@ -5,9 +5,41 @@ import { Button } from "@/components/ui/button";
 import { FadeInSection } from "@/components/ui/fade-in-section";
 import { CountUp } from "@/components/ui/count-up";
 import { ServicesExplorer } from "@/components/ServicesExplorer";
+import { DeveloperStrip } from "@/components/DeveloperStrip";
+import { ListingCard } from "@/components/listings/ListingCard";
 import { ArrowRight, Building2, TrendingUp, Handshake, ClipboardList, BarChart3, ShieldCheck, CheckCircle2, MapPin, Maximize2, Store, Repeat, Coins } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase, type Listing } from "@/lib/supabase";
+import { SchemaMarkup } from "@/components/SchemaMarkup";
+import { faqSchema } from "@/lib/schema";
+
+const HOME_FAQS = [
+  {
+    question: "What types of properties does PLACES list?",
+    answer:
+      "PLACES lists administrative offices and commercial offices across Cairo's top business districts. Administrative properties include business parks, business buildings, and mixed-use developments. Commercial properties include units in mega malls, strip malls, and drive-through developments. All listings are available for sale or rent depending on the unit.",
+  },
+  {
+    question: "Which locations in Egypt does PLACES cover?",
+    answer:
+      "PLACES covers six key business districts in Cairo and Greater Cairo: New Cairo, Sheikh Zayed, 6th October, Downtown Cairo, Sheraton, and Maadi. These locations represent Egypt's most active commercial and administrative real estate markets.",
+  },
+  {
+    question: "Does PLACES help with both buying and leasing?",
+    answer:
+      "Yes. PLACES assists with leasing, primary property purchases, resale transactions, and investment acquisitions. Whether you are a business looking to rent office space or an investor buying a commercial unit, PLACES provides advisory and market access for both.",
+  },
+  {
+    question: "Can I use PLACES to find a commercial space as an investor?",
+    answer:
+      "Yes. PLACES works with commercial investors looking for high-yield assets in Egypt's most active retail and commercial developments. We provide market analysis, yield assessment, and due diligence support to help investors evaluate commercial units before committing.",
+  },
+  {
+    question: "How is PLACES different from a regular real estate broker?",
+    answer:
+      "PLACES goes beyond listing availability. Before you commit to any space, we conduct a market survey, evaluate shortlisted units against your requirements, and perform due diligence on developer credibility, contract terms, and service charge history. The goal is to make sure you choose the right space — not just an available one.",
+  },
+];
 
 import {
   Accordion,
@@ -38,27 +70,30 @@ export default function Home() {
 
   return (
     <div className="min-h-screen font-sans flex flex-col bg-background">
+      <SchemaMarkup schema={faqSchema(HOME_FAQS)} />
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative h-[92vh] min-h-[640px] flex items-center justify-center overflow-hidden">
+      <section className="relative h-[85vh] min-h-[580px] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img
-            src="/src/assets/hero-section.jpg"
+            src="/images/hero-section.jpg"
             alt="Modern Office Building"
+            fetchPriority="high"
+            decoding="async"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-[#111111]/60 mix-blend-multiply" />
           <div className="absolute inset-0 bg-[#F5F0EA]/15 mix-blend-overlay" />
         </div>
 
-        <div className="relative z-10 container mx-auto px-4 text-center text-white">
+        <div className="relative z-10 container mx-auto px-6 md:px-10 max-w-7xl text-center text-white">
           <div className="animate-in fade-in zoom-in duration-1000 slide-in-from-bottom-10">
             <h1 className="font-serif text-5xl md:text-7xl font-bold mb-6 tracking-tight leading-tight text-white">
-              Elevate Your <span className="text-accent italic">Business</span> Space
+              Find <span className="text-accent">Your Office</span> in Egypt
             </h1>
-            <p className="text-lg md:text-xl text-white/90 mb-10 max-w-2xl mx-auto font-normal">
-              The premier marketplace for buying, renting, and reselling administrative offices in Egypt's most prestigious locations.
+            <p className="text-lg md:text-xl text-white mb-10 max-w-2xl mx-auto font-medium">
+              Browse offices across Egypt's top business districts and get expert market guidance before you commit to anything.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -84,12 +119,12 @@ export default function Home() {
       {/* Stats Trust Bar */}
       <FadeInSection>
         <section className="pt-12 pb-10 -mt-32 relative z-20">
-          <div className="container mx-auto px-4 max-w-6xl">
-            <div className="bg-white rounded-2xl shadow-xl shadow-primary/5 border border-border/40 p-7 md:p-10">
+          <div className="container mx-auto px-6 md:px-10 max-w-7xl">
+            <div className="bg-white rounded-2xl shadow-md shadow-primary/5 p-7 md:p-10">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-7 text-center">
                 <div>
                   <p className="text-4xl md:text-[2.75rem] font-serif font-bold text-primary hover:text-accent transition-colors cursor-default mb-1">
-                    <CountUp end={300} duration={3500} suffix="+" />
+                    <CountUp end={50} duration={3500} suffix="+" />
                   </p>
                   <p className="text-xs text-muted-foreground uppercase tracking-widest">Developers</p>
                 </div>
@@ -101,15 +136,15 @@ export default function Home() {
                 </div>
                 <div>
                   <p className="text-4xl md:text-[2.75rem] font-serif font-bold text-primary hover:text-accent transition-colors cursor-default mb-1">
-                    <CountUp end={10} duration={3500} />
+                    <CountUp end={6} duration={3500} />
                   </p>
                   <p className="text-xs text-muted-foreground uppercase tracking-widest">Key Locations</p>
                 </div>
                 <div>
                   <p className="text-4xl md:text-[2.75rem] font-serif font-bold text-primary hover:text-accent transition-colors cursor-default mb-1">
-                    <CountUp end={500} duration={3500} suffix="+" />
+                    <CountUp end={7000} duration={3500} suffix="+" />
                   </p>
-                  <p className="text-xs text-muted-foreground uppercase tracking-widest">Businesses</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-widest">Businesses Helped</p>
                 </div>
               </div>
             </div>
@@ -120,15 +155,10 @@ export default function Home() {
       {/* Property Types Section */}
       <FadeInSection>
         <section className="py-12">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-serif font-bold text-primary mb-4">Discover Our Properties</h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto text-lg">Specialized real estate solutions designed for your success.</p>
-            </div>
-
+          <div className="container mx-auto px-6 md:px-10 max-w-7xl">
             <div className="grid md:grid-cols-2 gap-6">
-              <Link href="/admin-offices/business-building" className="group relative h-[420px] rounded-2xl overflow-hidden cursor-pointer block shadow-lg shadow-primary/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500">
-                <img src="/src/assets/images/admin 1.jpg" alt="Admin Offices" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+              <Link href="/admin" className="group relative h-[420px] rounded-2xl overflow-hidden cursor-pointer block shadow-lg shadow-primary/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500">
+                <img src="/images/admin 1.jpg" alt="Admin Offices" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-primary/70 transition-colors duration-500 group-hover:bg-primary/60" />
 
                 <div className="relative h-full flex flex-col justify-end p-8 md:p-12">
@@ -137,7 +167,7 @@ export default function Home() {
                   </div>
                   <h3 className="text-3xl font-serif font-bold text-white mb-3">Admin Offices</h3>
                   <p className="text-white/85 text-lg mb-6 max-w-md">
-                    Premium workspaces including business parks, standalone buildings, and mixed-use developments.
+                    Office spaces for businesses that need a professional, dedicated base.
                   </p>
                   <span className="inline-flex items-center text-white font-bold uppercase tracking-wider text-sm group-hover:text-accent transition-colors">
                     View Admin Properties <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
@@ -146,7 +176,7 @@ export default function Home() {
               </Link>
 
               <Link href="/commercial" className="group relative h-[420px] rounded-2xl overflow-hidden cursor-pointer block shadow-lg shadow-primary/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500">
-                <img src="/src/assets/images/commercial.jpg" alt="Commercial Properties" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                <img src="/images/commercial.jpg" alt="Commercial Properties" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-primary/70 transition-colors duration-500 group-hover:bg-primary/60" />
 
                 <div className="relative h-full flex flex-col justify-end p-8 md:p-12">
@@ -155,7 +185,7 @@ export default function Home() {
                   </div>
                   <h3 className="text-3xl font-serif font-bold text-white mb-3">Commercial</h3>
                   <p className="text-white/85 text-lg mb-6 max-w-md">
-                    High-potential retail spaces in mega malls, strip malls, and drive-through locations.
+                    Retail and commercial units for brands, F&amp;B operators, and investors.
                   </p>
                   <span className="inline-flex items-center text-white font-bold uppercase tracking-wider text-sm group-hover:text-accent transition-colors">
                     View Commercial Properties <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
@@ -167,187 +197,31 @@ export default function Home() {
         </section>
       </FadeInSection>
 
-      {/* Services */}
-      <FadeInSection>
-        <section className="py-12">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-serif font-bold text-primary mb-4">Comprehensive Real Estate Services</h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto text-lg">End-to-end solutions for all your administrative real estate needs.</p>
-            </div>
-
-            <ServicesExplorer />
-          </div>
-        </section>
-      </FadeInSection>
-
       {/* Developer Logo Strip */}
       <FadeInSection>
-        <section className="py-10">
-          <div className="container mx-auto px-4 text-center">
-            <h3 className="text-sm font-bold text-accent uppercase tracking-widest mb-10">
-              Trusted Developer Partners
-            </h3>
-            <div className="flex flex-nowrap justify-center items-center gap-4 md:gap-8 overflow-x-auto">
-              {[
-                { name: "SODIC", logo: "/src/assets/images/SODIC_Logo.png" },
-                { name: "Emaar", logo: "/src/assets/images/Emaar_logo.png" },
-                { name: "Marakez", logo: "/src/assets/images/Marakez _logo.png" },
-                { name: "Al Futtaim", logo: "/src/assets/images/Al futtaim _ logo.png" },
-                { name: "Misr Italia", logo: "/src/assets/images/Misritalia_logoo.png" },
-                { name: "Palm Hills", logo: "/src/assets/images/PalmHills_logo.png" },
-              ].map((dev) => (
-                <Link
-                  key={dev.name}
-                  href={`/developers/${dev.name.toLowerCase().replace(" ", "-")}`}
-                  className="group flex items-center justify-center w-32 h-20 shrink-0"
-                >
-                  <img
-                    src={dev.logo}
-                    alt={dev.name}
-                    className="max-h-full max-w-full object-contain grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
-                  />
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      </FadeInSection>
-
-      {/* Locations Preview */}
-      <FadeInSection>
-        <section className="py-12">
-          <div className="container mx-auto px-4">
-            <div className="flex flex-col md:flex-row justify-between items-end mb-12">
-              <div>
-                <h2 className="text-4xl md:text-5xl font-serif font-bold text-primary mb-2">Prime Locations</h2>
-                <p className="text-muted-foreground text-lg">Discover offices in Egypt's most sought-after business districts.</p>
-              </div>
-              <Link href="/locations">
-                <Button variant="ghost" className="hidden md:flex">View All Locations <ArrowRight className="ml-2 w-4 h-4" /></Button>
-              </Link>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="group relative h-[420px] rounded-2xl overflow-hidden cursor-pointer shadow-lg shadow-primary/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500">
-                <img src="/src/assets/images/new-cairo.webp" alt="New Cairo" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/20 to-transparent" />
-                <div className="absolute bottom-0 left-0 p-8">
-                  <h3 className="text-3xl font-serif text-white font-bold mb-2">New Cairo</h3>
-                  <p className="text-gray-300 mb-4">The new heart of business with premium administrative hubs.</p>
-                  <span className="text-accent text-sm font-bold uppercase tracking-wider flex items-center gap-2">Explore <ArrowRight className="w-4 h-4" /></span>
-                </div>
-              </div>
-
-              <div className="grid grid-rows-2 gap-6">
-                <div className="group relative rounded-2xl overflow-hidden cursor-pointer shadow-lg shadow-primary/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500">
-                  <img src="/src/assets/images/Sheikh-zayed.jpg" alt="Sheikh Zayed" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-linear-to-t from-black/80 to-transparent" />
-                  <div className="absolute bottom-0 left-0 p-6">
-                    <h3 className="text-2xl font-serif text-white font-bold">Sheikh Zayed</h3>
-                  </div>
-                </div>
-                <div className="group relative rounded-2xl overflow-hidden cursor-pointer shadow-lg shadow-primary/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500">
-                  <img src="/src/assets/images/downtown-cairo.jpg" alt="Downtown Cairo" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-linear-to-t from-black/80 to-transparent" />
-                  <div className="absolute bottom-0 left-0 p-6">
-                    <h3 className="text-2xl font-serif text-white font-bold">Downtown Cairo</h3>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      </FadeInSection>
-
-      {/* How It Works */}
-      <FadeInSection>
-        <section className="py-12">
-          <div className="container mx-auto px-4">
-            <div className="bg-primary text-white rounded-3xl p-12 md:p-20 shadow-xl shadow-primary/10">
-              <div className="text-center mb-16 max-w-2xl mx-auto">
-                <span className="inline-block text-xs font-bold tracking-[0.2em] uppercase text-accent mb-4">Our Process</span>
-                <h2 className="text-4xl md:text-5xl font-serif font-bold mb-6 text-white">More Than Just Listings</h2>
-                <p className="text-white/70 text-lg">
-                  We go beyond the search to ensure your business finds its perfect home.
-                </p>
-              </div>
-
-              <div className="grid md:grid-cols-4 gap-6">
-                {[
-                  { icon: ClipboardList, title: "Understand", desc: "We start by understanding your business needs and operational requirements." },
-                  { icon: BarChart3, title: "Analyze", desc: "We conduct comprehensive market surveys to identify the best opportunities." },
-                  { icon: ShieldCheck, title: "Advise", desc: "Our experts provide objective, transparent recommendations." },
-                  { icon: CheckCircle2, title: "Execute", desc: "We manage the entire transaction process for a seamless acquisition." }
-                ].map((step, i) => (
-                  <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all duration-300">
-                    <div className="w-12 h-12 bg-accent/15 rounded-full flex items-center justify-center mb-6 text-accent">
-                      <step.icon className="w-6 h-6" />
-                    </div>
-                    <h3 className="text-xl font-bold mb-3 font-serif text-white">{step.title}</h3>
-                    <p className="text-white/75 text-sm leading-relaxed">{step.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
+        <DeveloperStrip />
       </FadeInSection>
 
       {/* Curated Opportunities */}
       <FadeInSection>
         <section className="py-12">
-          <div className="container mx-auto px-4">
-            <div className="flex flex-col md:flex-row justify-between items-end mb-12">
-              <div>
-                <h2 className="text-4xl md:text-5xl font-serif font-bold text-primary mb-3">Curated Opportunities</h2>
-                <p className="text-muted-foreground text-lg max-w-xl">Explore our handpicked selection of premium administrative spaces.</p>
-              </div>
+          <div className="container mx-auto px-6 md:px-10 max-w-7xl">
+            <div className="flex justify-between items-center mb-8">
+              <span className="inline-flex items-center gap-2.5 text-xs font-bold uppercase tracking-wider text-accent bg-accent/10 px-4 py-2 rounded-full shadow-sm shadow-accent/20">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-75 animate-ping" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-accent" />
+                </span>
+                New Available Units
+              </span>
               <Link href="/listings" className="hidden md:inline-flex items-center text-primary font-medium hover:text-accent transition-colors group">
-                View all listings <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
+                View all available offices <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
               </Link>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-3 gap-5 max-w-5xl mx-auto">
               {listings.slice(0, 3).map((listing) => (
-                <Link key={listing.id} href={`/listings`} className="group block bg-white rounded-2xl overflow-hidden shadow-sm shadow-primary/5 border border-border/40 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-1 transition-all duration-300">
-                  <div className="relative h-64 overflow-hidden">
-                    <img
-                      src={listing.images?.[0] || "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000"}
-                      alt={listing.title}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    />
-                    <div className="absolute top-4 left-4 bg-primary/90 text-white text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">
-                      {formatLabel(listing.transaction_type)}
-                    </div>
-                  </div>
-                  <div className="p-6">
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="text-accent text-xs font-bold uppercase tracking-widest">{formatLabel(listing.developer)}</span>
-                      <span className="text-muted-foreground text-sm">{formatLabel(listing.subtype)}</span>
-                    </div>
-                    <h3 className="text-xl font-serif font-bold text-primary mb-3 line-clamp-1 group-hover:text-accent transition-colors">{listing.title}</h3>
-
-                    <div className="flex items-center gap-4 text-muted-foreground text-sm mb-4">
-                      <div className="flex items-center gap-1">
-                        <MapPin className="w-4 h-4" />
-                        {formatLabel(listing.location)}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Maximize2 className="w-4 h-4" />
-                        {listing.area_sqm} m²
-                      </div>
-                    </div>
-
-                    <div className="pt-4 border-t border-border/40 flex justify-between items-center">
-                      <span className="text-primary font-bold text-lg">
-                        {listing.transaction_type === 'Rent'
-                          ? `${listing.price?.toLocaleString()} EGP/mo`
-                          : `${listing.price?.toLocaleString()} EGP`}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
+                <ListingCard key={listing.id} listing={listing} />
               ))}
             </div>
 
@@ -362,58 +236,152 @@ export default function Home() {
         </section>
       </FadeInSection>
 
+      {/* Services */}
+      <FadeInSection>
+        <section className="py-12">
+          <div className="container mx-auto px-6 md:px-10 max-w-7xl">
+            <div className="mb-16">
+              <h2 className="text-4xl md:text-5xl font-serif font-bold text-primary mb-4">Comprehensive real estate services</h2>
+            </div>
+
+            <ServicesExplorer />
+          </div>
+        </section>
+      </FadeInSection>
+
+      {/* How It Works */}
+      <FadeInSection>
+        <section className="py-12">
+          <div className="container mx-auto px-6 md:px-10 max-w-7xl">
+            <div className="bg-primary/95 text-white rounded-3xl p-10 md:p-14 shadow-lg shadow-primary/5">
+              <div className="text-center mb-10 max-w-2xl mx-auto">
+                <h2 className="text-3xl md:text-4xl font-serif font-bold mb-3 text-white">The right space for your business exists.</h2>
+                <p className="text-white/60 text-base">
+                  We're here to make sure you find it fast.
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-4 gap-4">
+                {[
+                  { icon: ClipboardList, title: "Understand", desc: "We start by understanding your business model, budget & what you actually need from a space." },
+                  { icon: BarChart3, title: "Analyze", desc: "We survey the market, map competing supply & identify options that align with your office requirements." },
+                  { icon: ShieldCheck, title: "Advise", desc: "We give you an objective view of your options, including the risks, the trade-offs & even what we'd do in your position." },
+                  { icon: CheckCircle2, title: "Execute", desc: "We manage the transaction from offer to handover so nothing falls through the cracks." }
+                ].map((step, i) => (
+                  <div key={i} className="bg-white/[0.04] rounded-2xl p-6 hover:bg-white/[0.08] transition-all duration-300">
+                    <div className="w-10 h-10 bg-accent/15 rounded-full flex items-center justify-center mb-4 text-accent">
+                      <step.icon className="w-5 h-5" />
+                    </div>
+                    <h3 className="text-lg font-bold mb-2 font-serif text-white">{step.title}</h3>
+                    <p className="text-white/60 text-sm leading-relaxed">{step.desc}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-10 text-center">
+                <Link href="/contact" className="inline-flex items-center text-accent font-medium hover:text-white transition-colors">
+                  Tell us what you need — we'll handle the rest <ArrowRight className="ml-2 w-4 h-4" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      </FadeInSection>
+
+      {/* Locations Preview */}
+      <FadeInSection>
+        <section className="py-12">
+          <div className="container mx-auto px-6 md:px-10 max-w-7xl">
+            <div className="flex flex-col md:flex-row justify-between items-end mb-12">
+              <div>
+                <h2 className="text-4xl md:text-5xl font-serif font-bold text-primary mb-2">Prime locations</h2>
+                <p className="text-muted-foreground text-lg">Discover offices in Egypt's most sought-after business districts.</p>
+              </div>
+              <Link href="/locations">
+                <Button variant="ghost" className="hidden md:flex">View All Locations <ArrowRight className="ml-2 w-4 h-4" /></Button>
+              </Link>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <Link href="/locations/new-cairo" className="group relative h-[420px] rounded-2xl overflow-hidden cursor-pointer shadow-lg shadow-primary/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 block">
+                <img src="/images/new-cairo.jpg" alt="New Cairo" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/20 to-transparent" />
+                <div className="absolute bottom-0 left-0 p-8">
+                  <h3 className="text-3xl font-serif text-white font-bold mb-2">New Cairo</h3>
+                  <p className="text-gray-300 mb-4">The new heart of business with premium administrative hubs.</p>
+                  <span className="text-accent text-sm font-bold uppercase tracking-wider flex items-center gap-2">Explore <ArrowRight className="w-4 h-4" /></span>
+                </div>
+              </Link>
+
+              <div className="grid grid-rows-2 gap-6">
+                <Link href="/locations/sheikh-zayed" className="group relative rounded-2xl overflow-hidden cursor-pointer shadow-lg shadow-primary/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 block">
+                  <img src="/images/Sheikh-zayed.jpg" alt="Sheikh Zayed" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                  <div className="absolute inset-0 bg-linear-to-t from-black/80 to-transparent" />
+                  <div className="absolute bottom-0 left-0 p-6">
+                    <h3 className="text-2xl font-serif text-white font-bold">Sheikh Zayed</h3>
+                  </div>
+                </Link>
+                <Link href="/locations/downtown-cairo" className="group relative rounded-2xl overflow-hidden cursor-pointer shadow-lg shadow-primary/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 block">
+                  <img src="/images/downtown-cairo.jpg" alt="Downtown Cairo" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                  <div className="absolute inset-0 bg-linear-to-t from-black/80 to-transparent" />
+                  <div className="absolute bottom-0 left-0 p-6">
+                    <h3 className="text-2xl font-serif text-white font-bold">Downtown Cairo</h3>
+                  </div>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      </FadeInSection>
+
       {/* FAQ */}
       <FadeInSection>
         <section className="py-12">
-          <div className="container mx-auto px-4 max-w-4xl">
-            <div className="text-center mb-12">
-              <h2 className="text-4xl md:text-5xl font-serif font-bold text-primary mb-4">Frequently Asked Questions</h2>
-              <p className="text-muted-foreground text-lg">Find answers to common questions about buying, renting, and investing in offices across Egypt.</p>
-            </div>
-
+          <div className="container mx-auto px-6 md:px-10 max-w-7xl">
+            <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-8">Frequently asked questions</h2>
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="item-1" className="border-b border-border/40">
                 <AccordionTrigger className="text-lg font-medium text-primary hover:text-accent hover:no-underline text-left">
-                  What types of administrative offices do you list?
+                  What types of properties does PLACES list?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground text-base leading-relaxed">
-                  We specialize in three main types of administrative properties: Standalone Business Buildings for corporate headquarters, units within comprehensive Business Parks, and flexible offices in Mixed-Use developments that combine commercial and administrative spaces.
+                  PLACES lists administrative offices and commercial offices across Cairo's top business districts. Administrative properties include business parks, business buildings, and mixed-use developments. Commercial properties include units in mega malls, strip malls, and drive-through developments. All listings are available for sale or rent depending on the unit.
                 </AccordionContent>
               </AccordionItem>
 
               <AccordionItem value="item-2" className="border-b border-border/40">
                 <AccordionTrigger className="text-lg font-medium text-primary hover:text-accent hover:no-underline text-left">
-                  Which locations do you cover in Egypt?
+                  Which locations in Egypt does PLACES cover?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground text-base leading-relaxed">
-                  Our primary focus is on Egypt's key business districts: New Cairo, Sheikh Zayed, 6th October, Maadi, Downtown Cairo, and Heliopolis.
+                  PLACES covers six key business districts in Cairo and Greater Cairo: New Cairo, Sheikh Zayed, 6th October, Downtown Cairo, Sheraton, and Maadi. These locations represent Egypt's most active commercial and administrative real estate markets.
                 </AccordionContent>
               </AccordionItem>
 
               <AccordionItem value="item-3" className="border-b border-border/40">
                 <AccordionTrigger className="text-lg font-medium text-primary hover:text-accent hover:no-underline text-left">
-                  Do you offer consultation for real estate investments?
+                  Does PLACES help with both buying and leasing?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground text-base leading-relaxed">
-                  Yes, our Investment Consultation service is designed to help you make informed decisions. We provide market analysis, ROI projections, and portfolio strategy.
+                  Yes. PLACES assists with leasing, primary property purchases, resale transactions, and investment acquisitions. Whether you are a business looking to rent office space or an investor buying a commercial unit, PLACES provides advisory and market access for both.
                 </AccordionContent>
               </AccordionItem>
 
               <AccordionItem value="item-4" className="border-b border-border/40">
                 <AccordionTrigger className="text-lg font-medium text-primary hover:text-accent hover:no-underline text-left">
-                  Can I list my property for resale on PLACES?
+                  Can I use PLACES to find a commercial space as an investor?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground text-base leading-relaxed">
-                  Absolutely. Our Primary Resale service connects sellers with a network of serious buyers. We handle the valuation, marketing, and negotiation processes.
+                  Yes. PLACES works with commercial investors looking for high-yield assets in Egypt's most active retail and commercial developments. We provide market analysis, yield assessment, and due diligence support to help investors evaluate commercial units before committing.
                 </AccordionContent>
               </AccordionItem>
 
               <AccordionItem value="item-5">
                 <AccordionTrigger className="text-lg font-medium text-primary hover:text-accent hover:no-underline text-left">
-                  Who are the developers you partner with?
+                  How is PLACES different from a regular real estate broker?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground text-base leading-relaxed">
-                  We partner with Egypt's top-tier developers including SODIC, Emaar Misr, Al Futtaim Group, The Waterway, and other leading names.
+                  PLACES goes beyond listing availability. Before you commit to any space, we conduct a market survey, evaluate shortlisted units against your requirements, and perform due diligence on developer credibility, contract terms, and service charge history. The goal is to make sure you choose the right space — not just an available one.
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
@@ -424,7 +392,7 @@ export default function Home() {
       {/* Final CTA */}
       <FadeInSection>
         <section className="py-12">
-          <div className="container mx-auto px-4">
+          <div className="container mx-auto px-6 md:px-10 max-w-7xl">
             <div className="bg-white rounded-3xl shadow-xl shadow-primary/5 border border-border/40 p-12 md:p-20 text-center">
               <h2 className="text-4xl md:text-5xl font-serif font-bold text-primary mb-6">Need personalized guidance?</h2>
               <p className="text-lg text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">

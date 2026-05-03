@@ -1,6 +1,8 @@
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ShieldCheck, TrendingUp, Users, Award, Building2, HeartHandshake } from "lucide-react";
+import { SchemaMarkup } from "@/components/SchemaMarkup";
+import { aboutPageSchema, breadcrumbSchema } from "@/lib/schema";
 
 export default function WhyPlaces() {
   const values = [
@@ -38,45 +40,79 @@ export default function WhyPlaces() {
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-background">
+      <SchemaMarkup
+        schema={breadcrumbSchema([
+          { name: "Home", url: "/" },
+          { name: "Why PLACES", url: "/why-places" },
+        ])}
+      />
+      <SchemaMarkup schema={aboutPageSchema()} />
       <Navbar />
 
       {/* Hero */}
-      <section className="bg-primary text-white py-24">
-        <div className="container mx-auto px-4 text-center max-w-3xl">
-          <h1 className="text-4xl md:text-6xl font-serif font-bold mb-6 text-white">
+      <section className="relative bg-secondary/30 pt-32 pb-16 overflow-hidden">
+        <div className="relative z-10 container mx-auto px-4 text-center max-w-3xl">
+          <span className="inline-block text-xs font-bold uppercase tracking-widest text-accent mb-5">
+            About PLACES
+          </span>
+          <h1 className="text-4xl md:text-6xl font-serif font-bold mb-6 text-primary">
             Why PLACES
           </h1>
-          <p className="text-lg md:text-xl text-white/80 leading-relaxed">
+          <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
             We're more than a marketplace. We're your partner in finding the perfect
             workspace for your business to thrive in Egypt's most sought-after locations.
           </p>
         </div>
       </section>
 
-      {/* Mission */}
-      <section className="py-24">
-        <div className="container mx-auto px-4 max-w-4xl">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-6">
-              Our Mission
+      {/* Mission + Stats */}
+      <section className="bg-secondary/30 pb-4">
+        <div className="container mx-auto px-4 max-w-5xl">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-3 mb-4">
+              <span className="h-px w-8 bg-accent" />
+              <span className="text-xs font-bold uppercase tracking-widest text-accent">01 · The Mission</span>
+              <span className="h-px w-8 bg-accent" />
+            </div>
+            <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-5">
+              Making real estate effortless
             </h2>
-            <p className="text-lg text-muted-foreground leading-relaxed">
-              To redefine how businesses find, lease, and invest in administrative real estate
-              across Egypt — making the process transparent, professional, and effortless.
+            <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+              To make finding, leasing, and investing in Egyptian real estate effortless.
             </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 text-center pt-10 border-t border-border/40">
+            <div>
+              <p className="text-4xl md:text-5xl font-serif font-bold text-accent mb-1">7,000+</p>
+              <p className="text-xs text-primary/60 uppercase tracking-widest">Happy clients</p>
+            </div>
+            <div>
+              <p className="text-4xl md:text-5xl font-serif font-bold text-accent mb-1">10+</p>
+              <p className="text-xs text-primary/60 uppercase tracking-widest">Years experience</p>
+            </div>
+            <div>
+              <p className="text-4xl md:text-5xl font-serif font-bold text-accent mb-1">50K+</p>
+              <p className="text-xs text-primary/60 uppercase tracking-widest">Successful deals</p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Values Grid */}
-      <section className="py-24 bg-white">
+      <section className="pt-10 pb-12">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-3 mb-4">
+              <span className="h-px w-8 bg-accent" />
+              <span className="text-xs font-bold uppercase tracking-widest text-accent">02 · What Sets Us Apart</span>
+              <span className="h-px w-8 bg-accent" />
+            </div>
             <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-4">
-              What Sets Us Apart
+              Six pillars, one promise
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Six pillars that define how we serve our clients and shape every decision we make.
+              Six pillars that shape every decision we make.
             </p>
           </div>
 
@@ -99,26 +135,89 @@ export default function WhyPlaces() {
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="py-24 bg-primary text-white">
+      {/* Experience strip + Team */}
+      <section className="bg-secondary/30 pt-4 pb-20">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <p className="text-4xl md:text-5xl font-serif font-bold text-accent mb-2">300+</p>
-              <p className="text-white/70 text-sm uppercase tracking-wider">Properties Listed</p>
+          <div className="text-center mb-4">
+            <span className="text-xs font-bold uppercase tracking-widest text-primary/60">
+              Our team brings experience from
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-y-6 mb-20">
+            {[
+              { src: "/images/savills logo.png", alt: "Savills" },
+              { src: "/images/heroleads-logo.png", alt: "Heroleads" },
+              { src: "/images/the-brokers-league.png", alt: "Brokers League" },
+              { src: "/images/RocketDevs.png", alt: "RocketDevs" },
+              { src: "/images/etegah-logo.png", alt: "Etegah" },
+            ].map((logo) => (
+              <div key={logo.alt} className="w-32 md:w-40 flex items-center justify-center">
+                <img src={logo.src} alt={logo.alt} loading="lazy" decoding="async" className="h-8 md:h-10 w-auto object-contain grayscale opacity-70" />
+              </div>
+            ))}
+          </div>
+
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-3 mb-4">
+              <span className="h-px w-8 bg-accent" />
+              <span className="text-xs font-bold uppercase tracking-widest text-accent">03 · The Team</span>
+              <span className="h-px w-8 bg-accent" />
             </div>
-            <div>
-              <p className="text-4xl md:text-5xl font-serif font-bold text-accent mb-2">1000+</p>
-              <p className="text-white/70 text-sm uppercase tracking-wider">Happy Clients</p>
-            </div>
-            <div>
-              <p className="text-4xl md:text-5xl font-serif font-bold text-accent mb-2">10</p>
-              <p className="text-white/70 text-sm uppercase tracking-wider">Years Experience</p>
-            </div>
-            <div>
-              <p className="text-4xl md:text-5xl font-serif font-bold text-accent mb-2">500+</p>
-              <p className="text-white/70 text-sm uppercase tracking-wider">Successful Deals</p>
-            </div>
+            <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-4">
+              The people behind PLACES
+            </h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Advisors and brokers who know Egypt's commercial market end-to-end.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10">
+            {[
+              // Founders
+              { name: "Ahmed Eslam", title: "Co-Founder", image: "/images/optimized/why-places/Ahmed Eslam.JPG" },
+              { name: "Mohamed Safwat", title: "Co-Founder", image: "/images/optimized/why-places/Mohamed Safwat .JPG", objectPosition: "center 25%" },
+              // Senior leadership
+              { name: "Omar Gamal", title: "Business Development Manager", image: "/images/optimized/why-places/Omar Gamal.JPG", objectPosition: "center 25%" },
+              // Senior consultants
+              { name: "Abdelrhman Younis", title: "Senior Corporate Consultant", image: "/images/optimized/why-places/Abdelrahman Younes.JPG" },
+              { name: "Ahmed Ali", title: "Senior Corporate Consultant", image: "/images/optimized/why-places/Ahmed Ali.JPG" },
+              { name: "Ibrahim Samir", title: "Senior Commercial Consultant", image: "/images/optimized/why-places/Ebrahim Samir .jpeg" },
+              { name: "Mohamed Mohsen", title: "Senior Corporate Consultant", image: "/images/optimized/why-places/Mohamed Mohsen .JPG" },
+              { name: "Mostafa Ezzat", title: "Senior Corporate Consultant", image: "/images/optimized/why-places/Mostafa Ezzat.JPG" },
+              { name: "Abdallah Sleem", title: "Senior Corporate Consultant", image: "/images/optimized/why-places/Abdallah Sleem - senior corporate consultant _ 4  transactions - Celebrating exceptional performance and commitment throughout 2025..JPG" },
+              { name: "Youssef Safwat", title: "Senior Corporate Consultant", image: "/images/optimized/why-places/Youssef Safwa.JPG" },
+              { name: "Mohamed Eid", title: "Senior Corporate Consultant", image: "/images/optimized/why-places/Mohamed Eid.JPG" },
+              // Consultants
+              { name: "Ahmed Khaled", title: "Senior Sales Consultant", image: "/images/optimized/why-places/Ahmed Khaled .JPG" },
+              { name: "Dalia Ramadan", title: "Real Estate & Corporate Leasing Consultant", image: "/images/optimized/why-places/Dalia Ramadan.jpeg" },
+              { name: "Youssef Hosny", title: "Corporate Consultant", image: "/images/optimized/why-places/Youssef Hussni.JPG" },
+              { name: "Mohamed Sami", title: "Corporate Consultant", image: "/images/optimized/why-places/Mohamed Sami.JPG" },
+              { name: "Ahmed Amr", title: "Commercial Leasing Consultant", image: "/images/optimized/why-places/Ahmed Amr .JPG" },
+              { name: "Anas Harirah", title: "Commercial & Administrative Real Estate Broker", image: "/images/optimized/why-places/Anas Harira.JPG" },
+              { name: "Abdelrhman Salah", title: "Commercial Broker", image: "/images/optimized/why-places/Abdelrahman Salah .JPG" },
+              { name: "Ahmed Medhat", title: "Commercial Real Estate Broker", image: "/images/optimized/why-places/Ahmed Medhat.JPG" },
+              { name: "Zeyad Medhat", title: "Senior Sales", image: "/images/optimized/why-places/Zeyad Medhat .JPG" },
+              { name: "Mohamed Khaled", title: "Real Estate Advisor", image: "/images/optimized/why-places/Mohamed Khaled.JPG" },
+            ].map((member, i) => (
+              <div key={i} className="flex flex-col items-center text-center">
+                <div className="w-full aspect-square rounded-2xl overflow-hidden bg-primary/5 mb-4">
+                  <img
+                    src={member.image}
+                    alt={member.name}
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full h-full object-cover object-top"
+                    style={member.objectPosition ? { objectPosition: member.objectPosition } : undefined}
+                  />
+                </div>
+                <h3 className="text-base font-serif font-bold text-primary mb-1 leading-tight">
+                  {member.name}
+                </h3>
+                <p className="text-xs text-muted-foreground leading-snug">
+                  {member.title}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
