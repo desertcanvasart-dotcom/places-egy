@@ -426,7 +426,6 @@ const DEVELOPER_LOGOS: Record<string, string> = {
   sodic: "/images/SODIC_Logo.png",
   marakez: "/images/Marakez _logo.png",
   "al futtaim": "/images/Al futtaim _ logo.png",
-  "misr italia": "/images/Misritalia_logoo.png",
   "palm hills": "/images/PalmHills_logo.png",
   lmd: "/images/LMD-developments.png",
   "the waterway": "/images/waterway.png",

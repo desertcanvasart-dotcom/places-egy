@@ -123,9 +123,9 @@ export default function AdminOffices() {
           {/* Three format cards */}
           <div className="grid md:grid-cols-3 gap-6 mb-12">
             {[
-              { icon: Briefcase, title: "Business Buildings", tagline: "Standalone offices, premium addresses", link: "/admin/business-building", image: "/images/admin 1.jpg" },
-              { icon: Building, title: "Business Parks", tagline: "Campus-scale, parking, room to grow", link: "/admin/business-park", image: "/images/business-park.jpg" },
-              { icon: ShoppingBag, title: "Mixed-Use Malls", tagline: "Offices above retail and F&B", link: "/admin/mixed-use", image: "/images/mixed-use.jpg" },
+              { icon: Briefcase, title: "Business Building", tagline: "Standalone offices, premium addresses", link: "/admin/business-building", image: "/images/admin 1.jpg" },
+              { icon: Building, title: "Business Park", tagline: "Campus-scale, parking, room to grow", link: "/admin/business-park", image: "/images/business-park.jpg" },
+              { icon: ShoppingBag, title: "Mixed Use", tagline: "Offices above retail and F&B", link: "/admin/mixed-use", image: "/images/mixed-use.jpg" },
             ].map((item, i) => (
               <Link
                 key={i}
@@ -138,7 +138,7 @@ export default function AdminOffices() {
                   <div className="w-16 h-16 bg-accent/20 rounded-2xl flex items-center justify-center mb-8 text-accent">
                     <item.icon className="w-8 h-8" />
                   </div>
-                  <h3 className="text-2xl md:text-3xl font-serif font-bold text-white mb-2">{item.title}</h3>
+                  <h3 className="text-2xl md:text-3xl font-serif font-bold text-white mb-2 whitespace-nowrap">{item.title}</h3>
                   <p className="text-white/70 text-sm">{item.tagline}</p>
                 </div>
                 <ArrowRight className="absolute top-10 right-10 z-10 w-5 h-5 text-white/30 group-hover:text-accent group-hover:translate-x-1 transition-all" />
@@ -258,16 +258,13 @@ export default function AdminOffices() {
         </div>
       </section>
 
-      {/* Office locations across Cairo */}
+      {/* Office locations across Egypt */}
       <section className="py-10">
         <div className="container mx-auto px-6 md:px-10">
           <div className="mb-12">
             <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-3">
-              Office locations across Cairo
+              Office locations across Egypt
             </h2>
-            <p className="text-muted-foreground text-lg max-w-3xl">
-              Cairo's office market is concentrated in five strategic districts. Each one fits different types of businesses, budgets, and growth stages.
-            </p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-5">

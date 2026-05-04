@@ -42,11 +42,6 @@ const DEVELOPERS: { name: string; logo: string; desc: string; slug?: string; log
     slug: "majid-al-futtaim",
   },
   {
-    name: "Misr Italia",
-    logo: "/images/Misritalia_logoo.png",
-    desc: "A prominent Egyptian-Italian developer focused on integrated residential and commercial communities across New Cairo and the New Capital.",
-  },
-  {
     name: "Palm Hills",
     logo: "/images/PalmHills_logo.png",
     desc: "Egypt's leading integrated real estate developer since 1997 — listed on the Egyptian and London Stock Exchanges with 29 million sqm in portfolio, and three business park developments across New Cairo and Sheikh Zayed.",

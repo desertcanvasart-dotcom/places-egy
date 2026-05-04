@@ -8,7 +8,6 @@ const DEVELOPERS: { name: string; logo: string; slug?: string }[] = [
   { name: "Marakez", logo: "/images/Marakez _logo.png", slug: "marakez" },
   { name: "Al Futtaim", logo: "/images/Al futtaim _ logo.png", slug: "al-futtaim" },
   { name: "Majid Al Futtaim", logo: "/images/majid-al-futtaim.png", slug: "majid-al-futtaim" },
-  { name: "Misr Italia", logo: "/images/Misritalia_logoo.png" },
   { name: "Palm Hills", logo: "/images/PalmHills_logo.png", slug: "palm-hills" },
   { name: "LMD", logo: "/images/LMD-developments.png", slug: "lmd" },
   { name: "The Waterway", logo: "/images/waterway.png", slug: "the-waterway" },
