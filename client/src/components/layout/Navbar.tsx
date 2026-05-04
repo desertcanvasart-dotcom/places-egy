@@ -66,18 +66,19 @@ export function Navbar() {
         ? "bg-primary/95 backdrop-blur-lg border-b border-white/5 shadow-sm shadow-primary/5"
         : "bg-transparent border-b border-transparent"
     )}>
-      <div className="container mx-auto px-6 md:px-10 h-20 flex items-center gap-4">
-        <Link href="/" className="flex items-center gap-2 shrink-0">
+      <div className="w-full px-6 md:px-10 h-20 flex items-center justify-between lg:grid lg:grid-cols-[1fr_auto_1fr] lg:gap-4">
+        {/* Column 1 — logo (left-aligned) */}
+        <Link href="/" className="flex items-center gap-2 shrink-0 lg:justify-self-start">
           <img src="/images/places-logo.png" alt="PLACES" className="h-10 w-auto brightness-0 invert shrink-0" />
         </Link>
 
-        {/* Desktop Navigation — flex-grow centers it between logo and CTAs without overlap */}
-        <div className="hidden lg:flex items-center gap-2 flex-1 justify-center min-w-0">
+        {/* Column 2 — nav (center column, auto-sized, mathematically centered) */}
+        <div className="hidden lg:flex items-center gap-2 justify-self-center">
           <NavigationMenu delayDuration={0} skipDelayDuration={0}>
             <NavigationMenuList className="gap-0">
               {/* Properties */}
               <NavigationMenuItem>
-                <NavigationMenuTrigger className="bg-transparent text-[15px] text-white hover:text-accent hover:bg-white/10 px-3.5">Properties</NavigationMenuTrigger>
+                <NavigationMenuTrigger className="bg-transparent text-base text-white hover:text-accent hover:bg-white/10 px-3.5">Properties</NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <div className="grid grid-cols-2 gap-5 p-5 w-[560px]">
                     <div>
@@ -143,14 +144,14 @@ export function Navbar() {
 
               {/* Locations */}
               <NavigationMenuItem>
-                <Link href="/locations" className={cn(navigationMenuTriggerStyle(), "bg-transparent text-[15px] text-white hover:text-accent hover:bg-white/10 transition-colors px-3.5", isActive("/locations") && "text-accent font-medium")}>
+                <Link href="/locations" className={cn(navigationMenuTriggerStyle(), "bg-transparent text-base text-white hover:text-accent hover:bg-white/10 transition-colors px-3.5", isActive("/locations") && "text-accent font-medium")}>
                   Locations
                 </Link>
               </NavigationMenuItem>
 
               {/* Services */}
               <NavigationMenuItem>
-                <NavigationMenuTrigger className="bg-transparent text-[15px] text-white hover:text-accent hover:bg-white/10 px-3.5">Services</NavigationMenuTrigger>
+                <NavigationMenuTrigger className="bg-transparent text-base text-white hover:text-accent hover:bg-white/10 px-3.5">Services</NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <ul className="grid w-[280px] gap-1.5 p-3">
                     {SERVICES.map((item) => (
@@ -167,14 +168,14 @@ export function Navbar() {
 
               {/* Why PLACES */}
               <NavigationMenuItem>
-                <Link href="/why-places" className={cn(navigationMenuTriggerStyle(), "bg-transparent text-[15px] text-white hover:text-accent hover:bg-white/10 transition-colors px-3.5", isActive("/why-places") && "text-accent font-medium")}>
+                <Link href="/why-places" className={cn(navigationMenuTriggerStyle(), "bg-transparent text-base text-white hover:text-accent hover:bg-white/10 transition-colors px-3.5", isActive("/why-places") && "text-accent font-medium")}>
                   Why PLACES
                 </Link>
               </NavigationMenuItem>
 
               {/* Resources */}
               <NavigationMenuItem>
-                <NavigationMenuTrigger className="bg-transparent text-[15px] text-white hover:text-accent hover:bg-white/10 px-3.5">Resources</NavigationMenuTrigger>
+                <NavigationMenuTrigger className="bg-transparent text-base text-white hover:text-accent hover:bg-white/10 px-3.5">Resources</NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <ul className="grid w-55 gap-1.5 p-3">
                     {RESOURCES.map((item) => (
@@ -192,15 +193,15 @@ export function Navbar() {
           </NavigationMenu>
         </div>
 
-        {/* Desktop CTAs */}
-        <div className="hidden lg:flex items-center gap-3 shrink-0">
+        {/* Column 3 — Desktop CTAs (right-aligned) */}
+        <div className="hidden lg:flex items-center gap-3 shrink-0 lg:justify-self-end">
           <Link href="/contact">
-            <Button variant="outline" className="rounded-full px-5 font-medium bg-transparent border-white/30 text-white hover:bg-white/10 hover:text-white hover:border-white/50">
+            <Button variant="outline" size="sm" className="rounded-full px-4 h-9 text-sm font-medium bg-transparent border-white/30 text-white hover:bg-white/10 hover:text-white hover:border-white/50">
               Contact
             </Button>
           </Link>
           <Link href="/listings">
-            <Button className="rounded-full px-5 font-medium bg-accent hover:bg-accent/90 text-primary shadow-lg shadow-accent/20">
+            <Button size="sm" className="rounded-full px-4 h-9 text-sm font-medium bg-accent hover:bg-accent/90 text-primary shadow-lg shadow-accent/20">
               Browse Listings
             </Button>
           </Link>
