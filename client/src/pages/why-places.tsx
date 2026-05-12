@@ -19,7 +19,7 @@ export default function WhyPlaces() {
     {
       icon: Users,
       title: "Client-First Approach",
-      desc: "Every recommendation starts with understanding your unique business needs.",
+      desc: "We place your business needs at the core of every decision to ensure tailor-made solutions that align with your goals.",
     },
     {
       icon: Award,
@@ -59,8 +59,26 @@ export default function WhyPlaces() {
             Why PLACES
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
-            We're more than a marketplace. We're your partner in finding the perfect
-            workspace for your business to thrive in Egypt's most sought-after locations.
+            Specialized real estate expertise focused entirely on Egypt's administrative office market.
+          </p>
+        </div>
+      </section>
+
+      {/* About paragraph */}
+      <section className="bg-secondary/30 pt-6 pb-12">
+        <div className="container mx-auto px-4 max-w-3xl">
+          <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+            At PLACES, we provide specialized real estate solutions with deep
+            expertise in one focused sector: administrative office real estate,
+            including sales, leasing, and consultancy services. Our team supports
+            clients throughout every stage of the process — from selecting the
+            ideal location, identifying the right property, and choosing the most
+            suitable office space, to negotiating the best possible terms and
+            reviewing contracts while providing strategic investment advisory
+            services. Through our strong market knowledge and extensive industry
+            relationships, we help developers, property owners, investors, and
+            tenants make confident real estate decisions and secure the best
+            available opportunities.
           </p>
         </div>
       </section>
@@ -77,23 +95,33 @@ export default function WhyPlaces() {
             <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-5">
               Making real estate effortless
             </h2>
-            <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-              To make finding, leasing, and investing in Egyptian real estate effortless.
+            <p className="text-lg text-muted-foreground leading-relaxed max-w-3xl mx-auto">
+              To provide specialized real estate services focused entirely on
+              administrative spaces across all sectors of the market. We offer
+              full support in securing suitable office spaces through leasing or
+              acquisition — whether for income-generating leased assets or
+              vacant properties with investment potential. Our mission is to
+              ensure efficient operations while maximizing long-term asset
+              performance and value.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 text-center pt-10 border-t border-border/40">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8 text-center pt-10 border-t border-border/40">
             <div>
-              <p className="text-3xl md:text-5xl font-serif font-bold text-accent mb-1">7,000+</p>
+              <p className="text-3xl md:text-5xl font-serif font-bold text-accent mb-1">600+</p>
               <p className="text-xs text-primary/60 uppercase tracking-widest">Happy clients</p>
             </div>
             <div>
-              <p className="text-3xl md:text-5xl font-serif font-bold text-accent mb-1">10+</p>
+              <p className="text-3xl md:text-5xl font-serif font-bold text-accent mb-1">3+</p>
               <p className="text-xs text-primary/60 uppercase tracking-widest">Years experience</p>
             </div>
             <div>
-              <p className="text-3xl md:text-5xl font-serif font-bold text-accent mb-1">50K+</p>
-              <p className="text-xs text-primary/60 uppercase tracking-widest">Successful deals</p>
+              <p className="text-3xl md:text-5xl font-serif font-bold text-accent mb-1">250K</p>
+              <p className="text-xs text-primary/60 uppercase tracking-widest">Admin sqm leased</p>
+            </div>
+            <div>
+              <p className="text-3xl md:text-5xl font-serif font-bold text-accent mb-1">100K</p>
+              <p className="text-xs text-primary/60 uppercase tracking-widest">Admin sqm sold</p>
             </div>
           </div>
         </div>
@@ -167,7 +195,8 @@ export default function WhyPlaces() {
               The people behind PLACES
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Advisors and brokers who know Egypt's commercial market end-to-end.
+              Advisors and brokers with end-to-end knowledge of Egypt's
+              administrative real estate market.
             </p>
           </div>
 
@@ -192,10 +221,10 @@ export default function WhyPlaces() {
               { name: "Dalia Ramadan", title: "Real Estate & Corporate Leasing Consultant", image: "/images/optimized/why-places/Dalia Ramadan.jpeg" },
               { name: "Youssef Hosny", title: "Corporate Consultant", image: "/images/optimized/why-places/Youssef Hussni.JPG" },
               { name: "Mohamed Sami", title: "Corporate Consultant", image: "/images/optimized/why-places/Mohamed Sami.JPG" },
-              { name: "Ahmed Amr", title: "Commercial Leasing Consultant", image: "/images/optimized/why-places/Ahmed Amr .JPG" },
-              { name: "Anas Harirah", title: "Commercial & Administrative Real Estate Broker", image: "/images/optimized/why-places/Anas Harira.JPG" },
-              { name: "Abdelrhman Salah", title: "Commercial Broker", image: "/images/optimized/why-places/Abdelrahman Salah .JPG" },
-              { name: "Ahmed Medhat", title: "Commercial Real Estate Broker", image: "/images/optimized/why-places/Ahmed Medhat.JPG" },
+              { name: "Ahmed Amr", title: "Corporate Consultant", image: "/images/optimized/why-places/Ahmed Amr .JPG" },
+              { name: "Anas Harirah", title: "Corporate Consultant", image: "/images/optimized/why-places/Anas Harira.JPG" },
+              { name: "Abdelrhman Salah", title: "Corporate Consultant", image: "/images/optimized/why-places/Abdelrahman Salah .JPG" },
+              { name: "Ahmed Medhat", title: "Corporate Consultant", image: "/images/optimized/why-places/Ahmed Medhat.JPG" },
               { name: "Zeyad Medhat", title: "Senior Sales", image: "/images/optimized/why-places/Zeyad Medhat .JPG" },
               { name: "Mohamed Khaled", title: "Real Estate Advisor", image: "/images/optimized/why-places/Mohamed Khaled.JPG" },
             ].map((member, i) => (
@@ -219,6 +248,27 @@ export default function WhyPlaces() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Consultation CTA */}
+      <section className="py-16">
+        <div className="container mx-auto px-4 max-w-3xl text-center">
+          <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-4">
+            Want our take on your specific situation?
+          </h2>
+          <p className="text-lg text-muted-foreground leading-relaxed mb-8">
+            Book a free 15-minute consultation with a PLACES advisor and get
+            clear guidance on your best options.
+          </p>
+          <a
+            href="https://wa.me/201063618217?text=Hi%2C%20I%27d%20like%20to%20book%20a%2015-minute%20consultation%20with%20a%20PLACES%20advisor."
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center h-12 px-8 rounded-full bg-accent text-white font-medium hover:bg-accent/90 transition-colors"
+          >
+            Book a consultation
+          </a>
         </div>
       </section>
 

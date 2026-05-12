@@ -196,8 +196,8 @@ export default function ListingsPage() {
           {/* Two-layer overlay: a uniform dark tint over the image for
               consistent contrast, plus a bottom-only gradient that fades
               into the page background. */}
-          <div className="absolute inset-0 bg-black/65" />
-          <div className="absolute inset-0 bg-linear-to-b from-transparent via-transparent to-background" />
+          <div className="absolute inset-0 bg-black/40" />
+          <div className="absolute inset-0 bg-linear-to-b from-transparent via-background/30 to-background" />
         </div>
         <div className="relative z-10 container mx-auto px-6 md:px-10 pt-4">
           <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4 text-white">Find your perfect workspace</h1>
