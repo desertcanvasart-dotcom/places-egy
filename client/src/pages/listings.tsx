@@ -190,20 +190,19 @@ export default function ListingsPage() {
       )}
       <Navbar />
 
-      {/* Header — title + search live together in the hero so there's no
-          empty gap between the dark backdrop and the results below. Darker
-          overlay + extended fade so the hero blends further into the listings. */}
-      <div className="relative text-white pt-24 pb-12 md:pb-16 overflow-hidden">
+      {/* Hero — taller image-forward header with a soft fade into the
+          results section. Lighter overlay so the photo reads clearly,
+          gradient that begins in the lower third for a smooth handoff. */}
+      <div className="relative text-white pt-32 pb-28 md:pt-40 md:pb-36 overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <img src="/images/general-office.jpg" alt="Office" fetchPriority="high" decoding="async" className="w-full h-full object-cover" />
-          {/* Two-layer overlay: a uniform dark tint over the image for
-              consistent contrast, plus a bottom-only gradient that fades
-              into the page background. */}
-          <div className="absolute inset-0 bg-black/40" />
-          <div className="absolute inset-0 bg-linear-to-b from-transparent via-background/30 to-background" />
+          <img src="/images/offices-hero.jpg" alt="Office" fetchPriority="high" decoding="async" className="w-full h-full object-cover" />
+          {/* Light uniform tint for text contrast, plus a single bottom-half
+              gradient that fades smoothly into the page background. */}
+          <div className="absolute inset-0 bg-black/25" />
+          <div className="absolute inset-0 bg-linear-to-b from-transparent from-50% to-background" />
         </div>
-        <div className="relative z-10 container mx-auto px-6 md:px-10 pt-4">
-          <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4 text-white">Find your perfect workspace</h1>
+        <div className="relative z-10 container mx-auto px-6 md:px-10">
+          <h1 className="text-4xl md:text-6xl font-serif font-bold mb-6 text-white drop-shadow-md">Find your perfect workspace</h1>
           <div className="relative max-w-2xl">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <Input
