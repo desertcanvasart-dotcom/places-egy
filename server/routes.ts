@@ -1,6 +1,17 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
+import multer from "multer";
 import { storage } from "./storage";
+import { supabaseAdmin } from "./supabase";
+import { requireAdmin } from "./admin-auth";
+import { strictLimiter } from "./rate-limit";
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB per file
+});
+
+const SUPABASE_BUCKET = "listings-images";
 
 const WP_API = process.env.WORDPRESS_API_URL;
 
@@ -81,6 +92,114 @@ export async function registerRoutes(
   app.get("/api/blog/categories", async (_req: Request, res: Response) => {
     return proxyToWp(`/categories?per_page=100&hide_empty=true`, res);
   });
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Admin endpoints. All gated by requireAdmin + strictLimiter. Use the
+  // service-role Supabase client which bypasses RLS — never expose this key.
+  // ──────────────────────────────────────────────────────────────────────────
+
+  // POST /api/admin/login — verify the admin password without exposing it on
+  // a write path. Returns 200/401. Used by the dashboard login screen.
+  app.post(
+    "/api/admin/login",
+    strictLimiter,
+    requireAdmin,
+    (_req: Request, res: Response) => {
+      res.json({ ok: true });
+    },
+  );
+
+  app.post(
+    "/api/admin/listings",
+    strictLimiter,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      if (!supabaseAdmin) {
+        return res.status(503).json({ message: "Supabase not configured" });
+      }
+      const { error, data } = await supabaseAdmin
+        .from("listings")
+        .insert(req.body)
+        .select()
+        .single();
+      if (error) return res.status(400).json({ message: error.message });
+      res.json(data);
+    },
+  );
+
+  app.patch(
+    "/api/admin/listings/:id",
+    strictLimiter,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      if (!supabaseAdmin) {
+        return res.status(503).json({ message: "Supabase not configured" });
+      }
+      const id = Number(req.params.id);
+      if (!Number.isFinite(id)) {
+        return res.status(400).json({ message: "Invalid id" });
+      }
+      const { error, data } = await supabaseAdmin
+        .from("listings")
+        .update(req.body)
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) return res.status(400).json({ message: error.message });
+      res.json(data);
+    },
+  );
+
+  app.delete(
+    "/api/admin/listings/:id",
+    strictLimiter,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      if (!supabaseAdmin) {
+        return res.status(503).json({ message: "Supabase not configured" });
+      }
+      const id = Number(req.params.id);
+      if (!Number.isFinite(id)) {
+        return res.status(400).json({ message: "Invalid id" });
+      }
+      const { error } = await supabaseAdmin
+        .from("listings")
+        .delete()
+        .eq("id", id);
+      if (error) return res.status(400).json({ message: error.message });
+      res.json({ ok: true });
+    },
+  );
+
+  app.post(
+    "/api/admin/listings-images",
+    strictLimiter,
+    requireAdmin,
+    upload.single("file"),
+    async (req: Request, res: Response) => {
+      if (!supabaseAdmin) {
+        return res.status(503).json({ message: "Supabase not configured" });
+      }
+      const file = (req as Request & { file?: Express.Multer.File }).file;
+      if (!file) return res.status(400).json({ message: "No file uploaded" });
+      if (!file.mimetype.startsWith("image/")) {
+        return res.status(400).json({ message: "File must be an image" });
+      }
+      const ext = file.originalname.split(".").pop() || "bin";
+      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabaseAdmin.storage
+        .from(SUPABASE_BUCKET)
+        .upload(fileName, file.buffer, {
+          contentType: file.mimetype,
+          upsert: false,
+        });
+      if (upErr) return res.status(400).json({ message: upErr.message });
+      const { data } = supabaseAdmin.storage
+        .from(SUPABASE_BUCKET)
+        .getPublicUrl(fileName);
+      res.json({ publicUrl: data.publicUrl });
+    },
+  );
 
   return httpServer;
 }
