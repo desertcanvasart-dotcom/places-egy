@@ -17,7 +17,24 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, LogOut, X, Upload, Loader2 } from "lucide-react";
 
-const ADMIN_PASSWORD = "places2026";
+// Admin password is now validated server-side. We keep it in sessionStorage
+// purely so the user doesn't have to re-enter it on every action; the server
+// is the source of truth via the x-admin-password header.
+function getAdminPassword(): string | null {
+  return sessionStorage.getItem("admin_password");
+}
+
+async function adminFetch(path: string, init: RequestInit = {}) {
+  const password = getAdminPassword();
+  const headers = new Headers(init.headers);
+  if (password) headers.set("x-admin-password", password);
+  const res = await fetch(path, { ...init, headers });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ message: res.statusText }));
+    throw new Error(body.message || `Request failed: ${res.status}`);
+  }
+  return res.json();
+}
 
 import {
   DEVELOPER_OPTIONS,
@@ -72,14 +89,27 @@ const EMPTY_FORM: ListingForm = {
 function LoginScreen({ onLogin }: { onLogin: () => void }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
-      sessionStorage.setItem("admin_auth", "true");
-      onLogin();
-    } else {
+    setSubmitting(true);
+    setError(false);
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "x-admin-password": password },
+      });
+      if (res.ok) {
+        sessionStorage.setItem("admin_password", password);
+        onLogin();
+      } else {
+        setError(true);
+      }
+    } catch {
       setError(true);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -99,8 +129,8 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
             className="bg-white h-12"
           />
           {error && <p className="text-accent text-sm">Incorrect password</p>}
-          <Button type="submit" className="w-full h-12 bg-primary text-white">
-            Log In
+          <Button type="submit" disabled={submitting} className="w-full h-12 bg-primary text-white">
+            {submitting ? "Checking..." : "Log In"}
           </Button>
         </form>
       </div>
@@ -165,11 +195,17 @@ function ListingFormDialog({
     mutationFn: async (data: ListingForm) => {
       const { id, ...rest } = data;
       if (id) {
-        const { error } = await supabase.from("listings").update(rest).eq("id", id);
-        if (error) throw error;
+        await adminFetch(`/api/admin/listings/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(rest),
+        });
       } else {
-        const { error } = await supabase.from("listings").insert(rest);
-        if (error) throw error;
+        await adminFetch(`/api/admin/listings`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(rest),
+        });
       }
     },
     onSuccess: () => {
@@ -191,16 +227,16 @@ function ListingFormDialog({
     setUploading(true);
     const newUrls: string[] = [];
     for (const file of Array.from(files)) {
-      const ext = file.name.split(".").pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const { error } = await supabase.storage
-        .from("listings-images")
-        .upload(fileName, file);
-      if (!error) {
-        const { data: urlData } = supabase.storage
-          .from("listings-images")
-          .getPublicUrl(fileName);
-        newUrls.push(urlData.publicUrl);
+      const fd = new FormData();
+      fd.append("file", file);
+      try {
+        const { publicUrl } = await adminFetch("/api/admin/listings-images", {
+          method: "POST",
+          body: fd,
+        });
+        if (publicUrl) newUrls.push(publicUrl);
+      } catch (err) {
+        console.error("Upload failed:", err);
       }
     }
     set("images", [...(form.images || []), ...newUrls]);
@@ -372,8 +408,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const { error } = await supabase.from("listings").delete().eq("id", id);
-      if (error) throw error;
+      await adminFetch(`/api/admin/listings/${id}`, { method: "DELETE" });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-listings"] });
@@ -528,10 +563,10 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
 }
 
 export default function AdminPage() {
-  const [authed, setAuthed] = useState(() => sessionStorage.getItem("admin_auth") === "true");
+  const [authed, setAuthed] = useState(() => !!sessionStorage.getItem("admin_password"));
 
   const handleLogout = () => {
-    sessionStorage.removeItem("admin_auth");
+    sessionStorage.removeItem("admin_password");
     setAuthed(false);
   };
 
