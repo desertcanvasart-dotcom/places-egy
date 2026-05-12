@@ -8,3 +8,4 @@ vite.config.ts.*
 *.tar.gz
 _originals/
 client/public/images/_originals/
+PLACES assets/
