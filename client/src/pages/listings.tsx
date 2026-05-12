@@ -167,7 +167,8 @@ export default function ListingsPage() {
   const activeFilterChips = (() => {
     const chips: { label: string; clear: () => void }[] = [];
     if (filters.transactionType) chips.push({ label: filters.transactionType, clear: () => setFilters((p) => ({ ...p, transactionType: null })) });
-    if (filters.propertyType) chips.push({ label: filters.propertyType, clear: () => setFilters((p) => ({ ...p, propertyType: null })) });
+    // propertyType chip removed — site is admin-only, so the chip would
+    // always appear and have nothing meaningful to clear to.
     filters.subtype.forEach((s) => chips.push({ label: s, clear: () => setFilters((p) => ({ ...p, subtype: p.subtype.filter((x) => x !== s) })) }));
     if (filters.location) chips.push({ label: filters.location, clear: () => setFilters((p) => ({ ...p, location: null })) });
     if (filters.developer) chips.push({ label: DEVELOPER_DISPLAY_NAMES[filters.developer] ?? filters.developer, clear: () => setFilters((p) => ({ ...p, developer: null })) });
