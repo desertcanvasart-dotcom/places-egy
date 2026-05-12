@@ -100,9 +100,8 @@ export function FilterSidebar({ filters, setFilters, listings, className }: Filt
   const furnishingOptions = FURNISHING_OPTIONS;
 
   return (
-    <div className={`space-y-8 ${className}`}>
-      <div className="flex items-center justify-between pb-3 border-b border-accent/20">
-        <h3 className="font-serif text-xl font-semibold text-primary">Filters</h3>
+    <div className={`space-y-6 ${className}`}>
+      <div className="flex justify-end -mb-3">
         <Button
           variant="ghost"
           size="sm"

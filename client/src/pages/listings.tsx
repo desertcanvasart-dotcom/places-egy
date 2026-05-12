@@ -74,6 +74,11 @@ export default function ListingsPage() {
 
   const { data: listings = [], isLoading, error } = useQuery<Listing[]>({
     queryKey: ["listings"],
+    // Serve cached data instantly on revisit; refetch in the background after
+    // 60s. gcTime keeps the cache alive for 5 minutes after the page unmounts
+    // so navigating away and back is instant.
+    staleTime: 60 * 1000,
+    gcTime: 5 * 60 * 1000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("listings")
@@ -172,7 +177,7 @@ export default function ListingsPage() {
   })();
 
   return (
-    <div className="min-h-screen flex flex-col bg-background font-sans">
+    <div className="min-h-screen flex flex-col bg-muted font-sans">
       <SchemaMarkup
         schema={breadcrumbSchema([
           { name: "Home", url: "/" },
@@ -199,23 +204,25 @@ export default function ListingsPage() {
           {/* Light uniform tint for text contrast, plus a single bottom-half
               gradient that fades smoothly into the page background. */}
           <div className="absolute inset-0 bg-black/25" />
-          <div className="absolute inset-0 bg-linear-to-b from-transparent from-50% to-background" />
+          <div className="absolute inset-0 bg-linear-to-b from-transparent from-50% to-muted" />
         </div>
         <div className="relative z-10 container mx-auto px-6 md:px-10">
-          <h1 className="text-4xl md:text-6xl font-serif font-bold mb-4 text-white drop-shadow-md">Find your perfect workspace</h1>
-          <div className="relative max-w-2xl">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-            <Input
-              placeholder="Search by project, location, or developer..."
-              className="pl-11 h-12 bg-white border-border/40 shadow-lg text-foreground"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+          <div className="inline-flex flex-col w-fit max-w-full">
+            <h1 className="text-4xl md:text-6xl font-serif font-bold mb-6 text-white drop-shadow-md">Find your perfect workspace</h1>
+            <div className="relative w-full">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                placeholder="Search by project, location, or developer..."
+                className="pl-11 h-12 bg-white border-border/40 shadow-lg text-foreground"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
           </div>
         </div>
       </div>
 
-      <main className="container mx-auto px-6 md:px-10 -mt-6 pb-24 lg:pb-8 flex-1 relative z-10">
+      <main className="container mx-auto px-6 md:px-10 -mt-12 pb-24 lg:pb-8 flex-1 relative z-10">
 
         {/* Active filter chips */}
         {activeFilterChips.length > 0 && (
@@ -245,23 +252,25 @@ export default function ListingsPage() {
           <p className="text-sm text-muted-foreground">
             <span className="font-medium text-foreground">{sortedListings.length}</span> results
           </p>
-          <div className="flex items-center gap-3">
-            <div className="hidden md:flex items-center bg-white rounded-full border border-border/40 p-0.5">
+          <div className="flex items-center gap-4">
+            <div className="hidden md:flex items-center gap-1">
               <button
                 onClick={() => setViewMode("grid")}
-                className={`p-1.5 rounded-full transition-colors ${viewMode === "grid" ? "bg-primary text-white" : "text-muted-foreground hover:text-primary"}`}
+                aria-label="Grid view"
+                className={`p-1.5 rounded-md transition-all hover:bg-primary/10 hover:text-primary active:scale-95 ${viewMode === "grid" ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}
               >
                 <LayoutGrid className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setViewMode("list")}
-                className={`p-1.5 rounded-full transition-colors ${viewMode === "list" ? "bg-primary text-white" : "text-muted-foreground hover:text-primary"}`}
+                aria-label="List view"
+                className={`p-1.5 rounded-md transition-all hover:bg-primary/10 hover:text-primary active:scale-95 ${viewMode === "list" ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}
               >
                 <List className="w-4 h-4" />
               </button>
             </div>
             <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
-              <SelectTrigger className="w-44 h-8 bg-white text-xs">
+              <SelectTrigger className="w-auto h-8 px-2 gap-1 bg-transparent border-none shadow-none text-xs text-muted-foreground hover:text-primary focus:ring-0 focus-visible:ring-0">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -296,9 +305,24 @@ export default function ListingsPage() {
           {/* Results Area */}
           <div className="flex-1">
             {isLoading ? (
-              <div className="flex flex-col items-center justify-center py-20">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Loading listings...</p>
+              // Skeleton grid — matches the real grid's layout so the page
+              // doesn't shift when data lands. Six placeholders fill the
+              // viewport on most screens.
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="rounded-2xl border border-border/40 bg-white overflow-hidden animate-pulse">
+                    <div className="aspect-4/3 bg-muted" />
+                    <div className="p-5 space-y-3">
+                      <div className="h-4 w-2/3 bg-muted rounded" />
+                      <div className="h-3 w-1/2 bg-muted rounded" />
+                      <div className="flex gap-2 pt-2">
+                        <div className="h-3 w-16 bg-muted rounded" />
+                        <div className="h-3 w-16 bg-muted rounded" />
+                      </div>
+                      <div className="h-5 w-1/3 bg-muted rounded mt-2" />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : error ? (
               <div className="flex flex-col items-center justify-center py-20 text-center">

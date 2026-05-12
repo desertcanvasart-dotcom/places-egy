@@ -21,6 +21,12 @@
     <meta name="twitter:description" content="Discover premium administrative offices across Egypt's top business hubs. Verified listings from trusted developers — buy, lease, or resell with PLACES." />
     <meta name="twitter:image" content="https://places-egy.com/opengraph.jpg" />
 
+    <!-- Preload the LCP hero on the most-trafficked landing (/) so the
+         browser starts fetching it before parsing the JS bundle. Safe to
+         leave even when visitors land on other routes — same image is
+         widely reused and the cache hit pays off. -->
+    <link rel="preload" as="image" href="/images/hero-section.jpg" fetchpriority="high" />
+
     <!-- SVG favicon with embedded prefers-color-scheme adapts in browsers that ignore the media attribute on icon links (Arc, Brave, etc.) -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <!-- PNG fallbacks for browsers without SVG favicon support -->
