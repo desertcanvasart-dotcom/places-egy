@@ -35,7 +35,6 @@ export const DEFAULT_FILTERS: Filters = {
 };
 
 const ADMIN_SUBTYPES = ["Business Park", "Business Building", "Mixed Use"];
-const COMMERCIAL_SUBTYPES = ["Mega Mall", "Strip Mall", "Drive Through"];
 const LOCATIONS = ["New Cairo", "Sheikh Zayed", "6th October", "Downtown Cairo", "Sheraton", "Maadi"];
 
 const PRICE_MIN = 0;
@@ -62,24 +61,12 @@ export function FilterSidebar({ filters, setFilters, listings, className }: Filt
     [listings]
   );
 
-  const subtypeOptions = filters.propertyType === "Admin"
-    ? ADMIN_SUBTYPES
-    : filters.propertyType === "Commercial"
-      ? COMMERCIAL_SUBTYPES
-      : [...ADMIN_SUBTYPES, ...COMMERCIAL_SUBTYPES];
+  const subtypeOptions = ADMIN_SUBTYPES;
 
   const setTransactionType = (type: "Sale" | "Rent") => {
     setFilters((prev) => ({
       ...prev,
       transactionType: prev.transactionType === type ? null : type,
-    }));
-  };
-
-  const setPropertyType = (type: "Admin" | "Commercial") => {
-    setFilters((prev) => ({
-      ...prev,
-      propertyType: prev.propertyType === type ? null : type,
-      subtype: [],
     }));
   };
 
@@ -148,29 +135,7 @@ export function FilterSidebar({ filters, setFilters, listings, className }: Filt
 
       <Separator />
 
-      {/* Filter 2 — Property Type */}
-      <div className="space-y-3">
-        <Label className="block mb-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">Property Type</Label>
-        <div className="flex gap-2 p-1 bg-secondary/50 rounded-lg">
-          {(["Admin", "Commercial"] as const).map((type) => (
-            <button
-              key={type}
-              onClick={() => setPropertyType(type)}
-              className={`flex-1 text-sm font-medium py-2 rounded-full transition-all ${
-                filters.propertyType === type
-                  ? "bg-primary text-white shadow-sm"
-                  : "text-muted-foreground hover:text-primary"
-              }`}
-            >
-              {type}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* Filter 3 — Subtype (multi-select pills) */}
+      {/* Filter 2 — Subtype (multi-select pills) */}
       <div className="space-y-3">
         <Label className="block mb-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">Subtype</Label>
         <div className="flex flex-wrap gap-2">

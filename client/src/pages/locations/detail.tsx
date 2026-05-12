@@ -83,6 +83,7 @@ export default function LocationDetail() {
       const { data, error } = await supabase
         .from("listings")
         .select("*")
+        .eq("property_type", "admin")
         .eq("location", content!.displayName)
         .order("id", { ascending: false })
         .limit(4);
@@ -100,6 +101,7 @@ export default function LocationDetail() {
       const { data, error } = await supabase
         .from("listings")
         .select("project, developer, property_type, subtype")
+        .eq("property_type", "admin")
         .eq("location", content!.displayName);
       if (error) throw error;
       return data ?? [];

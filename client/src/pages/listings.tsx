@@ -41,8 +41,10 @@ function getInitialFilters(): Filters {
   const location = params.get("location");
   const transaction = params.get("transaction");
   const developer = params.get("developer");
-  if (type === "commercial" || type === "admin") {
-    filters.propertyType = type === "commercial" ? "Commercial" : "Admin";
+  // Note: legacy ?type=commercial URLs are silently ignored after the
+  // positioning shift to admin-only. The query below also enforces admin.
+  if (type === "admin") {
+    filters.propertyType = "Admin";
   }
   if (subtype) {
     filters.subtype = [subtype];
@@ -76,6 +78,7 @@ export default function ListingsPage() {
       const { data, error } = await supabase
         .from("listings")
         .select("*")
+        .eq("property_type", "admin")
         .order("id", { ascending: false });
       if (error) throw error;
       return data;

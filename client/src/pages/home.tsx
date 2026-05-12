@@ -62,6 +62,7 @@ export default function Home() {
       const { data, error } = await supabase
         .from("listings")
         .select("*")
+        .eq("property_type", "admin")
         .order("id", { ascending: false });
       if (error) throw error;
       return data;
