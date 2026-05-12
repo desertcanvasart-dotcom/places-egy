@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { registerRedirects } from "./redirects";
+import { apiLimiter } from "./rate-limit";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 
@@ -24,6 +25,12 @@ app.use(
 app.use(express.urlencoded({ extended: false }));
 
 registerRedirects(app);
+
+// Trust Railway's reverse proxy so rate limiting keys on the real client IP
+// (X-Forwarded-For) rather than every request appearing to come from the proxy.
+app.set("trust proxy", 1);
+
+app.use("/api", apiLimiter);
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
