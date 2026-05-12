@@ -43,7 +43,7 @@ export function Footer() {
           <div className="space-y-4 sm:col-span-2 lg:col-span-2">
             <img src="/images/places-logo.png" alt="PLACES" loading="lazy" decoding="async" className="h-12 w-auto brightness-0 invert" />
             <p className="text-gray-300 text-sm leading-relaxed max-w-xs">
-              Egypt's premier marketplace for administrative & commercial offices. Buy, rent or resell offices throughout Egypt easily.
+              Egypt's specialized partner for administrative office real estate. Buy, lease, or resell offices throughout Egypt with confidence.
             </p>
             <ul className="space-y-3 text-sm text-gray-300 pt-2">
               <li>
@@ -98,7 +98,6 @@ export function Footer() {
             <ul className="space-y-2 text-sm text-gray-300">
               <li><Link href="/listings" className="hover:text-white transition-colors">All listings</Link></li>
               <li><Link href="/admin" className="hover:text-white transition-colors">Admin offices</Link></li>
-              <li><Link href="/commercial" className="hover:text-white transition-colors">Commercial spaces</Link></li>
             </ul>
             <SubHeading>Explore</SubHeading>
             <ul className="space-y-2 text-sm text-gray-300">
