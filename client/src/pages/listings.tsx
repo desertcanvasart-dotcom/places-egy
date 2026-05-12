@@ -193,7 +193,7 @@ export default function ListingsPage() {
       {/* Hero — taller image-forward header with a soft fade into the
           results section. Lighter overlay so the photo reads clearly,
           gradient that begins in the lower third for a smooth handoff. */}
-      <div className="relative text-white pt-32 pb-28 md:pt-40 md:pb-36 overflow-hidden">
+      <div className="relative text-white pt-24 pb-12 md:pt-28 md:pb-16 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img src="/images/offices-hero.jpg" alt="Office" fetchPriority="high" decoding="async" className="w-full h-full object-cover" />
           {/* Light uniform tint for text contrast, plus a single bottom-half
@@ -202,7 +202,7 @@ export default function ListingsPage() {
           <div className="absolute inset-0 bg-linear-to-b from-transparent from-50% to-background" />
         </div>
         <div className="relative z-10 container mx-auto px-6 md:px-10">
-          <h1 className="text-4xl md:text-6xl font-serif font-bold mb-6 text-white drop-shadow-md">Find your perfect workspace</h1>
+          <h1 className="text-4xl md:text-6xl font-serif font-bold mb-4 text-white drop-shadow-md">Find your perfect workspace</h1>
           <div className="relative max-w-2xl">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <Input
@@ -215,7 +215,7 @@ export default function ListingsPage() {
         </div>
       </div>
 
-      <main className="container mx-auto px-6 md:px-10 pt-4 pb-24 lg:pb-8 flex-1">
+      <main className="container mx-auto px-6 md:px-10 -mt-6 pb-24 lg:pb-8 flex-1 relative z-10">
 
         {/* Active filter chips */}
         {activeFilterChips.length > 0 && (
