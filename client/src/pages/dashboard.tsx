@@ -15,7 +15,8 @@ import {
   Dialog,
   DialogContent,
 } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, LogOut, X, Upload, Loader2 } from "lucide-react";
+import { Link } from "wouter";
+import { Plus, Pencil, Trash2, LogOut, X, Upload, Loader2, Home } from "lucide-react";
 
 // Admin password is now validated server-side. We keep it in sessionStorage
 // purely so the user doesn't have to re-enter it on every action; the server
@@ -438,8 +439,22 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
       {/* Header */}
       <div className="bg-primary text-white">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-serif font-bold">PLACES Admin</h1>
+          <Link href="/" className="flex items-center gap-3 group">
+            <img
+              src="/images/places-logo.png"
+              alt="PLACES"
+              className="h-8 w-auto brightness-0 invert"
+            />
+            <h1 className="text-xl font-serif font-bold group-hover:opacity-80 transition-opacity">
+              Admin
+            </h1>
+          </Link>
           <div className="flex items-center gap-3">
+            <Link href="/">
+              <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-white/10">
+                <Home className="w-4 h-4 mr-2" /> View site
+              </Button>
+            </Link>
             <Button onClick={handleAdd} className="bg-accent hover:bg-accent/90 text-white">
               <Plus className="w-4 h-4 mr-2" /> Add Listing
             </Button>
