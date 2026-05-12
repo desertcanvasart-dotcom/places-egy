@@ -10,7 +10,6 @@ import { ArrowRight, MapPin, Building2, ChevronRight, Briefcase, ShoppingBag, Us
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema, itemListSchema } from "@/lib/schema";
 import { listingUrl } from "@/lib/listings";
-import { LOCATION_CONTENT } from "@/lib/location-content";
 import { getProjectsByType } from "@/lib/projects";
 
 // Projects grid — sourced from the centralized project list. Any project
@@ -376,19 +375,15 @@ export default function BusinessPark() {
                 image: "/images/new-cairo.jpg",
               },
               {
-                name: "New Administrative Capital",
-                desc: "Large-scale business park development is happening here from day one. Prices still below established districts, full infrastructure, and the long-term play if your business is positioning for the next 10 years.",
-                slug: "new-administrative-capital",
-                image: "/images/business-park.jpg",
+                name: "Maadi",
+                desc: "An established district with a long history of hosting multinationals and consulting firms. Quieter than the satellite cities, with mature business parks and a residential surround that appeals to senior staff. Strong for legacy tenants and stable demand.",
+                slug: "maadi",
+                image: "/images/Maadi.jpg",
               },
             ].map((loc, i) => (
               <a
                 key={i}
-                href={
-                  LOCATION_CONTENT[loc.slug]
-                    ? `/locations/${loc.slug}`
-                    : `/listings?type=admin&subtype=business-park`
-                }
+                href={`/listings?type=admin&subtype=business-park&location=${loc.slug}`}
                 className="group relative h-64 rounded-2xl overflow-hidden block hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
               >
                 <img

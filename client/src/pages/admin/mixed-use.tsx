@@ -10,7 +10,6 @@ import { ArrowRight, MapPin, Building2, ChevronRight, Briefcase, Building, Coffe
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema, itemListSchema } from "@/lib/schema";
 import { listingUrl } from "@/lib/listings";
-import { LOCATION_CONTENT } from "@/lib/location-content";
 import { getProjectsByType } from "@/lib/projects";
 
 // Projects grid — sourced from the centralized project list. Any project
@@ -376,19 +375,15 @@ export default function MixedUseMall() {
                 image: "/images/6thoctober .jpg",
               },
               {
-                name: "New Administrative Capital",
-                desc: "Most new development here is mixed-use by default. Offices, retail, F&B, and residential are being planned together from day one. Prices are still below established districts, with full integration planned from the start.",
-                slug: "new-administrative-capital",
-                image: "/images/business-park.jpg",
+                name: "Downtown Cairo",
+                desc: "Historic mixed-use at its most authentic. Ground-floor retail, F&B, and offices stacked above sit in the same buildings that have anchored Cairo's social and commercial life for over a century. Foot traffic and cultural pull are unmatched.",
+                slug: "downtown-cairo",
+                image: "/images/downtown-cairo.jpg",
               },
             ].map((loc, i) => (
               <a
                 key={i}
-                href={
-                  LOCATION_CONTENT[loc.slug]
-                    ? `/locations/${loc.slug}`
-                    : `/listings?type=admin&subtype=mixed-use`
-                }
+                href={`/listings?type=admin&subtype=mixed-use&location=${loc.slug}`}
                 className="group relative h-64 rounded-2xl overflow-hidden block hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
               >
                 <img

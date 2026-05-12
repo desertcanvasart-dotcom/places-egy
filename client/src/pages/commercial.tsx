@@ -8,7 +8,6 @@ import { ListingCard } from "@/components/listings/ListingCard";
 import { DeveloperStrip } from "@/components/DeveloperStrip";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema } from "@/lib/schema";
-import { LOCATION_CONTENT } from "@/lib/location-content";
 import {
   Accordion,
   AccordionContent,
@@ -289,11 +288,7 @@ export default function Commercial() {
             ].map((loc) => (
               <a
                 key={loc.name}
-                href={
-                  LOCATION_CONTENT[loc.slug]
-                    ? `/locations/${loc.slug}`
-                    : `/listings?type=commercial&location=${loc.slug}`
-                }
+                href={`/listings?type=commercial&location=${loc.slug}`}
                 className="group relative h-48 rounded-2xl overflow-hidden block hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
               >
                 <img

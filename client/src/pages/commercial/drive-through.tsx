@@ -10,7 +10,6 @@ import { ArrowRight, MapPin, Building2, ChevronRight, Store, Coffee, UtensilsCro
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema, itemListSchema } from "@/lib/schema";
 import { listingUrl } from "@/lib/listings";
-import { LOCATION_CONTENT } from "@/lib/location-content";
 import { getProjectsByType } from "@/lib/projects";
 
 // Projects grid — sourced from the centralized project list. Any project
@@ -376,19 +375,15 @@ export default function DriveThrough() {
                 image: "/images/new-cairo.jpg",
               },
               {
-                name: "Mostakbal City & New Administrative Capital",
-                desc: "The newest growth zones. Drive-thru clusters are forming early here, often before the residential handovers are complete — meaning there's a window to lock in good units at lower rates.",
-                slug: "mostakbal-nac",
-                image: "/images/the-drive.jpeg",
+                name: "Sheraton",
+                desc: "A major commercial corridor connecting Heliopolis to the airport road. Steady through-traffic and a long-established F&B base make Sheraton one of the strongest drive-thru locations in east Cairo, with consistent demand from regional and international chains.",
+                slug: "sheraton",
+                image: "/images/sheraton.jpg",
               },
             ].map((loc, i) => (
               <a
                 key={i}
-                href={
-                  LOCATION_CONTENT[loc.slug]
-                    ? `/locations/${loc.slug}`
-                    : `/listings?type=commercial&subtype=drive-through`
-                }
+                href={`/listings?type=commercial&subtype=drive-through&location=${loc.slug}`}
                 className="group relative h-64 rounded-2xl overflow-hidden block hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
               >
                 <img

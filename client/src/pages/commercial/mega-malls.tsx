@@ -9,7 +9,6 @@ import { ArrowRight, MapPin, Building2, ChevronRight, Store, UtensilsCrossed, La
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema, itemListSchema } from "@/lib/schema";
 import { listingUrl } from "@/lib/listings";
-import { LOCATION_CONTENT } from "@/lib/location-content";
 import { getProjectsByType } from "@/lib/projects";
 
 // Projects grid — sourced from the centralized project list. Any project
@@ -372,11 +371,7 @@ export default function MegaMalls() {
             ].map((loc, i) => (
               <a
                 key={i}
-                href={
-                  LOCATION_CONTENT[loc.slug]
-                    ? `/locations/${loc.slug}`
-                    : `/listings?type=commercial&subtype=mega-mall&location=${loc.slug}`
-                }
+                href={`/listings?type=commercial&subtype=mega-mall&location=${loc.slug}`}
                 className="group relative h-64 rounded-2xl overflow-hidden block hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
               >
                 <img
