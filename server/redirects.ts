@@ -11,14 +11,15 @@ const PERMANENT_REDIRECTS: Record<string, string> = {
   "/admin-offices/mixed-use-mall": "/admin/mixed-use",
   "/office-spaces": "/",
   // PLACES retired its commercial offering — all /commercial* paths now
-  // route to /admin so external links + indexed URLs land on a useful page.
-  "/commercial": "/admin",
-  "/commercial/mega-mall": "/admin",
-  "/commercial/mega-malls": "/admin",
-  "/commercial/strip-mall": "/admin",
-  "/commercial/strip-malls": "/admin",
-  "/commercial/drive-through": "/admin",
-  "/commercial/drive-thru": "/admin",
+  // route to the homepage so external links + indexed URLs land on a
+  // useful page that reflects the new admin-only positioning.
+  "/commercial": "/",
+  "/commercial/mega-mall": "/",
+  "/commercial/mega-malls": "/",
+  "/commercial/strip-mall": "/",
+  "/commercial/strip-malls": "/",
+  "/commercial/drive-through": "/",
+  "/commercial/drive-thru": "/",
 };
 
 // Prefix redirects for path roots that have moved. Anything matching the
