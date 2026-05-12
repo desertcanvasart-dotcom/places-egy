@@ -30,6 +30,7 @@ export default function PropertyResale() {
       const { data, error } = await supabase
         .from("listings")
         .select("*")
+        .eq("property_type", "admin")
         .eq("transaction_type", "sale")
         .order("id", { ascending: false })
         .limit(4);

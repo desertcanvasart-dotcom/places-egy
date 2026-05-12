@@ -4,14 +4,22 @@ import type { Express } from "express";
 // and keeps any external bookmarks landing on a useful page.
 const PERMANENT_REDIRECTS: Record<string, string> = {
   "/services/corporate-leasing": "/services/leasing",
-  "/commercial/mega-malls": "/commercial/mega-mall",
-  "/commercial/strip-malls": "/commercial/strip-mall",
   "/admin-offices": "/admin",
   "/admin-offices/business-park": "/admin/business-park",
   "/admin-offices/business-building": "/admin/business-building",
   "/admin-offices/mixed-use": "/admin/mixed-use",
   "/admin-offices/mixed-use-mall": "/admin/mixed-use",
   "/office-spaces": "/",
+  // PLACES retired its commercial offering — all /commercial* paths now
+  // route to the homepage so external links + indexed URLs land on a
+  // useful page that reflects the new admin-only positioning.
+  "/commercial": "/",
+  "/commercial/mega-mall": "/",
+  "/commercial/mega-malls": "/",
+  "/commercial/strip-mall": "/",
+  "/commercial/strip-malls": "/",
+  "/commercial/drive-through": "/",
+  "/commercial/drive-thru": "/",
 };
 
 // Prefix redirects for path roots that have moved. Anything matching the

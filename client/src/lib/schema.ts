@@ -36,11 +36,11 @@ export const organizationSchema = {
   },
   areaServed: LOCATIONS.map((name) => ({ "@type": "Place", name })),
   knowsAbout: [
-    "Commercial real estate",
+    "Administrative office real estate",
     "Administrative office leasing",
     "Corporate leasing",
     "Office space in Cairo",
-    "Retail and mega-mall leasing",
+    "Office sales and acquisitions",
     "Real estate investment advisory",
   ],
   founder: [
@@ -63,9 +63,9 @@ export const organizationSchema = {
     "@type": "QuantitativeValue",
     value: 21,
   },
-  slogan: "Egypt's trusted partner for commercial and administrative real estate.",
+  slogan: "Egypt's specialized partner for administrative office real estate.",
   description:
-    "PLACES provides premium admin and commercial office spaces across Egypt — buy, rent, and resell with trusted developers.",
+    "PLACES specializes in administrative office real estate across Egypt — buy, lease, or resell with trusted developers.",
   sameAs: [
     "https://www.instagram.com/places.egy",
     "https://www.facebook.com/share/1CMGKrymLB/",
@@ -278,7 +278,7 @@ export function blogIndexSchema(opts: {
     name: "PLACES Insights",
     url: `${BASE_URL}/blog`,
     description:
-      "Market insights, investor guides, and location analysis for commercial and administrative real estate in Egypt.",
+      "Market insights, investor guides, and location analysis for administrative office real estate in Egypt.",
     publisher: { "@id": `${BASE_URL}/#organization` },
     blogPost: opts.posts.map((p) => ({
       "@type": "BlogPosting",
@@ -366,7 +366,7 @@ export function aboutPageSchema() {
     name: "Why PLACES",
     url: `${BASE_URL}/why-places`,
     description:
-      "Meet the team and mission behind PLACES — Egypt's trusted partner for commercial and administrative real estate across Cairo, New Cairo, Sheikh Zayed, 6th October, Downtown Cairo, Sheraton, and Maadi.",
+      "Meet the team and mission behind PLACES — Egypt's specialized partner for administrative office real estate across Cairo, New Cairo, Sheikh Zayed, 6th October, Downtown Cairo, Sheraton, and Maadi.",
     mainEntity: { "@id": `${BASE_URL}/#organization` },
     significantLink: [
       `${BASE_URL}/listings`,

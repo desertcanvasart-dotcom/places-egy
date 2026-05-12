@@ -10,7 +10,6 @@ import { ArrowRight, MapPin, Building2, ChevronRight, Building, ShoppingBag, Bri
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema, itemListSchema } from "@/lib/schema";
 import { listingUrl } from "@/lib/listings";
-import { LOCATION_CONTENT } from "@/lib/location-content";
 import { getProjectsByType } from "@/lib/projects";
 
 // Projects grid — sourced from the centralized project list. Any project
@@ -376,19 +375,15 @@ export default function BusinessBuilding() {
                 image: "/images/downtown-cairo.jpg",
               },
               {
-                name: "New Administrative Capital",
-                desc: "The newest play. Government ministries, embassies, and major corporates are anchoring here. Office prices are still below New Cairo, but rising fast — early movers are securing prime addresses at a discount.",
-                slug: "new-administrative-capital",
-                image: "/images/business-park.jpg",
+                name: "6th October",
+                desc: "A growing business district anchored by manufacturing, logistics, and an expanding office stock. Pricing remains lower than New Cairo or Sheikh Zayed, making it an attractive base for companies prioritizing value and connectivity to the wider west-Cairo corridor.",
+                slug: "6th-october",
+                image: "/images/6thoctober .jpg",
               },
             ].map((loc, i) => (
               <a
                 key={i}
-                href={
-                  LOCATION_CONTENT[loc.slug]
-                    ? `/locations/${loc.slug}`
-                    : `/listings?type=admin&subtype=business-building`
-                }
+                href={`/listings?type=admin&subtype=business-building&location=${loc.slug}`}
                 className="group relative h-64 rounded-2xl overflow-hidden block hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
               >
                 <img

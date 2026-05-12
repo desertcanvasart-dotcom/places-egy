@@ -21,7 +21,6 @@ import {
   TrendingUp,
   Briefcase,
   CheckCircle2,
-  Store,
   Home,
   Landmark,
   Lightbulb,
@@ -63,10 +62,9 @@ function renderEmphasized(text: string): React.ReactNode[] {
   });
 }
 
-// Icon per property type. Defaults to Building2 for unknown types.
-function propertyTypeIcon(type: string): LucideIcon {
-  const t = type.toLowerCase();
-  if (t === "commercial") return Store;
+// Icon per property type. PLACES is admin-only — Building2 for all admin
+// subtypes; default falls through to Building2 too.
+function propertyTypeIcon(_type: string): LucideIcon {
   return Building2;
 }
 
@@ -83,6 +81,7 @@ export default function LocationDetail() {
       const { data, error } = await supabase
         .from("listings")
         .select("*")
+        .eq("property_type", "admin")
         .eq("location", content!.displayName)
         .order("id", { ascending: false })
         .limit(4);
@@ -100,6 +99,7 @@ export default function LocationDetail() {
       const { data, error } = await supabase
         .from("listings")
         .select("project, developer, property_type, subtype")
+        .eq("property_type", "admin")
         .eq("location", content!.displayName);
       if (error) throw error;
       return data ?? [];
@@ -181,7 +181,7 @@ export default function LocationDetail() {
         <div className="absolute inset-0 z-0">
           <img
             src={content.heroImage}
-            alt={`${content.displayName} commercial district`}
+            alt={`${content.displayName} business district`}
             fetchPriority="high"
             decoding="async"
             className="w-full h-full object-cover"

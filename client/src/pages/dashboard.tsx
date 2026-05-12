@@ -15,7 +15,8 @@ import {
   Dialog,
   DialogContent,
 } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, LogOut, X, Upload, Loader2 } from "lucide-react";
+import { Link } from "wouter";
+import { Plus, Pencil, Trash2, LogOut, X, Upload, Loader2, Home } from "lucide-react";
 
 // Admin password is now validated server-side. We keep it in sessionStorage
 // purely so the user doesn't have to re-enter it on every action; the server
@@ -65,9 +66,12 @@ function formatLabel(value: string | null | undefined): string {
 
 type ListingForm = Omit<Listing, "id"> & { id?: number };
 
+// property_type is hardcoded to "admin" on every new listing — PLACES has
+// retired its commercial offering. Keeping the field on the type for DB
+// shape compatibility, but it's never user-editable.
 const EMPTY_FORM: ListingForm = {
   title: "",
-  property_type: "",
+  property_type: "admin",
   subtype: "",
   developer: "",
   project: "",
@@ -261,7 +265,6 @@ function ListingFormDialog({
               <Input value={form.title} onChange={(e) => set("title", e.target.value)} className="bg-white" />
             </div>
 
-            <SelectField label="Property Type" value={form.property_type} options={ENUM_OPTIONS.property_type} onChange={(v) => set("property_type", v)} />
             <SelectField label="Subtype" value={form.subtype} options={ENUM_OPTIONS.subtype} onChange={(v) => set("subtype", v)} />
             <SelectField label="Transaction Type" value={form.transaction_type} options={ENUM_OPTIONS.transaction_type} onChange={(v) => set("transaction_type", v)} />
             <SelectField label="Developer" value={form.developer} options={ENUM_OPTIONS.developer} onChange={(v) => set("developer", v)} />
@@ -392,8 +395,6 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
   const queryClient = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
   const [editListing, setEditListing] = useState<ListingForm | null>(null);
-  const [typeFilter, setTypeFilter] = useState<string | null>(null);
-
   const { data: listings = [], isLoading } = useQuery<Listing[]>({
     queryKey: ["admin-listings"],
     queryFn: async () => {
@@ -438,8 +439,22 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
       {/* Header */}
       <div className="bg-primary text-white">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-serif font-bold">PLACES Admin</h1>
+          <Link href="/" className="flex items-center gap-3 group">
+            <img
+              src="/images/places-logo.png"
+              alt="PLACES"
+              className="h-8 w-auto brightness-0 invert"
+            />
+            <h1 className="text-xl font-serif font-bold group-hover:opacity-80 transition-opacity">
+              Admin
+            </h1>
+          </Link>
           <div className="flex items-center gap-3">
+            <Link href="/">
+              <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-white/10">
+                <Home className="w-4 h-4 mr-2" /> View site
+              </Button>
+            </Link>
             <Button onClick={handleAdd} className="bg-accent hover:bg-accent/90 text-white">
               <Plus className="w-4 h-4 mr-2" /> Add Listing
             </Button>
@@ -452,44 +467,9 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
 
       {/* Stats */}
       <div className="container mx-auto px-6 py-6">
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div
-            onClick={() => setTypeFilter(null)}
-            className={`rounded-xl p-5 border cursor-pointer transition-all duration-200 ${
-              typeFilter === null
-                ? "bg-primary border-primary ring-2 ring-primary/30"
-                : "bg-primary/80 border-primary/80 hover:bg-primary"
-            }`}
-          >
-            <p className="text-3xl font-serif font-bold text-white">{listings.length}</p>
-            <p className="text-xs text-white/60 uppercase tracking-wider mt-1">Total Listings</p>
-          </div>
-          <div
-            onClick={() => setTypeFilter(typeFilter === "admin" ? null : "admin")}
-            className={`rounded-xl p-5 border-l-4 border-l-accent border cursor-pointer transition-all duration-200 ${
-              typeFilter === "admin"
-                ? "bg-accent/5 border-accent/30 ring-2 ring-accent/30"
-                : "bg-white border-border/40 hover:bg-accent/5"
-            }`}
-          >
-            <p className="text-3xl font-serif font-bold text-accent">
-              {listings.filter((l) => l.property_type === "admin").length}
-            </p>
-            <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">Admin</p>
-          </div>
-          <div
-            onClick={() => setTypeFilter(typeFilter === "commercial" ? null : "commercial")}
-            className={`rounded-xl p-5 border-l-4 border-l-primary border cursor-pointer transition-all duration-200 ${
-              typeFilter === "commercial"
-                ? "bg-primary/5 border-primary/30 ring-2 ring-primary/30"
-                : "bg-white border-border/40 hover:bg-primary/5"
-            }`}
-          >
-            <p className="text-3xl font-serif font-bold text-primary">
-              {listings.filter((l) => l.property_type === "commercial").length}
-            </p>
-            <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">Commercial</p>
-          </div>
+        <div className="rounded-xl p-5 border bg-primary border-primary mb-6 max-w-xs">
+          <p className="text-3xl font-serif font-bold text-white">{listings.length}</p>
+          <p className="text-xs text-white/60 uppercase tracking-wider mt-1">Admin listings</p>
         </div>
 
         {/* Table */}
@@ -509,7 +489,6 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                 <thead>
                   <tr className="border-b border-border/40 bg-primary/5">
                     <th className="text-left px-4 py-3 font-medium text-primary">Title</th>
-                    <th className="text-left px-4 py-3 font-medium text-primary">Type</th>
                     <th className="text-left px-4 py-3 font-medium text-primary">Subtype</th>
                     <th className="text-left px-4 py-3 font-medium text-primary">Location</th>
                     <th className="text-left px-4 py-3 font-medium text-primary">Developer</th>
@@ -519,10 +498,9 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {listings.filter((l) => !typeFilter || l.property_type === typeFilter).map((listing) => (
+                  {listings.map((listing) => (
                     <tr key={listing.id} className="border-b border-border/20 hover:bg-primary/[0.02] transition-colors">
                       <td className="px-4 py-3 font-medium text-primary max-w-[200px] truncate">{listing.title}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{formatLabel(listing.property_type)}</td>
                       <td className="px-4 py-3 text-muted-foreground">{formatLabel(listing.subtype)}</td>
                       <td className="px-4 py-3 text-muted-foreground">{listing.location}</td>
                       <td className="px-4 py-3 text-muted-foreground">{getEnumLabel(DEVELOPER_OPTIONS, listing.developer)}</td>

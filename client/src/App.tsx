@@ -31,11 +31,7 @@ const InvestmentConsultation = lazy(() => import("@/pages/services/investment-co
 const IncomeGeneratingProperty = lazy(() => import("@/pages/services/income-generating-property"));
 const ServicesIndex = lazy(() => import("@/pages/services"));
 const WhyPlaces = lazy(() => import("@/pages/why-places"));
-const Commercial = lazy(() => import("@/pages/commercial"));
 const AdminOffices = lazy(() => import("@/pages/admin"));
-const MegaMalls = lazy(() => import("@/pages/commercial/mega-malls"));
-const StripMalls = lazy(() => import("@/pages/commercial/strip-malls"));
-const DriveThrough = lazy(() => import("@/pages/commercial/drive-through"));
 const BusinessBuilding = lazy(() => import("@/pages/admin/business-building"));
 const BusinessPark = lazy(() => import("@/pages/admin/business-park"));
 const MixedUseMall = lazy(() => import("@/pages/admin/mixed-use"));
@@ -128,13 +124,9 @@ function Router() {
       <Route path="/listings" component={ListingsPage} />
       <Route path="/listings/:idSlug" component={ListingDetailPage} />
       <Route path="/why-places" component={WhyPlaces} />
-      <Route path="/commercial/mega-mall" component={MegaMalls} />
-      <Route path="/commercial/strip-mall" component={StripMalls} />
-      <Route path="/commercial/drive-through" component={DriveThrough} />
       <Route path="/admin/business-building" component={BusinessBuilding} />
       <Route path="/admin/business-park" component={BusinessPark} />
       <Route path="/admin/mixed-use" component={MixedUseMall} />
-      <Route path="/commercial" component={Commercial} />
       <Route path="/admin" component={AdminOffices} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/terms-of-service" component={TermsOfService} />
@@ -188,7 +180,6 @@ function Router() {
       <Route path="/locations/:slug" component={LocationDetail} />
 
       {/* Route categories to Listings Page for prototype */}
-      <Route path="/commercial/:type" component={ListingsPage} />
       <Route path="/admin/:type" component={ListingsPage} />
       <Route path="/developers/:name" component={ListingsPage} />
       <Route path="/services/:type" component={ListingsPage} />

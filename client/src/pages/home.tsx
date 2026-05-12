@@ -7,7 +7,7 @@ import { CountUp } from "@/components/ui/count-up";
 import { ServicesExplorer } from "@/components/ServicesExplorer";
 import { DeveloperStrip } from "@/components/DeveloperStrip";
 import { ListingCard } from "@/components/listings/ListingCard";
-import { ArrowRight, Building2, TrendingUp, Handshake, ClipboardList, BarChart3, ShieldCheck, CheckCircle2, MapPin, Maximize2, Store, Repeat, Coins } from "lucide-react";
+import { ArrowRight, Building2, TrendingUp, Handshake, ClipboardList, BarChart3, ShieldCheck, CheckCircle2, MapPin, Maximize2, Repeat, Coins } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase, type Listing } from "@/lib/supabase";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
@@ -17,22 +17,17 @@ const HOME_FAQS = [
   {
     question: "What types of properties does PLACES list?",
     answer:
-      "PLACES lists administrative offices and commercial offices across Cairo's top business districts. Administrative properties include business parks, business buildings, and mixed-use developments. Commercial properties include units in mega malls, strip malls, and drive-through developments. All listings are available for sale or rent depending on the unit.",
+      "PLACES is specialized in administrative office real estate across Cairo's top business districts. Listings include business parks, business buildings, and mixed-use developments, all available for sale or rent depending on the unit.",
   },
   {
     question: "Which locations in Egypt does PLACES cover?",
     answer:
-      "PLACES covers six key business districts in Cairo and Greater Cairo: New Cairo, Sheikh Zayed, 6th October, Downtown Cairo, Sheraton, and Maadi. These locations represent Egypt's most active commercial and administrative real estate markets.",
+      "PLACES covers six key business districts in Cairo and Greater Cairo: New Cairo, Sheikh Zayed, 6th October, Downtown Cairo, Sheraton, and Maadi. These locations represent Egypt's most active administrative real estate markets.",
   },
   {
     question: "Does PLACES help with both buying and leasing?",
     answer:
-      "Yes. PLACES assists with leasing, primary property purchases, resale transactions, and investment acquisitions. Whether you are a business looking to rent office space or an investor buying a commercial unit, PLACES provides advisory and market access for both.",
-  },
-  {
-    question: "Can I use PLACES to find a commercial space as an investor?",
-    answer:
-      "Yes. PLACES works with commercial investors looking for high-yield assets in Egypt's most active retail and commercial developments. We provide market analysis, yield assessment, and due diligence support to help investors evaluate commercial units before committing.",
+      "Yes. PLACES assists with leasing, primary property purchases, resale transactions, and investment acquisitions. Whether you are a business looking to rent office space or an investor buying an office for income, PLACES provides advisory and market access for both.",
   },
   {
     question: "How is PLACES different from a regular real estate broker?",
@@ -62,6 +57,7 @@ export default function Home() {
       const { data, error } = await supabase
         .from("listings")
         .select("*")
+        .eq("property_type", "admin")
         .order("id", { ascending: false });
       if (error) throw error;
       return data;
@@ -157,38 +153,38 @@ export default function Home() {
         <section className="py-12">
           <div className="container mx-auto px-6 md:px-10 max-w-7xl">
             <div className="grid md:grid-cols-2 gap-6">
-              <Link href="/admin" className="group relative h-[420px] rounded-2xl overflow-hidden cursor-pointer block shadow-lg shadow-primary/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500">
-                <img src="/images/admin 1.jpg" alt="Admin Offices" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+              <Link href="/listings?transaction=sale" className="group relative h-56 md:h-80 rounded-2xl overflow-hidden cursor-pointer block shadow-lg shadow-primary/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500">
+                <img src="/images/admin 1.jpg" alt="Buy an office" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-primary/70 transition-colors duration-500 group-hover:bg-primary/60" />
+
+                <div className="relative h-full flex flex-col justify-end p-8 md:p-12">
+                  <div className="mb-4 w-16 h-16 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full flex items-center justify-center text-white transform transition-transform duration-300 group-hover:-translate-y-2">
+                    <Coins className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-3xl font-serif font-bold text-white mb-3">Buy an office</h3>
+                  <p className="text-white/85 text-lg mb-6 max-w-md">
+                    Office assets for ownership, income, or long-term investment.
+                  </p>
+                  <span className="inline-flex items-center text-white font-bold uppercase tracking-wider text-sm group-hover:text-accent transition-colors">
+                    Browse offices for sale <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  </span>
+                </div>
+              </Link>
+
+              <Link href="/listings?transaction=rent" className="group relative h-56 md:h-80 rounded-2xl overflow-hidden cursor-pointer block shadow-lg shadow-primary/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500">
+                <img src="/images/admin 2.jpg" alt="Rent an office" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                <div className="absolute inset-0 bg-linear-to-t from-[#2E2A28]/85 via-[#2E2A28]/40 to-transparent transition-opacity duration-500 group-hover:opacity-90" />
 
                 <div className="relative h-full flex flex-col justify-end p-8 md:p-12">
                   <div className="mb-4 w-16 h-16 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full flex items-center justify-center text-white transform transition-transform duration-300 group-hover:-translate-y-2">
                     <Building2 className="w-8 h-8" />
                   </div>
-                  <h3 className="text-3xl font-serif font-bold text-white mb-3">Admin Offices</h3>
+                  <h3 className="text-3xl font-serif font-bold text-white mb-3">Rent an office</h3>
                   <p className="text-white/85 text-lg mb-6 max-w-md">
-                    Office spaces for businesses that need a professional, dedicated base.
+                    Office space for businesses ready to move in and operate.
                   </p>
                   <span className="inline-flex items-center text-white font-bold uppercase tracking-wider text-sm group-hover:text-accent transition-colors">
-                    View Admin Properties <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
-                  </span>
-                </div>
-              </Link>
-
-              <Link href="/commercial" className="group relative h-[420px] rounded-2xl overflow-hidden cursor-pointer block shadow-lg shadow-primary/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500">
-                <img src="/images/commercial.jpg" alt="Commercial Properties" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                <div className="absolute inset-0 bg-primary/70 transition-colors duration-500 group-hover:bg-primary/60" />
-
-                <div className="relative h-full flex flex-col justify-end p-8 md:p-12">
-                  <div className="mb-4 w-16 h-16 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full flex items-center justify-center text-white transform transition-transform duration-300 group-hover:-translate-y-2">
-                    <Store className="w-8 h-8" />
-                  </div>
-                  <h3 className="text-3xl font-serif font-bold text-white mb-3">Commercial</h3>
-                  <p className="text-white/85 text-lg mb-6 max-w-md">
-                    Retail and commercial units for brands, F&amp;B operators, and investors.
-                  </p>
-                  <span className="inline-flex items-center text-white font-bold uppercase tracking-wider text-sm group-hover:text-accent transition-colors">
-                    View Commercial Properties <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
+                    Browse offices for rent <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
                   </span>
                 </div>
               </Link>
@@ -345,7 +341,7 @@ export default function Home() {
                   What types of properties does PLACES list?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground text-base leading-relaxed">
-                  PLACES lists administrative offices and commercial offices across Cairo's top business districts. Administrative properties include business parks, business buildings, and mixed-use developments. Commercial properties include units in mega malls, strip malls, and drive-through developments. All listings are available for sale or rent depending on the unit.
+                  PLACES is specialized in administrative office real estate across Cairo's top business districts. Listings include business parks, business buildings, and mixed-use developments, all available for sale or rent depending on the unit.
                 </AccordionContent>
               </AccordionItem>
 
@@ -354,7 +350,7 @@ export default function Home() {
                   Which locations in Egypt does PLACES cover?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground text-base leading-relaxed">
-                  PLACES covers six key business districts in Cairo and Greater Cairo: New Cairo, Sheikh Zayed, 6th October, Downtown Cairo, Sheraton, and Maadi. These locations represent Egypt's most active commercial and administrative real estate markets.
+                  PLACES covers six key business districts in Cairo and Greater Cairo: New Cairo, Sheikh Zayed, 6th October, Downtown Cairo, Sheraton, and Maadi. These locations represent Egypt's most active administrative real estate markets.
                 </AccordionContent>
               </AccordionItem>
 
@@ -363,16 +359,7 @@ export default function Home() {
                   Does PLACES help with both buying and leasing?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground text-base leading-relaxed">
-                  Yes. PLACES assists with leasing, primary property purchases, resale transactions, and investment acquisitions. Whether you are a business looking to rent office space or an investor buying a commercial unit, PLACES provides advisory and market access for both.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="item-4" className="border-b border-border/40">
-                <AccordionTrigger className="text-lg font-medium text-primary hover:text-accent hover:no-underline text-left">
-                  Can I use PLACES to find a commercial space as an investor?
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground text-base leading-relaxed">
-                  Yes. PLACES works with commercial investors looking for high-yield assets in Egypt's most active retail and commercial developments. We provide market analysis, yield assessment, and due diligence support to help investors evaluate commercial units before committing.
+                  Yes. PLACES assists with leasing, primary property purchases, resale transactions, and investment acquisitions. Whether you are a business looking to rent office space or an investor buying an office for income, PLACES provides advisory and market access for both.
                 </AccordionContent>
               </AccordionItem>
 
