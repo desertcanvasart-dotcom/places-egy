@@ -152,7 +152,7 @@ export default function Home() {
       <FadeInSection>
         <section className="py-12">
           <div className="container mx-auto px-6 md:px-10 max-w-7xl">
-            <Link href="/admin" className="group relative h-[420px] rounded-2xl overflow-hidden cursor-pointer block shadow-lg shadow-primary/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500">
+            <Link href="/admin" className="group relative h-70 md:h-105 rounded-2xl overflow-hidden cursor-pointer block shadow-lg shadow-primary/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500">
               <img src="/images/admin 1.jpg" alt="Admin Offices" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
               <div className="absolute inset-0 bg-primary/70 transition-colors duration-500 group-hover:bg-primary/60" />
 

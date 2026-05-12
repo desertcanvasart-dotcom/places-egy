@@ -50,25 +50,22 @@ export default function WhyPlaces() {
       <Navbar />
 
       {/* Hero */}
-      <section className="relative bg-secondary/30 pt-32 pb-16 overflow-hidden">
+      <section className="relative bg-secondary/30 pt-32 pb-8 md:pb-10 overflow-hidden">
         <div className="relative z-10 container mx-auto px-4 text-center max-w-5xl">
           <span className="inline-block text-xs font-bold uppercase tracking-widest text-accent mb-5">
             About PLACES
           </span>
-          <h1 className="text-4xl md:text-6xl font-serif font-bold mb-6 text-primary">
+          <h1 className="text-4xl md:text-6xl font-serif font-bold text-primary">
             Why PLACES
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground leading-relaxed md:whitespace-nowrap">
-            Specialized real estate expertise focused entirely on Egypt's administrative office market.
-          </p>
         </div>
       </section>
 
       {/* About: two-column split — narrative on the left, numbered service
           list on the right. Breaks the wall-of-text into something scannable. */}
-      <section className="bg-secondary/30 pt-6 pb-16">
+      <section className="bg-secondary/30 pt-2 pb-16">
         <div className="container mx-auto px-4 max-w-5xl">
-          <div className="grid grid-cols-2 gap-6 md:gap-10 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 items-stretch">
             <div className="border-l-2 border-accent pl-6 space-y-5">
               <p className="text-base md:text-lg text-primary font-medium leading-relaxed">
                 At PLACES, we provide specialized real estate solutions with

@@ -159,7 +159,7 @@ export default function Leasing() {
       {/* Section 4 — What type of space? */}
       <section className="py-8">
         <div className="container mx-auto px-6 md:px-10">
-          <Link href="/admin/business-building" className="group relative h-[280px] rounded-2xl overflow-hidden block">
+          <Link href="/admin/business-building" className="group relative h-55 sm:h-70 rounded-2xl overflow-hidden block">
             <img src="/images/admin 1.jpg" alt="Admin Offices" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
             <div className="absolute inset-0 bg-primary/70 group-hover:bg-primary/60 transition-colors duration-300" />
             <div className="relative h-full flex flex-col justify-end p-8">

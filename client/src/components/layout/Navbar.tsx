@@ -77,10 +77,9 @@ export function Navbar() {
             <NavigationMenuList className="gap-0">
               {/* Properties */}
               <NavigationMenuItem>
-                <NavigationMenuTrigger className="bg-transparent text-base text-white hover:text-accent hover:bg-white/10 px-3.5">Properties</NavigationMenuTrigger>
+                <NavigationMenuTrigger className="bg-transparent text-base text-white hover:text-accent hover:bg-white/10 px-3.5">Admin Offices</NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <div className="p-5 w-75">
-                    <h4 className="mb-3 px-3 text-xs font-semibold leading-none text-accent uppercase tracking-wider">Admin Offices</h4>
                     <ul className="grid gap-1">
                       <li>
                         <Link href="/admin/business-park" className="block select-none rounded-md px-3 py-2.5 no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
@@ -204,20 +203,15 @@ export function Navbar() {
                 openMobileSection === "properties" ? "text-accent bg-white/5" : "text-white",
               )}
             >
-              Properties
+              Admin Offices
               <ChevronDown className={cn("w-4 h-4 transition-transform", openMobileSection === "properties" && "rotate-180")} />
             </button>
             {openMobileSection === "properties" && (
-              <div className="pb-3 pl-4 flex flex-col gap-4">
-                <div>
-                  <div className="text-xs font-bold text-accent mb-2 uppercase tracking-wide">Admin Offices</div>
-                  <div className="pl-2 flex flex-col gap-2 border-l border-white/10">
-                    <Link href="/admin/business-park" onClick={closeMobile} className="text-sm hover:text-accent pl-2">Business Park</Link>
-                    <Link href="/admin/business-building" onClick={closeMobile} className="text-sm hover:text-accent pl-2">Business Building</Link>
-                    <Link href="/admin/mixed-use" onClick={closeMobile} className="text-sm hover:text-accent pl-2">Mixed Use</Link>
-                    <Link href="/admin" onClick={closeMobile} className="text-xs font-semibold text-accent hover:text-accent/80 pl-2 inline-flex items-center gap-1">View all admin offices <ArrowRight className="w-3 h-3" /></Link>
-                  </div>
-                </div>
+              <div className="pb-3 pl-4 flex flex-col gap-2 border-l border-white/10">
+                <Link href="/admin/business-park" onClick={closeMobile} className="text-sm hover:text-accent pl-2">Business Park</Link>
+                <Link href="/admin/business-building" onClick={closeMobile} className="text-sm hover:text-accent pl-2">Business Building</Link>
+                <Link href="/admin/mixed-use" onClick={closeMobile} className="text-sm hover:text-accent pl-2">Mixed Use</Link>
+                <Link href="/admin" onClick={closeMobile} className="text-xs font-semibold text-accent hover:text-accent/80 pl-2 inline-flex items-center gap-1">View all admin offices <ArrowRight className="w-3 h-3" /></Link>
               </div>
             )}
           </div>
