@@ -296,7 +296,7 @@ function AdminOfficesMenuContent() {
               <Link
                 href={item.href}
                 className={cn(
-                  "group flex items-center justify-between gap-3 select-none rounded-md no-underline outline-none transition-all py-3.5 px-3 border-l-2",
+                  "group flex items-center select-none rounded-md no-underline outline-none transition-all py-3.5 px-3 border-l-2",
                   i === activeIndex
                     ? "border-accent bg-accent/5 pl-4"
                     : "border-transparent hover:border-accent hover:bg-accent/5 hover:pl-4",
@@ -305,7 +305,6 @@ function AdminOfficesMenuContent() {
                 <span className={cn("text-base font-semibold tracking-tight transition-colors", i === activeIndex ? "text-accent" : "text-foreground group-hover:text-accent")}>
                   {item.title}
                 </span>
-                <ArrowRight className={cn("w-4 h-4 text-accent transition-all", i === activeIndex ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0")} />
               </Link>
             </li>
           ))}

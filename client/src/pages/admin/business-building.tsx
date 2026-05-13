@@ -59,7 +59,7 @@ export default function BusinessBuilding() {
       <section className="relative min-h-[40vh] md:min-h-[55vh] pt-28 md:pt-32 pb-14 md:pb-20 overflow-hidden flex flex-col justify-between gap-8">
         <div className="absolute inset-0 z-0">
           <img
-            src="/images/Three-towers.jpeg"
+            src="/images/Mivida-Linea.webp"
             alt="Business Building"
             fetchPriority="high"
             decoding="async"
@@ -123,7 +123,7 @@ export default function BusinessBuilding() {
                       alt={name}
                       loading="lazy"
                       decoding="async"
-                      className="absolute inset-0 w-full h-full object-cover"
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
                     />
                   )}
                   <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/30 to-black/10" />
