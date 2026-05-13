@@ -123,7 +123,7 @@ export default function BusinessPark() {
                       alt={name}
                       loading="lazy"
                       decoding="async"
-                      className="absolute inset-0 w-full h-full object-cover"
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
                     />
                   )}
                   <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/30 to-black/10" />
