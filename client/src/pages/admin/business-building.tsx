@@ -59,7 +59,7 @@ export default function BusinessBuilding() {
       <section className="relative min-h-[40vh] md:min-h-[55vh] pt-28 md:pt-32 pb-14 md:pb-20 overflow-hidden flex flex-col justify-between gap-8">
         <div className="absolute inset-0 z-0">
           <img
-            src="/images/admin 1.jpg"
+            src="/images/Three-towers.jpeg"
             alt="Business Building"
             fetchPriority="high"
             decoding="async"

@@ -38,9 +38,10 @@ export function Navbar() {
   const isActive = (path: string) => location === path;
 
   const hasHero =
-    ["/", "/listings"].includes(location) ||
+    ["/", "/listings", "/admin"].includes(location) ||
     location.startsWith("/developers/") ||
-    /^\/locations\/[^/]+$/.test(location);
+    /^\/locations\/[^/]+$/.test(location) ||
+    /^\/admin\/[^/]+$/.test(location);
   const useSolid = !hasHero || scrolled;
 
   useEffect(() => {
@@ -79,33 +80,7 @@ export function Navbar() {
               <NavigationMenuItem>
                 <NavigationMenuTrigger className="bg-transparent text-base text-white hover:text-accent hover:bg-white/10 px-3.5">Admin Offices</NavigationMenuTrigger>
                 <NavigationMenuContent>
-                  <div className="p-5 w-75">
-                    <ul className="grid gap-1">
-                      <li>
-                        <Link href="/admin/business-park" className="block select-none rounded-md px-3 py-2.5 no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                          <div className="text-sm font-medium leading-none">Business Park</div>
-                          <p className="line-clamp-1 text-xs leading-snug text-muted-foreground mt-1">Integrated corporate communities</p>
-                        </Link>
-                      </li>
-                      <li>
-                        <Link href="/admin/business-building" className="block select-none rounded-md px-3 py-2.5 no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                          <div className="text-sm font-medium leading-none">Business Building</div>
-                          <p className="line-clamp-1 text-xs leading-snug text-muted-foreground mt-1">Standalone corporate towers</p>
-                        </Link>
-                      </li>
-                      <li>
-                        <Link href="/admin/mixed-use" className="block select-none rounded-md px-3 py-2.5 no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                          <div className="text-sm font-medium leading-none">Mixed Use</div>
-                          <p className="line-clamp-1 text-xs leading-snug text-muted-foreground mt-1">Retail and office combinations</p>
-                        </Link>
-                      </li>
-                    </ul>
-                    <div className="mt-2 pt-2 border-t border-border/40">
-                      <Link href="/admin" className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-accent hover:text-accent/80 transition-colors">
-                        View all admin offices <ArrowRight className="w-3 h-3" />
-                      </Link>
-                    </div>
-                  </div>
+                  <AdminOfficesMenuContent />
                 </NavigationMenuContent>
               </NavigationMenuItem>
 
@@ -284,5 +259,77 @@ export function Navbar() {
         </div>
       )}
     </header>
+  );
+}
+
+const ADMIN_SUBTYPES = [
+  {
+    href: "/admin/business-park",
+    title: "Business Park",
+    description: "Integrated corporate communities with campus-scale plots, parking, and shared amenities.",
+    image: "/images/business-park.jpg",
+  },
+  {
+    href: "/admin/business-building",
+    title: "Business Building",
+    description: "Standalone corporate towers with premium addresses and turnkey office floors.",
+    image: "/images/Mindset.png",
+  },
+  {
+    href: "/admin/mixed-use",
+    title: "Mixed Use",
+    description: "Office floors stacked above active retail and F&B — built-in foot traffic.",
+    image: "/images/mixed-use.jpg",
+  },
+] as const;
+
+function AdminOfficesMenuContent() {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const active = ADMIN_SUBTYPES[activeIndex];
+
+  return (
+    <div className="grid grid-cols-[200px_320px] gap-3 p-3">
+      <div className="flex flex-col">
+        <ul className="grid gap-0.5">
+          {ADMIN_SUBTYPES.map((item, i) => (
+            <li key={item.href} onMouseEnter={() => setActiveIndex(i)} onFocus={() => setActiveIndex(i)}>
+              <Link
+                href={item.href}
+                className={cn(
+                  "group flex items-center justify-between gap-3 select-none rounded-md no-underline outline-none transition-all py-3.5 px-3 border-l-2",
+                  i === activeIndex
+                    ? "border-accent bg-accent/5 pl-4"
+                    : "border-transparent hover:border-accent hover:bg-accent/5 hover:pl-4",
+                )}
+              >
+                <span className={cn("text-base font-semibold tracking-tight transition-colors", i === activeIndex ? "text-accent" : "text-foreground group-hover:text-accent")}>
+                  {item.title}
+                </span>
+                <ArrowRight className={cn("w-4 h-4 text-accent transition-all", i === activeIndex ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0")} />
+              </Link>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-2 pt-2 border-t border-border/40">
+          <Link href="/admin" className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-accent hover:text-accent/80 transition-colors">
+            View all admin offices <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
+      </div>
+      <Link href={active.href} className="relative overflow-hidden rounded-md group no-underline">
+        <img
+          key={active.image}
+          src={active.image}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 animate-in fade-in"
+          loading="lazy"
+        />
+        <div className="absolute inset-0 bg-linear-to-t from-primary/95 via-primary/55 to-primary/10" />
+        <div className="absolute inset-x-0 bottom-0 p-3 text-white">
+          <div className="text-sm font-semibold leading-tight">{active.title}</div>
+          <p className="text-xs leading-snug mt-1.5 text-white/85">{active.description}</p>
+        </div>
+      </Link>
+    </div>
   );
 }

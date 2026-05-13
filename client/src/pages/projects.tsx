@@ -276,7 +276,7 @@ export default function ProjectsPage() {
                     alt={project.name}
                     loading="lazy"
                     decoding="async"
-                    className="absolute inset-0 w-full h-full object-cover"
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/50 to-black/10" />
                   <div className="relative z-10 h-full flex flex-col justify-between p-5">
