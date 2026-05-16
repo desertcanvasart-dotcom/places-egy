@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { ArrowRight, Building2, MapPin, Search, X } from "lucide-react";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
-import { breadcrumbSchema } from "@/lib/schema";
+import { breadcrumbSchema, itemListSchema } from "@/lib/schema";
 import {
   PROJECTS,
   PROJECT_TYPE_LABELS,
@@ -117,6 +117,16 @@ export default function ProjectsPage() {
           { name: "Home", url: "/" },
           { name: "Projects", url: "/projects" },
         ])}
+      />
+      <SchemaMarkup
+        schema={itemListSchema({
+          name: "All Projects",
+          url: "/projects",
+          items: PROJECTS.slice(0, 100).map((p) => ({
+            name: p.name,
+            url: `/projects?q=${encodeURIComponent(p.name)}`,
+          })),
+        })}
       />
       <Navbar />
 
