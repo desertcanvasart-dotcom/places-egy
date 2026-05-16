@@ -4,7 +4,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Users } from "lucide-react";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
-import { breadcrumbSchema } from "@/lib/schema";
+import { breadcrumbSchema, itemListSchema } from "@/lib/schema";
 
 // `logoClass` is an optional override for logos whose source PNG has internal
 // transparent padding — applied as extra classes on the <img> element so the
@@ -226,6 +226,16 @@ export default function Developers() {
           { name: "Home", url: "/" },
           { name: "Developers", url: "/developers" },
         ])}
+      />
+      <SchemaMarkup
+        schema={itemListSchema({
+          name: "Egyptian Real Estate Developers",
+          url: "/developers",
+          items: DEVELOPERS.filter((d) => d.slug).map((d) => ({
+            name: d.name,
+            url: `/developers/${d.slug}`,
+          })),
+        })}
       />
       <Navbar />
 
