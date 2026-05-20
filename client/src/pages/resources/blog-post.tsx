@@ -12,6 +12,7 @@ import {
   Clock,
   Loader2,
 } from "lucide-react";
+import DOMPurify from "dompurify";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema, blogPostingSchema } from "@/lib/schema";
 import {
@@ -180,13 +181,14 @@ export default function BlogPostPage() {
         </section>
       )}
 
-      {/* Body — WP REST returns rendered HTML, so we use dangerouslySetInnerHTML.
-          When wired to live WP, content is sanitized by WP itself before publish. */}
+      {/* Body — WP REST returns rendered HTML. We sanitize client-side with
+          DOMPurify because WP's own sanitization only restricts low-privilege
+          authors; admin/editor roles can publish raw <script>. */}
       <article className="pb-12">
         <div className="container mx-auto px-6 md:px-10 max-w-3xl">
           <div
             className="blog-content"
-            dangerouslySetInnerHTML={{ __html: post.content }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
           />
 
           {/* Tags */}

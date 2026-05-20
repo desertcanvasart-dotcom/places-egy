@@ -1,4 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
+import helmet from "helmet";
 import { registerRoutes } from "./routes";
 import { registerRedirects } from "./redirects";
 import { apiLimiter } from "./rate-limit";
@@ -7,6 +8,41 @@ import { createServer } from "http";
 
 const app = express();
 const httpServer = createServer(app);
+
+// Security headers. CSP is only enforced in production — Vite dev requires
+// 'unsafe-eval' and inline scripts that we don't want to allow in prod.
+// Inline scripts are needed in prod for JSON-LD (SEO) and the gtag bootstrap
+// in client/index.html, so script-src includes 'unsafe-inline'. Google Tag
+// Manager / Analytics endpoints are explicitly allowed.
+if (process.env.NODE_ENV === "production") {
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        useDefaults: true,
+        directives: {
+          "script-src": [
+            "'self'",
+            "'unsafe-inline'",
+            "https://www.googletagmanager.com",
+            "https://www.google-analytics.com",
+          ],
+          "connect-src": [
+            "'self'",
+            "https://www.google-analytics.com",
+            "https://*.supabase.co",
+          ],
+          "img-src": ["'self'", "data:", "https:"],
+          "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+          "font-src": ["'self'", "https://fonts.gstatic.com", "data:"],
+          "frame-ancestors": ["'none'"],
+        },
+      },
+      crossOriginEmbedderPolicy: false,
+    }),
+  );
+} else {
+  app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+}
 
 declare module "http" {
   interface IncomingMessage {
@@ -58,7 +94,11 @@ app.use((req, res, next) => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
+      // Never log response bodies for admin endpoints — they contain listing
+      // data and signed URLs. Skip body logging entirely in production to avoid
+      // leaking sensitive data into aggregated logs.
+      const isAdmin = path.startsWith("/api/admin");
+      if (capturedJsonResponse && !isAdmin && process.env.NODE_ENV !== "production") {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
 
@@ -74,13 +114,20 @@ app.use((req, res, next) => {
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
 
     console.error("Internal Server Error:", err);
 
     if (res.headersSent) {
       return next(err);
     }
+
+    // Don't leak error messages to clients in production — internal errors can
+    // expose stack details, library names, or query fragments. Client-facing
+    // 4xx responses are constructed explicitly at the route level.
+    const message =
+      process.env.NODE_ENV === "production" && status >= 500
+        ? "Internal Server Error"
+        : err.message || "Internal Server Error";
 
     return res.status(status).json({ message });
   });

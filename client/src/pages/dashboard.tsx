@@ -64,6 +64,22 @@ function formatLabel(value: string | null | undefined): string {
   return value.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+// Listing data is queried under many keys across the app: ["listings"],
+// ["admin-listings"], ["commercial-listings"], ["business-park-listings"],
+// ["resale-listings"], ["location-newest-listings", ...], etc. After any
+// admin mutation we want all of them to refetch — otherwise newly-created
+// or edited listings stay invisible on subtype/service/location pages until
+// the user does a hard reload.
+function invalidateAllListingQueries(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({
+    predicate: (q) => {
+      const k = q.queryKey[0];
+      if (typeof k !== "string") return false;
+      return k === "listings" || k.endsWith("-listings");
+    },
+  });
+}
+
 type ListingForm = Omit<Listing, "id"> & { id?: number };
 
 // property_type is hardcoded to "admin" on every new listing — PLACES has
@@ -213,9 +229,7 @@ function ListingFormDialog({
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-listings"] });
-      queryClient.invalidateQueries({ queryKey: ["listings"] });
-      queryClient.invalidateQueries({ queryKey: ["commercial-listings"] });
+      invalidateAllListingQueries(queryClient);
       onClose();
     },
     onError: (error: Error) => {
@@ -412,9 +426,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
       await adminFetch(`/api/admin/listings/${id}`, { method: "DELETE" });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-listings"] });
-      queryClient.invalidateQueries({ queryKey: ["listings"] });
-      queryClient.invalidateQueries({ queryKey: ["commercial-listings"] });
+      invalidateAllListingQueries(queryClient);
     },
   });
 

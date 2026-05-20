@@ -11,6 +11,7 @@ import { breadcrumbSchema, listingSchema } from "@/lib/schema";
 import { supabase, type Listing } from "@/lib/supabase";
 import { DEVELOPER_OPTIONS, FURNISHING_OPTIONS, getEnumLabel } from "@/lib/enums";
 import { listingUrl, parseListingId } from "@/lib/listings";
+import { supabaseImage, supabaseImageOnError } from "@/lib/image-url";
 import { trackEvent } from "@/lib/analytics";
 import {
   ArrowRight,
@@ -289,7 +290,8 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
         <div className="container mx-auto px-6 md:px-10">
           <div className="relative aspect-[16/9] md:aspect-[16/7] rounded-2xl overflow-hidden bg-muted group">
             <img
-              src={images[imageIndex]}
+              src={supabaseImage(images[imageIndex], "full")}
+              onError={supabaseImageOnError(images[imageIndex])}
               alt={listing.title}
               fetchPriority="high"
               decoding="async"
@@ -335,7 +337,7 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
                   className={`relative h-20 w-32 shrink-0 rounded-lg overflow-hidden border-2 transition-all ${i === imageIndex ? "border-accent" : "border-transparent opacity-70 hover:opacity-100"}`}
                   aria-label={`Show image ${i + 1}`}
                 >
-                  <img src={src} alt="" loading="lazy" className="w-full h-full object-cover" />
+                  <img src={supabaseImage(src, "thumb")} onError={supabaseImageOnError(src)} alt="" loading="lazy" className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>
@@ -485,7 +487,8 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
                 >
                   <div className="relative aspect-[4/3] bg-muted overflow-hidden">
                     <img
-                      src={l.images?.[0] || FALLBACK_IMAGE}
+                      src={supabaseImage(l.images?.[0] || FALLBACK_IMAGE, "card")}
+                      onError={supabaseImageOnError(l.images?.[0] || FALLBACK_IMAGE)}
                       alt={l.title}
                       loading="lazy"
                       decoding="async"

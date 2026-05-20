@@ -13,6 +13,7 @@ import { MapPin, Building2, Maximize, ArrowUpRight, ChevronLeft, ChevronRight, P
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { listingSchema } from "@/lib/schema";
 import { listingUrl } from "@/lib/listings";
+import { supabaseImage, supabaseImageOnError } from "@/lib/image-url";
 import { trackEvent } from "@/lib/analytics";
 
 const PHONE = "01063618217";
@@ -112,7 +113,8 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
         >
           <div className="relative w-48 md:w-64 shrink-0 overflow-hidden">
             <img
-              src={images[0]}
+              src={supabaseImage(images[0], "card")}
+              onError={supabaseImageOnError(images[0])}
               alt={listing.title}
               loading="lazy"
               decoding="async"
@@ -192,7 +194,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
                 </div>
               ) : (
                 <>
-                  <img src={images[modalImage]} alt={listing.title} fetchPriority="high" decoding="async" className="w-full h-full object-cover transition-all duration-500" />
+                  <img src={supabaseImage(images[modalImage], "full")} onError={supabaseImageOnError(images[modalImage])} alt={listing.title} fetchPriority="high" decoding="async" className="w-full h-full object-cover transition-all duration-500" />
                   {hasMultiple && (
                     <>
                       <button onClick={() => setModalImage((c: number) => (c === 0 ? images.length - 1 : c - 1))} className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white opacity-0 group-hover/modal:opacity-100 transition-opacity hover:bg-black/60"><ChevronLeft className="w-5 h-5" /></button>
@@ -265,7 +267,8 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
         {/* Image Carousel */}
         <div className="relative aspect-[16/10] overflow-hidden">
           <img
-            src={images[current]}
+            src={supabaseImage(images[current], "card")}
+            onError={supabaseImageOnError(images[current])}
             alt={listing.title}
             loading="lazy"
             decoding="async"
@@ -390,7 +393,8 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
             ) : (
               <>
                 <img
-                  src={images[modalImage]}
+                  src={supabaseImage(images[modalImage], "full")}
+                  onError={supabaseImageOnError(images[modalImage])}
                   alt={listing.title}
                   fetchPriority="high"
                   decoding="async"

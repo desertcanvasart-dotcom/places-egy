@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { supabaseAdmin } from "./supabase";
 import { requireAdmin } from "./admin-auth";
 import { strictLimiter } from "./rate-limit";
+import { listingInsertSchema, listingUpdateSchema } from "./listing-schema";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -35,11 +36,15 @@ async function proxyToWp(path: string, res: Response) {
     });
 
     if (!wpRes.ok) {
+      // Log the upstream body server-side but don't reflect it to the client —
+      // WP error responses can leak plugin/version info.
       const text = await wpRes.text();
+      console.error(
+        `[blog] WP upstream ${wpRes.status} for ${path}: ${text.slice(0, 500)}`,
+      );
       return res.status(wpRes.status).json({
         error: "Upstream WordPress error",
         status: wpRes.status,
-        body: text.slice(0, 500),
       });
     }
 
@@ -117,9 +122,13 @@ export async function registerRoutes(
       if (!supabaseAdmin) {
         return res.status(503).json({ message: "Supabase not configured" });
       }
+      const parsed = listingInsertSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid listing payload" });
+      }
       const { error, data } = await supabaseAdmin
         .from("listings")
-        .insert(req.body)
+        .insert(parsed.data)
         .select()
         .single();
       if (error) return res.status(400).json({ message: error.message });
@@ -139,9 +148,13 @@ export async function registerRoutes(
       if (!Number.isFinite(id)) {
         return res.status(400).json({ message: "Invalid id" });
       }
+      const parsed = listingUpdateSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid listing payload" });
+      }
       const { error, data } = await supabaseAdmin
         .from("listings")
-        .update(req.body)
+        .update(parsed.data)
         .eq("id", id)
         .select()
         .single();
