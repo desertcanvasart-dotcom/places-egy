@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Link } from "wouter";
 import { Plus, Pencil, Trash2, LogOut, X, Upload, Loader2, Home } from "lucide-react";
+import { humanizeError } from "@/lib/error-messages";
 
 // Admin password is now validated server-side. We keep it in sessionStorage
 // purely so the user doesn't have to re-enter it on every action; the server
@@ -383,7 +384,7 @@ function ListingFormDialog({
           {saveMutation.error && (
             <div className="rounded-md border border-destructive/30 bg-destructive/5 text-destructive px-4 py-3 text-sm">
               <p className="font-semibold mb-1">Save failed</p>
-              <p className="text-xs">{(saveMutation.error as Error).message}</p>
+              <p className="text-xs">{humanizeError((saveMutation.error as Error).message)}</p>
             </div>
           )}
 
