@@ -111,7 +111,7 @@ export default function AdminOffices() {
       <section className="py-10">
         <div className="container mx-auto px-6 md:px-10">
           <div className="mb-10">
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-3">
+            <h2 className="text-2xl md:text-4xl font-serif font-bold text-primary mb-3">
               Choose the right office for your business
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl">
@@ -129,18 +129,18 @@ export default function AdminOffices() {
               <Link
                 key={i}
                 href={item.link}
-                className="group relative block p-10 rounded-3xl overflow-hidden transition-all duration-300"
+                className="group relative block p-6 md:p-10 rounded-3xl overflow-hidden transition-all duration-300"
               >
                 <img src={item.image} alt={item.title} loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-primary/75 group-hover:bg-primary/65 transition-colors duration-300" />
                 <div className="relative z-10">
-                  <div className="w-16 h-16 bg-accent/20 rounded-2xl flex items-center justify-center mb-8 text-accent">
-                    <item.icon className="w-8 h-8" />
+                  <div className="w-12 h-12 md:w-16 md:h-16 bg-accent/20 rounded-2xl flex items-center justify-center mb-6 md:mb-8 text-accent">
+                    <item.icon className="w-6 h-6 md:w-8 md:h-8" />
                   </div>
-                  <h3 className="text-2xl md:text-3xl font-serif font-bold text-white mb-2 whitespace-nowrap">{item.title}</h3>
+                  <h3 className="text-2xl md:text-3xl font-serif font-bold text-white mb-2 md:whitespace-nowrap">{item.title}</h3>
                   <p className="text-white/70 text-sm">{item.tagline}</p>
                 </div>
-                <ArrowRight className="absolute top-10 right-10 z-10 w-5 h-5 text-white/30 group-hover:text-accent group-hover:translate-x-1 transition-all" />
+                <ArrowRight className="absolute top-6 right-6 md:top-10 md:right-10 z-10 w-5 h-5 text-white/30 group-hover:text-accent group-hover:translate-x-1 transition-all" />
               </Link>
             ))}
           </div>
@@ -181,7 +181,7 @@ export default function AdminOffices() {
       <section id="listings" className="py-10 scroll-mt-24">
         <div className="container mx-auto px-6 md:px-10">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10">
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary">
+            <h2 className="text-2xl md:text-4xl font-serif font-bold text-primary">
               Explore available offices
             </h2>
             <Link href="/listings?type=admin" className="hidden md:inline-flex items-center text-primary font-medium hover:text-accent transition-colors group mt-4 md:mt-0">
@@ -214,7 +214,7 @@ export default function AdminOffices() {
       <section className="py-10">
         <div className="container mx-auto px-6 md:px-10">
           <div className="mb-12">
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-4">
+            <h2 className="text-2xl md:text-4xl font-serif font-bold text-primary mb-4">
               How PLACES helps
             </h2>
           </div>
@@ -261,7 +261,7 @@ export default function AdminOffices() {
       <section className="py-10">
         <div className="container mx-auto px-6 md:px-10">
           <div className="mb-12">
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-3">
+            <h2 className="text-2xl md:text-4xl font-serif font-bold text-primary mb-3">
               Office locations across Egypt
             </h2>
           </div>
@@ -322,7 +322,7 @@ export default function AdminOffices() {
       {/* FAQ */}
       <section className="py-10">
         <div className="container mx-auto px-6 md:px-10">
-          <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-8">Frequently asked questions</h2>
+          <h2 className="text-2xl md:text-4xl font-serif font-bold text-primary mb-8">Frequently asked questions</h2>
           <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="item-1" className="border-b border-border/40 py-1">
               <AccordionTrigger className="text-base font-medium text-primary hover:text-accent hover:no-underline text-left">

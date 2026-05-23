@@ -104,7 +104,7 @@ export default function GlossaryPage() {
               <div key={letter} className="relative">
                 {/* Letter Header */}
                 <div className="flex items-start gap-2 mb-8 border-b border-gray-100 pb-4">
-                  <h2 className="text-6xl font-serif text-primary leading-none">{letter}</h2>
+                  <h2 className="text-4xl md:text-6xl font-serif text-primary leading-none">{letter}</h2>
                   <Badge className="bg-accent text-primary hover:bg-accent rounded-full h-6 min-w-6 flex items-center justify-center text-xs font-bold border-0">
                     {filteredTerms.grouped[letter].length}
                   </Badge>

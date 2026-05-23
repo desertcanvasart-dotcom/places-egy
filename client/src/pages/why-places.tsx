@@ -113,7 +113,7 @@ export default function WhyPlaces() {
               <span className="text-xs font-bold uppercase tracking-widest text-accent">01 · The Mission</span>
               <span className="h-px w-8 bg-accent" />
             </div>
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-5">
+            <h2 className="text-2xl md:text-4xl font-serif font-bold text-primary mb-5">
               Making real estate effortless
             </h2>
             <p className="text-lg text-muted-foreground leading-relaxed max-w-5xl mx-auto text-left">
@@ -157,7 +157,7 @@ export default function WhyPlaces() {
               <span className="text-xs font-bold uppercase tracking-widest text-accent">02 · What Sets Us Apart</span>
               <span className="h-px w-8 bg-accent" />
             </div>
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-4">
+            <h2 className="text-2xl md:text-4xl font-serif font-bold text-primary mb-4">
               Six pillars, one promise
             </h2>
           </div>
@@ -209,7 +209,7 @@ export default function WhyPlaces() {
               <span className="text-xs font-bold uppercase tracking-widest text-accent">03 · The Team</span>
               <span className="h-px w-8 bg-accent" />
             </div>
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-4">
+            <h2 className="text-2xl md:text-4xl font-serif font-bold text-primary mb-4">
               The people behind PLACES
             </h2>
             <p className="text-muted-foreground mx-auto md:whitespace-nowrap">

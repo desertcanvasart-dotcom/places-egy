@@ -251,7 +251,7 @@ export default function Home() {
           <div className="container mx-auto px-6 md:px-10 max-w-7xl">
             <div className="bg-primary/95 text-white rounded-3xl p-10 md:p-14 shadow-lg shadow-primary/5">
               <div className="text-center mb-10 max-w-2xl mx-auto">
-                <h2 className="text-3xl md:text-4xl font-serif font-bold mb-3 text-white">The right space for your business exists.</h2>
+                <h2 className="text-2xl md:text-4xl font-serif font-bold mb-3 text-white">The right space for your business exists.</h2>
                 <p className="text-white/60 text-base">
                   We're here to make sure you find it fast.
                 </p>
@@ -309,15 +309,15 @@ export default function Home() {
                 </div>
               </Link>
 
-              <div className="grid grid-rows-2 gap-6 min-h-105">
-                <Link href="/locations/sheikh-zayed" className="group relative rounded-2xl overflow-hidden cursor-pointer shadow-lg shadow-primary/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 block">
+              <div className="grid grid-rows-2 gap-6 md:min-h-105">
+                <Link href="/locations/sheikh-zayed" className="group relative h-44 md:h-auto rounded-2xl overflow-hidden cursor-pointer shadow-lg shadow-primary/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 block">
                   <img src="/images/Sheikh-zayed.jpg" alt="Sheikh Zayed" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                   <div className="absolute inset-0 bg-linear-to-t from-black/80 to-transparent" />
                   <div className="absolute bottom-0 left-0 p-6">
                     <h3 className="text-2xl font-serif text-white font-bold">Sheikh Zayed</h3>
                   </div>
                 </Link>
-                <Link href="/locations/downtown-cairo" className="group relative rounded-2xl overflow-hidden cursor-pointer shadow-lg shadow-primary/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 block">
+                <Link href="/locations/downtown-cairo" className="group relative h-44 md:h-auto rounded-2xl overflow-hidden cursor-pointer shadow-lg shadow-primary/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 block">
                   <img src="/images/downtown-cairo.jpg" alt="Downtown Cairo" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                   <div className="absolute inset-0 bg-linear-to-t from-black/80 to-transparent" />
                   <div className="absolute bottom-0 left-0 p-6">
@@ -334,7 +334,7 @@ export default function Home() {
       <FadeInSection>
         <section className="py-12">
           <div className="container mx-auto px-6 md:px-10 max-w-7xl">
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-8">Frequently asked questions</h2>
+            <h2 className="text-2xl md:text-4xl font-serif font-bold text-primary mb-8">Frequently asked questions</h2>
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="item-1" className="border-b border-border/40">
                 <AccordionTrigger className="text-lg font-medium text-primary hover:text-accent hover:no-underline text-left">

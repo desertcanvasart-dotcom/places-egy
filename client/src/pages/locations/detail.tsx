@@ -486,7 +486,7 @@ export default function LocationDetail() {
       <section className="py-8">
         <div className="container mx-auto px-6 md:px-10">
           <div className="bg-primary rounded-3xl p-12 md:p-20 text-center">
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-white mb-4 flex items-center justify-center gap-3">
+            <h2 className="text-2xl md:text-4xl font-serif font-bold text-white mb-4 flex items-center justify-center gap-3">
               <MessageCircle className="w-7 h-7 md:w-8 md:h-8 text-accent shrink-0" />
               <span>Looking for an office in {content.displayName}?</span>
             </h2>
@@ -496,7 +496,7 @@ export default function LocationDetail() {
             <Link href="/contact">
               <Button
                 size="lg"
-                className="bg-accent hover:bg-accent/90 text-white px-10 h-14 text-lg font-medium shadow-lg shadow-accent/30 transition-all hover:scale-105"
+                className="bg-accent hover:bg-accent/90 text-white px-6 md:px-10 h-12 md:h-14 text-base md:text-lg font-medium shadow-lg shadow-accent/30 transition-all hover:scale-105"
               >
                 Speak with a PLACES advisor <ArrowRight className="ml-2 w-4 h-4" />
               </Button>

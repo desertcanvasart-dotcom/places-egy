@@ -296,7 +296,7 @@ export default function MarakezPage() {
             <span className="text-xs font-bold uppercase tracking-wider text-accent">
               Find Your Space
             </span>
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-white mt-3 mb-4">
+            <h2 className="text-2xl md:text-4xl font-serif font-bold text-white mt-3 mb-4">
               Looking for office space at District 5 Mindhaus?
             </h2>
             <p className="text-base md:text-lg text-white/70 mb-10 max-w-2xl mx-auto leading-relaxed">
@@ -305,7 +305,7 @@ export default function MarakezPage() {
             <Link href="/contact">
               <Button
                 size="lg"
-                className="bg-accent hover:bg-accent/90 text-white px-10 h-14 text-lg font-medium shadow-lg shadow-accent/30 transition-all hover:scale-105"
+                className="bg-accent hover:bg-accent/90 text-white px-6 md:px-10 h-12 md:h-14 text-base md:text-lg font-medium shadow-lg shadow-accent/30 transition-all hover:scale-105"
               >
                 Enquire Now <ArrowRight className="ml-2 w-4 h-4" />
               </Button>

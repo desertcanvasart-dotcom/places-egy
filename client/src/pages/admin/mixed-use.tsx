@@ -166,7 +166,7 @@ export default function MixedUseMall() {
       <section className="py-12">
         <div className="container mx-auto px-6 md:px-10">
           <div className="mb-10">
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-3">
+            <h2 className="text-2xl md:text-4xl font-serif font-bold text-primary mb-3">
               Is this right for you?
             </h2>
           </div>
@@ -263,7 +263,7 @@ export default function MixedUseMall() {
       <section id="mixed-use-listings" className="py-12 scroll-mt-24">
         <div className="container mx-auto px-6 md:px-10">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10">
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary">
+            <h2 className="text-2xl md:text-4xl font-serif font-bold text-primary">
               Top office units available now
             </h2>
             <Link href="/listings" className="hidden md:inline-flex items-center text-primary font-medium hover:text-accent transition-colors group mt-4 md:mt-0">
@@ -349,7 +349,7 @@ export default function MixedUseMall() {
       <section className="py-12">
         <div className="container mx-auto px-6 md:px-10">
           <div className="mb-10">
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-3">
+            <h2 className="text-2xl md:text-4xl font-serif font-bold text-primary mb-3">
               Where Cairo's mixed-use developments are
             </h2>
           </div>

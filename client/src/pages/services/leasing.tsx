@@ -86,7 +86,7 @@ export default function Leasing() {
           <div className="bg-secondary/40 rounded-3xl border border-border/40 p-6 md:p-10">
             <div className="grid md:grid-cols-2 gap-12 items-center">
               <div>
-                <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-4 leading-tight">
+                <h2 className="text-2xl md:text-4xl font-serif font-bold text-primary mb-4 leading-tight">
                   Is this service right<br />for your business?
                 </h2>
                 <div className="h-1 w-20 bg-accent mb-6" />
@@ -119,7 +119,7 @@ export default function Leasing() {
       <section className="py-8">
         <div className="container mx-auto px-6 md:px-10">
           <div className="mb-10">
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary">
+            <h2 className="text-2xl md:text-4xl font-serif font-bold text-primary">
               Who this service is for
             </h2>
           </div>
@@ -161,7 +161,7 @@ export default function Leasing() {
       <section className="py-10">
         <div className="container mx-auto px-6 md:px-10">
           <div className="mb-10">
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary">
+            <h2 className="text-2xl md:text-4xl font-serif font-bold text-primary">
               Why choose PLACES for leasing
             </h2>
           </div>
@@ -262,7 +262,7 @@ export default function Leasing() {
       <section className="py-8">
         <div className="container mx-auto px-6 md:px-10">
           <div className="mb-10">
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary">
+            <h2 className="text-2xl md:text-4xl font-serif font-bold text-primary">
               Explore other services
             </h2>
           </div>
@@ -311,7 +311,7 @@ export default function Leasing() {
       <section className="py-8">
         <div className="container mx-auto px-6 md:px-10">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10">
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary">
+            <h2 className="text-2xl md:text-4xl font-serif font-bold text-primary">
               Common FAQs on Leasing
             </h2>
             <a href="/faqs" className="hidden md:inline-flex items-center text-primary font-medium hover:text-accent transition-colors group mt-4 md:mt-0">
@@ -350,7 +350,7 @@ export default function Leasing() {
         <div className="container mx-auto px-6 md:px-10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8 py-12 border-t border-border/40">
             <div>
-              <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-2">
+              <h2 className="text-2xl md:text-4xl font-serif font-bold text-primary mb-2">
                 Ready to find your next space?
               </h2>
               <p className="text-muted-foreground text-lg">
@@ -358,7 +358,7 @@ export default function Leasing() {
               </p>
             </div>
             <Link href="/contact">
-              <Button size="lg" className="bg-accent hover:bg-accent/90 text-white px-10 h-14 text-lg font-medium shadow-lg shadow-accent/30 transition-all hover:scale-105 shrink-0">
+              <Button size="lg" className="bg-accent hover:bg-accent/90 text-white px-6 md:px-10 h-12 md:h-14 text-base md:text-lg font-medium shadow-lg shadow-accent/30 transition-all hover:scale-105 shrink-0">
                 Talk to an Advisor
               </Button>
             </Link>

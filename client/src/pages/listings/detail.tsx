@@ -273,7 +273,7 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
 
             {listing.price != null && (
               <div className="text-left md:text-right shrink-0">
-                <span className="text-3xl md:text-4xl font-bold text-primary font-serif">
+                <span className="text-2xl md:text-4xl font-bold text-primary font-serif">
                   {listing.price.toLocaleString()}
                 </span>
                 <p className="text-sm text-muted-foreground">
