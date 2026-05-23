@@ -24,12 +24,16 @@ export type Filters = {
   developer: string | null;
 };
 
+export const PRICE_MIN = 0;
+export const PRICE_MAX = 100000000;
+export const PRICE_STEP = 100000;
+
 export const DEFAULT_FILTERS: Filters = {
   transactionType: null,
   propertyType: null,
   subtype: [],
   location: null,
-  priceRange: [0, 20000000],
+  priceRange: [PRICE_MIN, PRICE_MAX],
   furnishing: [],
   developer: null,
 };
@@ -37,9 +41,6 @@ export const DEFAULT_FILTERS: Filters = {
 const ADMIN_SUBTYPES = ["Business Park", "Business Building", "Mixed Use"];
 const LOCATIONS = ["New Cairo", "Sheikh Zayed", "6th October", "Downtown Cairo", "Sheraton", "Maadi"];
 
-const PRICE_MIN = 0;
-const PRICE_MAX = 20000000;
-const PRICE_STEP = 100000;
 
 interface FilterSidebarProps {
   filters: Filters;

@@ -153,37 +153,37 @@ export default function Home() {
         <section className="py-12">
           <div className="container mx-auto px-6 md:px-10 max-w-7xl">
             <div className="grid md:grid-cols-2 gap-6">
-              <Link href="/listings?transaction=sale" className="group relative h-56 md:h-80 rounded-2xl overflow-hidden cursor-pointer block shadow-lg shadow-primary/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500">
+              <Link href="/listings?transaction=sale" className="group relative h-72 md:h-80 rounded-2xl overflow-hidden cursor-pointer block shadow-lg shadow-primary/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500">
                 <img src="/images/admin 1.jpg" alt="Buy an office" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-primary/70 transition-colors duration-500 group-hover:bg-primary/60" />
 
-                <div className="relative h-full flex flex-col justify-end p-8 md:p-12">
-                  <div className="mb-4 w-16 h-16 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full flex items-center justify-center text-white transform transition-transform duration-300 group-hover:-translate-y-2">
-                    <Coins className="w-8 h-8" />
+                <div className="relative h-full flex flex-col justify-end p-6 md:p-12">
+                  <div className="mb-3 md:mb-4 w-12 h-12 md:w-16 md:h-16 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full flex items-center justify-center text-white transform transition-transform duration-300 group-hover:-translate-y-2">
+                    <Coins className="w-6 h-6 md:w-8 md:h-8" />
                   </div>
-                  <h3 className="text-3xl font-serif font-bold text-white mb-3">Buy an office</h3>
-                  <p className="text-white/85 text-lg mb-6 max-w-md">
+                  <h3 className="text-2xl md:text-3xl font-serif font-bold text-white mb-2 md:mb-3">Buy an office</h3>
+                  <p className="text-white/85 text-base md:text-lg mb-4 md:mb-6 max-w-md">
                     Office assets for ownership, income, or long-term investment.
                   </p>
-                  <span className="inline-flex items-center text-white font-bold uppercase tracking-wider text-sm group-hover:text-accent transition-colors">
+                  <span className="inline-flex items-center text-white font-bold uppercase tracking-wider text-xs md:text-sm group-hover:text-accent transition-colors">
                     Browse offices for sale <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
                   </span>
                 </div>
               </Link>
 
-              <Link href="/listings?transaction=rent" className="group relative h-56 md:h-80 rounded-2xl overflow-hidden cursor-pointer block shadow-lg shadow-primary/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500">
+              <Link href="/listings?transaction=rent" className="group relative h-72 md:h-80 rounded-2xl overflow-hidden cursor-pointer block shadow-lg shadow-primary/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500">
                 <img src="/images/admin 2.jpg" alt="Rent an office" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-linear-to-t from-[#2E2A28]/85 via-[#2E2A28]/40 to-transparent transition-opacity duration-500 group-hover:opacity-90" />
 
-                <div className="relative h-full flex flex-col justify-end p-8 md:p-12">
-                  <div className="mb-4 w-16 h-16 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full flex items-center justify-center text-white transform transition-transform duration-300 group-hover:-translate-y-2">
-                    <Building2 className="w-8 h-8" />
+                <div className="relative h-full flex flex-col justify-end p-6 md:p-12">
+                  <div className="mb-3 md:mb-4 w-12 h-12 md:w-16 md:h-16 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full flex items-center justify-center text-white transform transition-transform duration-300 group-hover:-translate-y-2">
+                    <Building2 className="w-6 h-6 md:w-8 md:h-8" />
                   </div>
-                  <h3 className="text-3xl font-serif font-bold text-white mb-3">Rent an office</h3>
-                  <p className="text-white/85 text-lg mb-6 max-w-md">
+                  <h3 className="text-2xl md:text-3xl font-serif font-bold text-white mb-2 md:mb-3">Rent an office</h3>
+                  <p className="text-white/85 text-base md:text-lg mb-4 md:mb-6 max-w-md">
                     Office space for businesses ready to move in and operate.
                   </p>
-                  <span className="inline-flex items-center text-white font-bold uppercase tracking-wider text-sm group-hover:text-accent transition-colors">
+                  <span className="inline-flex items-center text-white font-bold uppercase tracking-wider text-xs md:text-sm group-hover:text-accent transition-colors">
                     Browse offices for rent <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
                   </span>
                 </div>

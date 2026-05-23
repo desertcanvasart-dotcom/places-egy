@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { FilterSidebar, DEFAULT_FILTERS, type Filters } from "@/components/listings/FilterSidebar";
+import { FilterSidebar, DEFAULT_FILTERS, PRICE_MIN, PRICE_MAX, type Filters } from "@/components/listings/FilterSidebar";
 import { ListingCard } from "@/components/listings/ListingCard";
 import { supabase, type Listing } from "@/lib/supabase";
 import { FURNISHING_OPTIONS, getEnumLabel } from "@/lib/enums";
@@ -131,9 +131,16 @@ export default function ListingsPage() {
           return false;
         }
       }
-      // Price range
-      if (listing.price < filters.priceRange[0] || listing.price > filters.priceRange[1]) {
-        return false;
+      // Price range. Only apply the filter when the user has actually moved
+      // the slider away from defaults; otherwise a listing with a missing or
+      // very-high price would be silently hidden on the default view.
+      const [minPrice, maxPrice] = filters.priceRange;
+      const priceFilterActive = minPrice > PRICE_MIN || maxPrice < PRICE_MAX;
+      if (priceFilterActive) {
+        const p = listing.price ?? 0;
+        if (p < minPrice || p > maxPrice) {
+          return false;
+        }
       }
       // Furnishing (multi, no selection = no filter)
       if (filters.furnishing.length > 0 && !filters.furnishing.some(f => f.toLowerCase() === listing.furnishing?.toLowerCase())) {
@@ -173,7 +180,7 @@ export default function ListingsPage() {
     if (filters.location) chips.push({ label: filters.location, clear: () => setFilters((p) => ({ ...p, location: null })) });
     if (filters.developer) chips.push({ label: DEVELOPER_DISPLAY_NAMES[filters.developer] ?? filters.developer, clear: () => setFilters((p) => ({ ...p, developer: null })) });
     filters.furnishing.forEach((f) => chips.push({ label: getEnumLabel(FURNISHING_OPTIONS, f), clear: () => setFilters((p) => ({ ...p, furnishing: p.furnishing.filter((x) => x !== f) })) }));
-    if (filters.priceRange[0] > 0 || filters.priceRange[1] < 20000000) chips.push({ label: `${(filters.priceRange[0] / 1000000).toFixed(1)}M – ${(filters.priceRange[1] / 1000000).toFixed(1)}M EGP`, clear: () => setFilters((p) => ({ ...p, priceRange: [0, 20000000] })) });
+    if (filters.priceRange[0] > PRICE_MIN || filters.priceRange[1] < PRICE_MAX) chips.push({ label: `${(filters.priceRange[0] / 1000000).toFixed(1)}M – ${(filters.priceRange[1] / 1000000).toFixed(1)}M EGP`, clear: () => setFilters((p) => ({ ...p, priceRange: [PRICE_MIN, PRICE_MAX] })) });
     return chips;
   })();
 
