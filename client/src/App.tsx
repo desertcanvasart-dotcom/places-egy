@@ -108,6 +108,34 @@ function PageViewTracker() {
   return null;
 }
 
+const SITE_ORIGIN = "https://places-egy.com";
+
+// Keep <link rel="canonical"> pointed at the current path on every route.
+// index.html ships a hardcoded canonical (homepage); without this, every SPA
+// route would tell crawlers its canonical is the homepage, collapsing the
+// whole site's indexing onto "/". Query strings (e.g. ?transaction=sale filter
+// params) are stripped so filtered views canonicalize to their base path and
+// don't register as duplicate content.
+function CanonicalTag() {
+  const [location] = useLocation();
+  useEffect(() => {
+    const path = location.split("?")[0].split("#")[0];
+    // Normalize a trailing slash (except the root) so /listings and /listings/
+    // don't produce two canonicals.
+    const normalized = path !== "/" && path.endsWith("/") ? path.slice(0, -1) : path;
+    const href = `${SITE_ORIGIN}${normalized}`;
+
+    let el = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    if (!el) {
+      el = document.createElement("link");
+      el.setAttribute("rel", "canonical");
+      document.head.appendChild(el);
+    }
+    el.setAttribute("href", href);
+  }, [location]);
+  return null;
+}
+
 function PageLoader() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -207,6 +235,7 @@ function App() {
         <SchemaMarkup schema={websiteSchema} />
         <Toaster />
         <ScrollToTop />
+        <CanonicalTag />
         <PageViewTracker />
         <Router />
         <MobileBottomBar />

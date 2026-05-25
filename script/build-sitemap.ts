@@ -56,7 +56,7 @@ function buildPostEntries(posts: WpPost[]): string {
       const lastmodLine = lastmod ? `    <lastmod>${lastmod}</lastmod>\n` : "";
       return (
         `  <url>\n` +
-        `    <loc>${SITE_ORIGIN}/resources/blog/${p.slug}</loc>\n` +
+        `    <loc>${SITE_ORIGIN}/blog/${p.slug}</loc>\n` +
         lastmodLine +
         `    <changefreq>${BLOG_CHANGEFREQ}</changefreq>\n` +
         `    <priority>${BLOG_PRIORITY}</priority>\n` +
