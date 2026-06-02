@@ -12,6 +12,15 @@ import type React from "react";
 const SUPABASE_OBJECT_PATH = "/storage/v1/object/public/";
 const SUPABASE_RENDER_PATH = "/storage/v1/render/image/public/";
 
+// Toggle this to `true` once the Supabase project is on the Pro plan (Image
+// Transformations are gated behind Pro). On the Free plan the render endpoint
+// returns 403, which forces an onError → original-URL swap on every image and
+// also breaks carousels (the per-element "already fell back" guard sticks
+// across src changes when React reuses the same <img> node). Until then we
+// just serve the original object URL directly — same outcome, one fewer
+// round-trip per image, and carousels work normally.
+const IMAGE_TRANSFORMS_ENABLED = false;
+
 export type ImageVariant = "thumb" | "card" | "full";
 
 const VARIANT_PRESETS: Record<ImageVariant, { width: number; quality: number }> = {
@@ -22,6 +31,7 @@ const VARIANT_PRESETS: Record<ImageVariant, { width: number; quality: number }> 
 
 export function supabaseImage(url: string, variant: ImageVariant = "card"): string {
   if (!url) return url;
+  if (!IMAGE_TRANSFORMS_ENABLED) return url;
   const idx = url.indexOf(SUPABASE_OBJECT_PATH);
   if (idx === -1) return url;
   const preset = VARIANT_PRESETS[variant];
@@ -36,12 +46,14 @@ export function supabaseImage(url: string, variant: ImageVariant = "card"): stri
 // onError handler for <img> tags using supabaseImage(). If the render endpoint
 // returns 4xx (e.g. Supabase project is on Free tier without Image Transforms),
 // fall back to the original object URL so the user still sees the image. The
-// data-fell-back attribute prevents an infinite loop if the original also fails.
+// data-fell-back attribute prevents an infinite loop if the original also
+// fails — and is reset when the src prop changes so it doesn't stick across
+// carousel slides that reuse the same <img> element.
 export function supabaseImageOnError(originalUrl: string) {
   return (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
-    if (img.dataset.fellBack === "true") return;
-    img.dataset.fellBack = "true";
+    if (img.dataset.fellBackFor === originalUrl) return;
+    img.dataset.fellBackFor = originalUrl;
     img.src = originalUrl;
   };
 }
