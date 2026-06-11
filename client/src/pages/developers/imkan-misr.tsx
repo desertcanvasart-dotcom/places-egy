@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, ChevronRight, MapPin, CheckCircle2 } from "lucide-react";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema } from "@/lib/schema";
+import { useDocumentMeta } from "@/lib/use-document-meta";
 import { getProjectsByDeveloper, PROJECT_TYPE_LABELS, type ProjectType } from "@/lib/projects";
 
 const PROJECTS = getProjectsByDeveloper("imkan-misr");
@@ -60,6 +61,13 @@ export default function ImkanMisrPage() {
 
   const filteredProjects =
     filter === "All" ? PROJECTS : PROJECTS.filter((p) => p.type === filter);
+
+  useDocumentMeta({
+    title: "Imkan Misr Projects & Offices in Egypt | PLACES",
+    description: imkanMisrOrganizationSchema.description,
+    url: imkanMisrOrganizationSchema.url,
+    image: imkanMisrOrganizationSchema.logo,
+  });
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-background">

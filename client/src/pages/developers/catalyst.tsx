@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, ChevronRight, MapPin, CheckCircle2 } from "lucide-react";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema } from "@/lib/schema";
+import { useDocumentMeta } from "@/lib/use-document-meta";
 import { getProjectsByDeveloper, PROJECT_TYPE_LABELS, type Project } from "@/lib/projects";
 
 const PROJECTS = getProjectsByDeveloper("catalyst");
@@ -58,6 +59,13 @@ export default function CatalystPage() {
 
   const filteredProjects =
     filter === "All" ? PROJECTS : PROJECTS.filter((p) => displayLabel(p) === filter);
+
+  useDocumentMeta({
+    title: "Catalyst Developments Projects & Offices in Egypt | PLACES",
+    description: catalystOrganizationSchema.description,
+    url: catalystOrganizationSchema.url,
+    image: catalystOrganizationSchema.logo,
+  });
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-background">

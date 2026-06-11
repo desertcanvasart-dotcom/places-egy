@@ -15,6 +15,7 @@ export type Listing = {
   location: string;
   location_area: string;
   price: number;
+  currency: string;
   area_sqm: number;
   transaction_type: string;
   furnishing: string;
@@ -24,5 +25,6 @@ export type Listing = {
   parking: number;
   price_per_meter: number;
   maintenance_fees: number;
+  maintenance_status: string;
   floor: number;
 };

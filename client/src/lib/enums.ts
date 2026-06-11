@@ -41,6 +41,13 @@ export const TRANSACTION_TYPE_OPTIONS: EnumOption[] = [
   { value: "rent", label: "Rent" },
 ];
 
+// Whether maintenance is included in the listing price. Displayed under the
+// label "Maintenance" (the numeric amount field is labelled "Maintenance Fees").
+export const MAINTENANCE_STATUS_OPTIONS: EnumOption[] = [
+  { value: "included", label: "Included" },
+  { value: "not-included", label: "Not Included" },
+];
+
 // Values are URL slugs that match the dev page paths under /developers/{slug}.
 // Adding a new developer here is one of the 4 steps documented in the dev-page
 // wiring memory — don't forget the route + grid + slug map + logo map updates.

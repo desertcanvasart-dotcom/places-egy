@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { type Listing } from "@/lib/supabase";
-import { DEVELOPER_OPTIONS, FURNISHING_OPTIONS, getEnumLabel } from "@/lib/enums";
+import { DEVELOPER_OPTIONS, FURNISHING_OPTIONS, MAINTENANCE_STATUS_OPTIONS, getEnumLabel } from "@/lib/enums";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
@@ -13,6 +13,7 @@ import { MapPin, Building2, Maximize, ArrowUpRight, ChevronLeft, ChevronRight, P
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { listingSchema } from "@/lib/schema";
 import { listingUrl } from "@/lib/listings";
+import { listingCurrency } from "@/lib/currency";
 import { supabaseImage, supabaseImageOnError } from "@/lib/image-url";
 import { trackEvent } from "@/lib/analytics";
 
@@ -174,7 +175,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
                 <span className="text-lg font-bold text-primary font-serif">
                   {listing.price?.toLocaleString()}
                 </span>
-                <span className="text-xs text-muted-foreground">EGP</span>
+                <span className="text-xs text-muted-foreground">{listingCurrency(listing)}</span>
                 {listing.transaction_type?.toLowerCase() === "rent" && <span className="text-xs text-muted-foreground">/month</span>}
               </div>
               <span className="text-xs text-accent font-medium opacity-0 group-hover:opacity-100 transition-opacity">
@@ -233,16 +234,17 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
                 </div>
                 <div className="text-right shrink-0">
                   <span className="text-2xl font-bold text-primary font-serif">{listing.price?.toLocaleString()}</span>
-                  <p className="text-xs text-muted-foreground">EGP{listing.transaction_type?.toLowerCase() === "rent" ? "/month" : ""}</p>
+                  <p className="text-xs text-muted-foreground">{listingCurrency(listing)}{listing.transaction_type?.toLowerCase() === "rent" ? "/month" : ""}</p>
                 </div>
               </div>
               {listing.description && (<p className="text-sm text-muted-foreground leading-relaxed">{listing.description}</p>)}
               <div className="grid grid-cols-3 gap-3">
                 <DetailBlock icon={MapPin} label="Project" value={listing.project} />
                 <DetailBlock icon={Maximize} label="Area" value={listing.area_sqm ? `${listing.area_sqm} m²` : null} />
-                {listing.price_per_meter != null && <DetailBlock icon={Building2} label="Price/m²" value={`${listing.price_per_meter.toLocaleString()} EGP`} />}
+                {listing.price_per_meter != null && <DetailBlock icon={Building2} label="Price/m²" value={`${listing.price_per_meter.toLocaleString()} ${listingCurrency(listing)}`} />}
                 <DetailBlock icon={Building2} label="Handover condition" value={getEnumLabel(FURNISHING_OPTIONS, listing.furnishing)} />
-                {listing.maintenance_fees != null && <DetailBlock icon={Building2} label="Maintenance" value={`${listing.maintenance_fees.toLocaleString()} EGP`} />}
+                {listing.maintenance_fees != null && <DetailBlock icon={Building2} label="Maintenance Fees" value={`${listing.maintenance_fees.toLocaleString()} ${listingCurrency(listing)}`} />}
+                {listing.maintenance_status && <DetailBlock icon={Building2} label="Maintenance" value={getEnumLabel(MAINTENANCE_STATUS_OPTIONS, listing.maintenance_status)} />}
                 {listing.floor != null && <DetailBlock icon={Building2} label="Floor" value={listing.floor} />}
                 {listing.delivery_date && <DetailBlock icon={Calendar} label="Delivery date" value={listing.delivery_date} />}
                 {listing.parking != null && <DetailBlock icon={CarFront} label="Parking" value={listing.parking} />}
@@ -365,7 +367,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
               <span className="text-xl font-bold text-primary font-serif">
                 {listing.price?.toLocaleString()}
               </span>
-              <span className="text-xs text-muted-foreground">EGP</span>
+              <span className="text-xs text-muted-foreground">{listingCurrency(listing)}</span>
               {listing.transaction_type?.toLowerCase() === "rent" && <span className="text-xs text-muted-foreground">/month</span>}
             </div>
           </div>
@@ -472,7 +474,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
                   {listing.price?.toLocaleString()}
                 </span>
                 <p className="text-xs text-muted-foreground">
-                  EGP{listing.transaction_type?.toLowerCase() === "rent" ? "/month" : ""}
+                  {listingCurrency(listing)}{listing.transaction_type?.toLowerCase() === "rent" ? "/month" : ""}
                 </p>
               </div>
             </div>
@@ -486,9 +488,10 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
             <div className="grid grid-cols-3 gap-3">
               <DetailBlock icon={MapPin} label="Project" value={listing.project} />
               <DetailBlock icon={Maximize} label="Area" value={listing.area_sqm ? `${listing.area_sqm} m²` : null} />
-              {listing.price_per_meter != null && <DetailBlock icon={Building2} label="Price/m²" value={`${listing.price_per_meter.toLocaleString()} EGP`} />}
+              {listing.price_per_meter != null && <DetailBlock icon={Building2} label="Price/m²" value={`${listing.price_per_meter.toLocaleString()} ${listingCurrency(listing)}`} />}
               <DetailBlock icon={Building2} label="Handover condition" value={getEnumLabel(FURNISHING_OPTIONS, listing.furnishing)} />
-              {listing.maintenance_fees != null && <DetailBlock icon={Building2} label="Maintenance" value={`${listing.maintenance_fees.toLocaleString()} EGP`} />}
+              {listing.maintenance_fees != null && <DetailBlock icon={Building2} label="Maintenance Fees" value={`${listing.maintenance_fees.toLocaleString()} ${listingCurrency(listing)}`} />}
+              {listing.maintenance_status && <DetailBlock icon={Building2} label="Maintenance" value={getEnumLabel(MAINTENANCE_STATUS_OPTIONS, listing.maintenance_status)} />}
               {listing.floor != null && <DetailBlock icon={Building2} label="Floor" value={listing.floor} />}
               {listing.delivery_date && <DetailBlock icon={Calendar} label="Delivery date" value={listing.delivery_date} />}
               {listing.parking != null && <DetailBlock icon={CarFront} label="Parking" value={listing.parking} />}

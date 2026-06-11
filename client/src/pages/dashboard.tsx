@@ -45,9 +45,11 @@ import {
   PROPERTY_TYPE_OPTIONS,
   SUBTYPE_OPTIONS,
   TRANSACTION_TYPE_OPTIONS,
+  MAINTENANCE_STATUS_OPTIONS,
   getEnumLabel,
   type EnumOption,
 } from "@/lib/enums";
+import { CURRENCY_OPTIONS, listingCurrency } from "@/lib/currency";
 
 // Dropdown options — single source of truth lives in lib/enums.ts so the admin
 // dropdowns, filter sidebars, and display labels all stay in lockstep.
@@ -58,6 +60,8 @@ const ENUM_OPTIONS = {
   furnishing: FURNISHING_OPTIONS,
   location: LOCATION_OPTIONS,
   developer: DEVELOPER_OPTIONS,
+  currency: CURRENCY_OPTIONS,
+  maintenance_status: MAINTENANCE_STATUS_OPTIONS,
 };
 
 function formatLabel(value: string | null | undefined): string {
@@ -95,6 +99,7 @@ const EMPTY_FORM: ListingForm = {
   location: "",
   location_area: "",
   price: 0,
+  currency: "EGP",
   area_sqm: 0,
   transaction_type: "",
   furnishing: "",
@@ -104,6 +109,7 @@ const EMPTY_FORM: ListingForm = {
   parking: 0,
   price_per_meter: 0,
   maintenance_fees: 0,
+  maintenance_status: "",
   floor: 0,
 };
 
@@ -177,7 +183,7 @@ function SelectField({
         <SelectTrigger className="bg-white">
           <SelectValue placeholder={`Select ${label.toLowerCase()}`} />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="max-h-72 overflow-y-auto">
           {options.map((opt) => (
             <SelectItem key={opt.value} value={opt.value}>
               {opt.label}
@@ -295,8 +301,10 @@ function ListingFormDialog({
               <Input value={form.project} onChange={(e) => set("project", e.target.value)} className="bg-white" />
             </div>
 
+            <SelectField label="Currency" value={form.currency} options={ENUM_OPTIONS.currency} onChange={(v) => set("currency", v)} />
+
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium text-primary">Price (EGP)</Label>
+              <Label className="text-sm font-medium text-primary">Price ({form.currency})</Label>
               <Input type="number" value={form.price || ""} onChange={(e) => set("price", Number(e.target.value))} className="bg-white" />
             </div>
 
@@ -306,14 +314,16 @@ function ListingFormDialog({
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium text-primary">Price per meter (EGP)</Label>
+              <Label className="text-sm font-medium text-primary">Price per meter ({form.currency})</Label>
               <Input type="number" value={form.price_per_meter || ""} onChange={(e) => set("price_per_meter", Number(e.target.value))} className="bg-white" />
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium text-primary">Maintenance fees (EGP)</Label>
+              <Label className="text-sm font-medium text-primary">Maintenance Fees ({form.currency})</Label>
               <Input type="number" value={form.maintenance_fees || ""} onChange={(e) => set("maintenance_fees", Number(e.target.value))} className="bg-white" />
             </div>
+
+            <SelectField label="Maintenance" value={form.maintenance_status} options={ENUM_OPTIONS.maintenance_status} onChange={(v) => set("maintenance_status", v)} />
 
             <div className="space-y-1.5">
               <Label className="text-sm font-medium text-primary">Floor</Label>
@@ -478,13 +488,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
         </div>
       </div>
 
-      {/* Stats */}
       <div className="container mx-auto px-6 py-6">
-        <div className="rounded-xl p-5 border bg-primary border-primary mb-6 max-w-xs">
-          <p className="text-3xl font-serif font-bold text-white">{listings.length}</p>
-          <p className="text-xs text-white/60 uppercase tracking-wider mt-1">Admin listings</p>
-        </div>
-
         {/* Table */}
         {isLoading ? (
           <p className="text-muted-foreground text-center py-12">Loading listings...</p>
@@ -517,7 +521,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                       <td className="px-4 py-3 text-muted-foreground">{formatLabel(listing.subtype)}</td>
                       <td className="px-4 py-3 text-muted-foreground">{listing.location}</td>
                       <td className="px-4 py-3 text-muted-foreground">{getEnumLabel(DEVELOPER_OPTIONS, listing.developer)}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{listing.price?.toLocaleString()} EGP</td>
+                      <td className="px-4 py-3 text-muted-foreground">{listing.price?.toLocaleString()} {listingCurrency(listing)}</td>
                       <td className="px-4 py-3 text-muted-foreground">{formatLabel(listing.transaction_type)}</td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-2">

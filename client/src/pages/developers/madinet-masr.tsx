@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, ChevronRight, MapPin, CheckCircle2 } from "lucide-react";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema } from "@/lib/schema";
+import { useDocumentMeta } from "@/lib/use-document-meta";
 import { getProjectsByDeveloper, PROJECT_TYPE_LABELS, type ProjectType } from "@/lib/projects";
 
 const PROJECTS = getProjectsByDeveloper("madinet-masr");
@@ -53,6 +54,13 @@ export default function MadinetMasrPage() {
 
   const filteredProjects =
     filter === "All" ? PROJECTS : PROJECTS.filter((p) => p.type === filter);
+
+  useDocumentMeta({
+    title: "Madinet Masr Projects & Offices in Egypt | PLACES",
+    description: madinetMasrOrganizationSchema.description,
+    url: madinetMasrOrganizationSchema.url,
+    image: madinetMasrOrganizationSchema.logo,
+  });
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-background">

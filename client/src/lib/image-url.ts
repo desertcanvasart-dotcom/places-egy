@@ -19,7 +19,7 @@ const SUPABASE_RENDER_PATH = "/storage/v1/render/image/public/";
 // across src changes when React reuses the same <img> node). Until then we
 // just serve the original object URL directly — same outcome, one fewer
 // round-trip per image, and carousels work normally.
-const IMAGE_TRANSFORMS_ENABLED = false;
+const IMAGE_TRANSFORMS_ENABLED = true;
 
 export type ImageVariant = "thumb" | "card" | "full";
 

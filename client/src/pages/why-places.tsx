@@ -1,6 +1,6 @@
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { ShieldCheck, TrendingUp, Users, Award, Building2, HeartHandshake } from "lucide-react";
+import { ShieldCheck, TrendingUp, Users, Award, Building2, HeartHandshake, Download } from "lucide-react";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { aboutPageSchema, breadcrumbSchema } from "@/lib/schema";
 
@@ -58,6 +58,14 @@ export default function WhyPlaces() {
           <h1 className="text-4xl md:text-6xl font-serif font-bold text-primary">
             Why PLACES
           </h1>
+          <a
+            href="/places-company-profile.pdf"
+            download="PLACES-Company-Profile.pdf"
+            className="mt-7 inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-3 text-sm font-bold uppercase tracking-widest text-accent-foreground transition-colors hover:bg-accent/90"
+          >
+            <Download className="h-4 w-4" />
+            Download Company Profile
+          </a>
         </div>
       </section>
 
@@ -129,7 +137,7 @@ export default function WhyPlaces() {
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8 text-center pt-10 border-t border-border/40">
             <div>
-              <p className="text-3xl md:text-5xl font-serif font-bold text-accent mb-1">600+</p>
+              <p className="text-3xl md:text-5xl font-serif font-bold text-accent mb-1">500+</p>
               <p className="text-xs text-primary/60 uppercase tracking-widest">Happy clients</p>
             </div>
             <div>
@@ -181,28 +189,9 @@ export default function WhyPlaces() {
         </div>
       </section>
 
-      {/* Experience strip + Team */}
-      <section className="bg-secondary/30 pt-4 pb-20">
+      {/* Team */}
+      <section className="bg-secondary/30 pt-20 pb-20">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-4">
-            <span className="text-xs font-bold uppercase tracking-widest text-primary/60">
-              Our team brings experience from
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-y-6 mb-20">
-            {[
-              { src: "/images/savills logo.png", alt: "Savills" },
-              { src: "/images/heroleads-logo.png", alt: "Heroleads" },
-              { src: "/images/the-brokers-league.png", alt: "Brokers League" },
-              { src: "/images/RocketDevs.png", alt: "RocketDevs" },
-              { src: "/images/etegah-logo.png", alt: "Etegah" },
-            ].map((logo) => (
-              <div key={logo.alt} className="w-32 md:w-40 flex items-center justify-center">
-                <img src={logo.src} alt={logo.alt} loading="lazy" decoding="async" className="h-8 md:h-10 w-auto object-contain grayscale opacity-70" />
-              </div>
-            ))}
-          </div>
-
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-3 mb-4">
               <span className="h-px w-8 bg-accent" />

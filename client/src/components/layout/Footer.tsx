@@ -124,6 +124,7 @@ export function Footer() {
             <SectionHeading>Company</SectionHeading>
             <ul className="space-y-2 text-sm text-gray-300">
               <li><Link href="/why-places" className="hover:text-white transition-colors">Why PLACES</Link></li>
+              <li><a href="/places-company-profile.pdf" download="PLACES-Company-Profile.pdf" className="hover:text-white transition-colors">Company Profile</a></li>
               <li><Link href="/contact" className="hover:text-white transition-colors">Contact</Link></li>
             </ul>
             <SubHeading>Resources</SubHeading>

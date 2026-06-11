@@ -15,6 +15,7 @@ export const listingInsertSchema = z
     location: z.string().max(200).optional(),
     location_area: z.string().max(200).optional(),
     price: z.number().finite().nonnegative().optional(),
+    currency: z.string().max(10).optional(),
     area_sqm: z.number().finite().nonnegative().optional(),
     transaction_type: z.string().max(50).optional(),
     furnishing: z.string().max(50).optional(),
@@ -24,6 +25,7 @@ export const listingInsertSchema = z
     parking: z.number().int().nonnegative().optional(),
     price_per_meter: z.number().finite().nonnegative().optional(),
     maintenance_fees: z.number().finite().nonnegative().optional(),
+    maintenance_status: z.string().max(50).optional(),
     floor: z.number().int().optional(),
   })
   .strict();

@@ -9,8 +9,9 @@ import { ListingCard } from "@/components/listings/ListingCard";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema, listingSchema } from "@/lib/schema";
 import { supabase, type Listing } from "@/lib/supabase";
-import { DEVELOPER_OPTIONS, FURNISHING_OPTIONS, getEnumLabel } from "@/lib/enums";
+import { DEVELOPER_OPTIONS, FURNISHING_OPTIONS, MAINTENANCE_STATUS_OPTIONS, getEnumLabel } from "@/lib/enums";
 import { listingUrl, parseListingId } from "@/lib/listings";
+import { listingCurrency } from "@/lib/currency";
 import { supabaseImage, supabaseImageOnError } from "@/lib/image-url";
 import { trackEvent } from "@/lib/analytics";
 import {
@@ -277,7 +278,7 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
                   {listing.price.toLocaleString()}
                 </span>
                 <p className="text-sm text-muted-foreground">
-                  EGP{listing.transaction_type?.toLowerCase() === "rent" ? "/month" : ""}
+                  {listingCurrency(listing)}{listing.transaction_type?.toLowerCase() === "rent" ? "/month" : ""}
                 </p>
               </div>
             )}
@@ -386,14 +387,21 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
                     <DetailRow
                       icon={Building2}
                       label="Price per m²"
-                      value={`${listing.price_per_meter.toLocaleString()} EGP`}
+                      value={`${listing.price_per_meter.toLocaleString()} ${listingCurrency(listing)}`}
                     />
                   )}
                   {listing.maintenance_fees != null && (
                     <DetailRow
                       icon={Building2}
-                      label="Maintenance fees"
-                      value={`${listing.maintenance_fees.toLocaleString()} EGP`}
+                      label="Maintenance Fees"
+                      value={`${listing.maintenance_fees.toLocaleString()} ${listingCurrency(listing)}`}
+                    />
+                  )}
+                  {listing.maintenance_status && (
+                    <DetailRow
+                      icon={Building2}
+                      label="Maintenance"
+                      value={getEnumLabel(MAINTENANCE_STATUS_OPTIONS, listing.maintenance_status)}
                     />
                   )}
                   {listing.floor != null && (

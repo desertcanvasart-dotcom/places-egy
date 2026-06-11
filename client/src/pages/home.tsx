@@ -138,7 +138,7 @@ export default function Home() {
                 </div>
                 <div>
                   <p className="text-3xl md:text-[2.75rem] font-serif font-bold text-primary hover:text-accent transition-colors cursor-default mb-1">
-                    <CountUp end={7000} duration={3500} suffix="+" />
+                    <CountUp end={500} duration={3500} suffix="+" />
                   </p>
                   <p className="text-xs text-muted-foreground uppercase tracking-widest">Businesses Helped</p>
                 </div>
