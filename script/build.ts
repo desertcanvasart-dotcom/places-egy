@@ -2,6 +2,8 @@ import { build as esbuild } from "esbuild";
 import { build as viteBuild } from "vite";
 import { rm, readFile } from "fs/promises";
 import { generateSitemap } from "./build-sitemap";
+import { prerender } from "./prerender";
+import { buildListingsSeo } from "./build-listings-seo";
 
 // server deps to bundle to reduce openat(2) syscalls
 // which helps cold start times
@@ -40,6 +42,16 @@ async function buildAll() {
   await viteBuild();
 
   await generateSitemap();
+
+  // Meta-only prerender: write per-route HTML with unique title/description for
+  // crawlers. Must run after viteBuild (needs dist/public/index.html). No
+  // browser involved, so it's safe on Railway's nixpacks build.
+  await prerender();
+
+  // Dynamic listing pages: add their URLs to the sitemap and prerender per-
+  // listing meta from Supabase. Runs after prerender() (same dist/index.html
+  // shell) and never fails the build if Supabase is unreachable.
+  await buildListingsSeo();
 
   console.log("building server...");
   const pkg = JSON.parse(await readFile("package.json", "utf-8"));

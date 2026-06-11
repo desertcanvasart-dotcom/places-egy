@@ -38,6 +38,12 @@ export function serveStatic(app: Express) {
   if (fs.existsSync(distPath)) {
     app.use(
       express.static(distPath, {
+        // Serve build-time prerendered pages: a request for /developers/akoya
+        // resolves to developers/akoya.html (meta-only prerender output) before
+        // falling through to the SPA catch-all below. Without this, those files
+        // would never be served and crawlers would keep getting the generic
+        // index.html shell.
+        extensions: ["html"],
         setHeaders: (res, filePath) => {
           // Vite-hashed assets (`/assets/index-abc123.js`, etc.) are immutable
           // — the filename changes when the content changes — so cache forever.
@@ -56,8 +62,9 @@ export function serveStatic(app: Express) {
             res.setHeader("Cache-Control", "public, max-age=86400");
             return;
           }
-          // index.html: never cache (so users get latest deploy immediately).
-          if (filePath.endsWith("index.html")) {
+          // HTML (index.html + prerendered per-route pages): never cache, so
+          // users/crawlers get the latest deploy immediately.
+          if (filePath.endsWith(".html")) {
             res.setHeader("Cache-Control", "no-cache");
           }
         },

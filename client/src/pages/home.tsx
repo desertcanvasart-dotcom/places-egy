@@ -6,6 +6,7 @@ import { FadeInSection } from "@/components/ui/fade-in-section";
 import { CountUp } from "@/components/ui/count-up";
 import { ServicesExplorer } from "@/components/ServicesExplorer";
 import { DeveloperStrip } from "@/components/DeveloperStrip";
+import { ClientsStrip } from "@/components/ClientsStrip";
 import { ListingCard } from "@/components/listings/ListingCard";
 import { ArrowRight, Building2, TrendingUp, Handshake, ClipboardList, BarChart3, ShieldCheck, CheckCircle2, MapPin, Maximize2, Repeat, Coins } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -193,11 +194,6 @@ export default function Home() {
         </section>
       </FadeInSection>
 
-      {/* Developer Logo Strip */}
-      <FadeInSection>
-        <DeveloperStrip />
-      </FadeInSection>
-
       {/* Curated Opportunities */}
       <FadeInSection>
         <section className="py-12">
@@ -215,8 +211,8 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-5 max-w-5xl mx-auto">
-              {listings.slice(0, 3).map((listing) => (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-6xl mx-auto">
+              {listings.slice(0, 4).map((listing) => (
                 <ListingCard key={listing.id} listing={listing} />
               ))}
             </div>
@@ -232,6 +228,12 @@ export default function Home() {
         </section>
       </FadeInSection>
 
+      {/* Client logos — companies PLACES has closed deals for. Renders nothing
+          until logos are added to ClientsStrip's CLIENTS list. */}
+      <FadeInSection>
+        <ClientsStrip />
+      </FadeInSection>
+
       {/* Services */}
       <FadeInSection>
         <section className="py-12">
@@ -243,6 +245,11 @@ export default function Home() {
             <ServicesExplorer />
           </div>
         </section>
+      </FadeInSection>
+
+      {/* Developer Logo Strip */}
+      <FadeInSection>
+        <DeveloperStrip />
       </FadeInSection>
 
       {/* How It Works */}

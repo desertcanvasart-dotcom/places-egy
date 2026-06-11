@@ -58,14 +58,6 @@ export default function WhyPlaces() {
           <h1 className="text-4xl md:text-6xl font-serif font-bold text-primary">
             Why PLACES
           </h1>
-          <a
-            href="/places-company-profile.pdf"
-            download="PLACES-Company-Profile.pdf"
-            className="mt-7 inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-3 text-sm font-bold uppercase tracking-widest text-accent-foreground transition-colors hover:bg-accent/90"
-          >
-            <Download className="h-4 w-4" />
-            Download Company Profile
-          </a>
         </div>
       </section>
 
@@ -159,6 +151,16 @@ export default function WhyPlaces() {
       {/* Values Grid */}
       <section className="pt-10 pb-12">
         <div className="container mx-auto px-4">
+          <div className="text-center mb-10">
+            <a
+              href="/places-company-profile.pdf"
+              download="PLACES-Company-Profile.pdf"
+              className="inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-3 text-sm font-bold uppercase tracking-widest text-accent-foreground transition-colors hover:bg-accent/90"
+            >
+              <Download className="h-4 w-4" />
+              Download Company Profile
+            </a>
+          </div>
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-3 mb-4">
               <span className="h-px w-8 bg-accent" />

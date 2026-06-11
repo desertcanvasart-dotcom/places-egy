@@ -143,6 +143,7 @@ export function listingSchema(listing: {
   description?: string | null;
   images?: string[] | null;
   price?: number | null;
+  currency?: string | null;
   transaction_type?: string | null;
   property_type?: string | null;
   subtype?: string | null;
@@ -191,7 +192,7 @@ export function listingSchema(listing: {
     ...(additionalProperty.length && { additionalProperty }),
     offers: {
       "@type": "Offer",
-      priceCurrency: "EGP",
+      priceCurrency: listing.currency === "USD" ? "USD" : "EGP",
       ...(listing.price && { price: listing.price }),
       availability: "https://schema.org/InStock",
       url,

@@ -283,6 +283,16 @@ function ListingFormDialog({
     set("images", (form.images || []).filter((_: string, i: number) => i !== index));
   };
 
+  // The first image in the array is the listing's main/cover photo (cards and
+  // the carousel use images[0]). "Set as main" moves the chosen image to the
+  // front, preserving the order of the rest.
+  const setMainImage = (index: number) => {
+    const imgs = form.images || [];
+    if (index <= 0 || index >= imgs.length) return;
+    const reordered = [imgs[index], ...imgs.filter((_: string, i: number) => i !== index)];
+    set("images", reordered);
+  };
+
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto bg-background p-0">
@@ -385,19 +395,37 @@ function ListingFormDialog({
                 />
               </label>
               {(form.images || []).length > 0 && (
-                <div className="grid grid-cols-4 gap-2 mt-2">
-                  {(form.images || []).map((url: string, i: number) => (
-                    <div key={i} className="relative group rounded-lg overflow-hidden border border-border/40">
-                      <img src={url} alt="" className="w-full h-20 object-cover" />
-                      <button
-                        onClick={() => removeImage(i)}
-                        className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                <>
+                  <p className="text-xs text-muted-foreground">
+                    The first image is the main photo shown on listing cards. Hover an image and click "Set main" to make it the cover.
+                  </p>
+                  <div className="grid grid-cols-4 gap-2 mt-2">
+                    {(form.images || []).map((url: string, i: number) => (
+                      <div key={i} className="relative group rounded-lg overflow-hidden border border-border/40">
+                        <img src={url} alt="" className="w-full h-20 object-cover" />
+                        {i === 0 && (
+                          <span className="absolute bottom-1 left-1 rounded bg-accent px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                            Main
+                          </span>
+                        )}
+                        {i !== 0 && (
+                          <button
+                            onClick={() => setMainImage(i)}
+                            className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-accent"
+                          >
+                            Set main
+                          </button>
+                        )}
+                        <button
+                          onClick={() => removeImage(i)}
+                          className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </>
               )}
             </div>
           </div>

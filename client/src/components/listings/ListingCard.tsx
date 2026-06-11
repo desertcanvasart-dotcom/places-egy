@@ -110,16 +110,16 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
       <>
         <div
           onClick={() => setModalOpen(true)}
-          className="group flex bg-[#FDFBF8] rounded-2xl border border-border/40 overflow-hidden hover:shadow-[0_12px_32px_-12px_rgba(232,64,74,0.18)] hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
+          className="group flex h-44 md:h-52 bg-[#FDFBF8] rounded-2xl border border-border/40 overflow-hidden hover:shadow-[0_12px_32px_-12px_rgba(232,64,74,0.18)] hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
         >
-          <div className="relative w-48 md:w-64 shrink-0 overflow-hidden">
+          <div className="relative w-48 md:w-64 shrink-0 self-stretch overflow-hidden">
             <img
               src={supabaseImage(images[0], "card")}
               onError={supabaseImageOnError(images[0])}
               alt={listing.title}
               loading="lazy"
               decoding="async"
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
             <div className="absolute top-3 left-3">
               <Badge className={`
@@ -132,7 +132,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
               </Badge>
             </div>
           </div>
-          <div className="flex-1 p-5 flex flex-col justify-between">
+          <div className="flex-1 p-5 flex flex-col gap-3">
             <div>
               <div className="flex justify-between items-start gap-4 mb-1">
                 <h3 className="font-serif text-base font-semibold text-primary group-hover:text-accent transition-colors line-clamp-1">
@@ -170,7 +170,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
                 )}
               </div>
             </div>
-            <div className="flex items-center justify-between mt-3">
+            <div className="flex items-center justify-between mt-auto">
               <div className="flex items-baseline gap-1">
                 <span className="text-lg font-bold text-primary font-serif">
                   {listing.price?.toLocaleString()}
@@ -237,7 +237,6 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
                   <p className="text-xs text-muted-foreground">{listingCurrency(listing)}{listing.transaction_type?.toLowerCase() === "rent" ? "/month" : ""}</p>
                 </div>
               </div>
-              {listing.description && (<p className="text-sm text-muted-foreground leading-relaxed">{listing.description}</p>)}
               <div className="grid grid-cols-3 gap-3">
                 <DetailBlock icon={MapPin} label="Project" value={listing.project} />
                 <DetailBlock icon={Maximize} label="Area" value={listing.area_sqm ? `${listing.area_sqm} m²` : null} />
@@ -478,11 +477,6 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
                 </p>
               </div>
             </div>
-
-            {/* Description */}
-            {listing.description && (
-              <p className="text-sm text-muted-foreground leading-relaxed">{listing.description}</p>
-            )}
 
             {/* Details grid */}
             <div className="grid grid-cols-3 gap-3">
