@@ -248,6 +248,17 @@ function ListingFormDialog({
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  // Coerce a number-input's raw string to a number, or null when blank/invalid.
+  // Sending null (not 0, not NaN) means an unfilled field is simply omitted —
+  // the listing card/detail page guard every numeric stat with `!= null`, so a
+  // blank field shows nothing instead of "0 m²", and NaN never reaches the
+  // server (its Zod .finite() check would otherwise reject the whole save).
+  const toNum = (raw: string): number | null => {
+    if (raw.trim() === "") return null;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : null;
+  };
+
   const uploadImages = async (files: FileList) => {
     setUploading(true);
     const newUrls: string[] = [];
@@ -282,7 +293,7 @@ function ListingFormDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2 space-y-1.5">
-              <Label className="text-sm font-medium text-primary">Title</Label>
+              <Label className="text-sm font-medium text-primary">Title <span className="text-accent">*</span></Label>
               <Input value={form.title} onChange={(e) => set("title", e.target.value)} className="bg-white" />
             </div>
 
@@ -304,30 +315,30 @@ function ListingFormDialog({
             <SelectField label="Currency" value={form.currency} options={ENUM_OPTIONS.currency} onChange={(v) => set("currency", v)} />
 
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium text-primary">Price ({form.currency})</Label>
-              <Input type="number" value={form.price || ""} onChange={(e) => set("price", Number(e.target.value))} className="bg-white" />
+              <Label className="text-sm font-medium text-primary">Price ({form.currency}) <span className="text-accent">*</span></Label>
+              <Input type="number" value={form.price ?? ""} onChange={(e) => set("price", toNum(e.target.value))} className="bg-white" />
             </div>
 
             <div className="space-y-1.5">
               <Label className="text-sm font-medium text-primary">Area (sqm)</Label>
-              <Input type="number" value={form.area_sqm || ""} onChange={(e) => set("area_sqm", Number(e.target.value))} className="bg-white" />
+              <Input type="number" value={form.area_sqm ?? ""} onChange={(e) => set("area_sqm", toNum(e.target.value))} className="bg-white" />
             </div>
 
             <div className="space-y-1.5">
               <Label className="text-sm font-medium text-primary">Price per meter ({form.currency})</Label>
-              <Input type="number" value={form.price_per_meter || ""} onChange={(e) => set("price_per_meter", Number(e.target.value))} className="bg-white" />
+              <Input type="number" value={form.price_per_meter ?? ""} onChange={(e) => set("price_per_meter", toNum(e.target.value))} className="bg-white" />
             </div>
 
             <div className="space-y-1.5">
               <Label className="text-sm font-medium text-primary">Maintenance Fees ({form.currency})</Label>
-              <Input type="number" value={form.maintenance_fees || ""} onChange={(e) => set("maintenance_fees", Number(e.target.value))} className="bg-white" />
+              <Input type="number" value={form.maintenance_fees ?? ""} onChange={(e) => set("maintenance_fees", toNum(e.target.value))} className="bg-white" />
             </div>
 
             <SelectField label="Maintenance" value={form.maintenance_status} options={ENUM_OPTIONS.maintenance_status} onChange={(v) => set("maintenance_status", v)} />
 
             <div className="space-y-1.5">
               <Label className="text-sm font-medium text-primary">Floor</Label>
-              <Input type="number" value={form.floor ?? ""} onChange={(e) => set("floor", Number(e.target.value))} placeholder="0" className="bg-white" />
+              <Input type="number" value={form.floor ?? ""} onChange={(e) => set("floor", toNum(e.target.value))} placeholder="0" className="bg-white" />
             </div>
 
             <div className="space-y-1.5">
@@ -337,7 +348,7 @@ function ListingFormDialog({
 
             <div className="space-y-1.5">
               <Label className="text-sm font-medium text-primary">Parking (spaces)</Label>
-              <Input type="number" value={form.parking ?? ""} onChange={(e) => set("parking", Number(e.target.value))} placeholder="0" className="bg-white" />
+              <Input type="number" value={form.parking ?? ""} onChange={(e) => set("parking", toNum(e.target.value))} placeholder="0" className="bg-white" />
             </div>
 
             <div className="col-span-2 space-y-1.5">
@@ -404,7 +415,7 @@ function ListingFormDialog({
             </Button>
             <Button
               onClick={() => saveMutation.mutate(form)}
-              disabled={saveMutation.isPending || !form.title}
+              disabled={saveMutation.isPending || !form.title.trim() || form.price == null}
               className="flex-1 bg-primary text-white"
             >
               {saveMutation.isPending ? "Saving..." : isEditing ? "Update" : "Create"}
