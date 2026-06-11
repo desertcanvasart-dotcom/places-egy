@@ -135,7 +135,7 @@ export function ClientsStrip() {
               <img
                 src={client.logo}
                 alt={`${client.name} logo`}
-                loading="lazy"
+                loading="eager"
                 decoding="async"
                 className="w-full h-auto object-contain grayscale opacity-60 transition-all duration-300 group-hover:grayscale-0 group-hover:opacity-100"
               />
