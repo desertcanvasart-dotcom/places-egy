@@ -6,6 +6,7 @@ import { supabaseAdmin } from "./supabase";
 import { requireAdmin } from "./admin-auth";
 import { strictLimiter } from "./rate-limit";
 import { listingInsertSchema, listingUpdateSchema } from "./listing-schema";
+import { dealInsertSchema, dealUpdateSchema } from "./deal-schema";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -98,6 +99,22 @@ export async function registerRoutes(
     return proxyToWp(`/categories?per_page=100&hide_empty=true`, res);
   });
 
+  // GET /api/deals — public. The homepage deal carousel reads the active deals
+  // (max 3) ordered by sort_order then newest. Uses the service-role client but
+  // only ever returns active rows, so it's safe to expose unauthenticated.
+  app.get("/api/deals", async (_req: Request, res: Response) => {
+    if (!supabaseAdmin) return res.json([]);
+    const { data, error } = await supabaseAdmin
+      .from("deals")
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: false })
+      .limit(3);
+    if (error) return res.status(500).json({ message: error.message });
+    res.json(data ?? []);
+  });
+
   // ──────────────────────────────────────────────────────────────────────────
   // Admin endpoints. All gated by requireAdmin + strictLimiter. Use the
   // service-role Supabase client which bypasses RLS — never expose this key.
@@ -179,6 +196,93 @@ export async function registerRoutes(
         .from("listings")
         .delete()
         .eq("id", id);
+      if (error) return res.status(400).json({ message: error.message });
+      res.json({ ok: true });
+    },
+  );
+
+  // ── Deals admin CRUD (mirrors the listings routes) ────────────────────────
+  app.get(
+    "/api/admin/deals",
+    strictLimiter,
+    requireAdmin,
+    async (_req: Request, res: Response) => {
+      if (!supabaseAdmin) {
+        return res.status(503).json({ message: "Supabase not configured" });
+      }
+      // Admin view: all deals (incl. inactive), in display order.
+      const { data, error } = await supabaseAdmin
+        .from("deals")
+        .select("*")
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: false });
+      if (error) return res.status(400).json({ message: error.message });
+      res.json(data ?? []);
+    },
+  );
+
+  app.post(
+    "/api/admin/deals",
+    strictLimiter,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      if (!supabaseAdmin) {
+        return res.status(503).json({ message: "Supabase not configured" });
+      }
+      const parsed = dealInsertSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid deal payload" });
+      }
+      const { error, data } = await supabaseAdmin
+        .from("deals")
+        .insert(parsed.data)
+        .select()
+        .single();
+      if (error) return res.status(400).json({ message: error.message });
+      res.json(data);
+    },
+  );
+
+  app.patch(
+    "/api/admin/deals/:id",
+    strictLimiter,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      if (!supabaseAdmin) {
+        return res.status(503).json({ message: "Supabase not configured" });
+      }
+      const id = Number(req.params.id);
+      if (!Number.isFinite(id)) {
+        return res.status(400).json({ message: "Invalid id" });
+      }
+      const parsed = dealUpdateSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid deal payload" });
+      }
+      const { error, data } = await supabaseAdmin
+        .from("deals")
+        .update(parsed.data)
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) return res.status(400).json({ message: error.message });
+      res.json(data);
+    },
+  );
+
+  app.delete(
+    "/api/admin/deals/:id",
+    strictLimiter,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      if (!supabaseAdmin) {
+        return res.status(503).json({ message: "Supabase not configured" });
+      }
+      const id = Number(req.params.id);
+      if (!Number.isFinite(id)) {
+        return res.status(400).json({ message: "Invalid id" });
+      }
+      const { error } = await supabaseAdmin.from("deals").delete().eq("id", id);
       if (error) return res.status(400).json({ message: error.message });
       res.json({ ok: true });
     },

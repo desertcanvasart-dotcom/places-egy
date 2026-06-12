@@ -1,5 +1,10 @@
 User-agent: *
 Allow: /
 Disallow: /dashboard
+# Faceted/search views of the listings page are low-value URL variations and
+# can render empty (soft 404s). They're also marked noindex. Block the search-
+# template URL outright. Individual listings (/listings/{id}-{slug}) and the
+# clean /listings page stay fully crawlable.
+Disallow: /listings?q=
 
 Sitemap: https://places-egy.com/sitemap.xml

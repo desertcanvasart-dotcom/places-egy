@@ -1,0 +1,104 @@
+import { useState, useEffect, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { DealAnnouncement } from "@/components/DealAnnouncement";
+import type { Deal } from "@/lib/deals";
+
+// Homepage carousel of the latest closed deals. Fetches up to 3 active deals
+// from /api/deals (managed in the admin dashboard) and renders each as a
+// DealAnnouncement slide. With one deal it's a static banner; with 2–3 it
+// becomes a swipeable/auto-advancing carousel. Renders nothing when there are
+// no active deals.
+export function DealAnnouncementCarousel() {
+  const { data: deals = [] } = useQuery<Deal[]>({
+    queryKey: ["deals"],
+    queryFn: async () => {
+      const res = await fetch("/api/deals");
+      if (!res.ok) return [];
+      return res.json();
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const [index, setIndex] = useState(0);
+  const count = deals.length;
+  const multiple = count > 1;
+
+  const go = useCallback(
+    (next: number) => setIndex(((next % count) + count) % count),
+    [count],
+  );
+
+  // Gentle auto-advance, paused for reduced-motion users.
+  useEffect(() => {
+    if (!multiple) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const t = setInterval(() => setIndex((i) => (i + 1) % count), 6000);
+    return () => clearInterval(t);
+  }, [multiple, count]);
+
+  // Keep index valid if the deal list shrinks (e.g. one was hidden).
+  useEffect(() => {
+    if (index >= count && count > 0) setIndex(0);
+  }, [count, index]);
+
+  if (count === 0) return null;
+
+  const current = deals[index];
+
+  return (
+    <div
+      className="relative"
+      role={multiple ? "group" : undefined}
+      aria-roledescription={multiple ? "carousel" : undefined}
+      aria-label={multiple ? "Latest closed deals" : undefined}
+    >
+      <DealAnnouncement
+        clientName={current.client_name}
+        clientLogo={current.client_logo ?? ""}
+        sqm={current.sqm ?? ""}
+        location={current.location ?? ""}
+        spaceType={current.space_type ?? ""}
+        leaseFormat={current.lease_format ?? ""}
+      />
+
+      {multiple && (
+        <>
+          {/* Prev / next — pinned to the screen edges of the full-bleed strip. */}
+          <button
+            type="button"
+            onClick={() => go(index - 1)}
+            aria-label="Previous deal"
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-30 flex h-8 w-8 items-center justify-center rounded-full bg-[#ECE7D8]/10 text-[#ECE7D8] backdrop-blur-sm transition-colors hover:bg-[#ECE7D8]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => go(index + 1)}
+            aria-label="Next deal"
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-30 flex h-8 w-8 items-center justify-center rounded-full bg-[#ECE7D8]/10 text-[#ECE7D8] backdrop-blur-sm transition-colors hover:bg-[#ECE7D8]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+
+          {/* Dots — bottom-center of the strip. */}
+          <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2">
+            {deals.map((deal, i) => (
+              <button
+                key={deal.id}
+                type="button"
+                onClick={() => go(i)}
+                aria-label={`Go to deal ${i + 1}`}
+                aria-current={i === index}
+                className={`h-1.5 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                  i === index ? "w-5 bg-accent" : "w-1.5 bg-[#ECE7D8]/40 hover:bg-[#ECE7D8]/70"
+                }`}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

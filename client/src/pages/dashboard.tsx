@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase, type Listing } from "@/lib/supabase";
+import { DealsManager } from "@/components/admin/DealsManager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,24 +20,7 @@ import { Link } from "wouter";
 import { Plus, Pencil, Trash2, LogOut, X, Upload, Loader2, Home } from "lucide-react";
 import { humanizeError } from "@/lib/error-messages";
 
-// Admin password is now validated server-side. We keep it in sessionStorage
-// purely so the user doesn't have to re-enter it on every action; the server
-// is the source of truth via the x-admin-password header.
-function getAdminPassword(): string | null {
-  return sessionStorage.getItem("admin_password");
-}
-
-async function adminFetch(path: string, init: RequestInit = {}) {
-  const password = getAdminPassword();
-  const headers = new Headers(init.headers);
-  if (password) headers.set("x-admin-password", password);
-  const res = await fetch(path, { ...init, headers });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(body.message || `Request failed: ${res.status}`);
-  }
-  return res.json();
-}
+import { adminFetch } from "@/lib/admin-fetch";
 
 import {
   DEVELOPER_OPTIONS,
@@ -459,6 +443,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
   const queryClient = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
   const [editListing, setEditListing] = useState<ListingForm | null>(null);
+  const [tab, setTab] = useState<"listings" | "deals">("listings");
   const { data: listings = [], isLoading } = useQuery<Listing[]>({
     queryKey: ["admin-listings"],
     queryFn: async () => {
@@ -517,9 +502,11 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                 <Home className="w-4 h-4 mr-2" /> View site
               </Button>
             </Link>
-            <Button onClick={handleAdd} className="bg-accent hover:bg-accent/90 text-white">
-              <Plus className="w-4 h-4 mr-2" /> Add Listing
-            </Button>
+            {tab === "listings" && (
+              <Button onClick={handleAdd} className="bg-accent hover:bg-accent/90 text-white">
+                <Plus className="w-4 h-4 mr-2" /> Add Listing
+              </Button>
+            )}
             <Button onClick={onLogout} variant="ghost" className="text-white/70 hover:text-white hover:bg-white/10">
               <LogOut className="w-4 h-4 mr-2" /> Logout
             </Button>
@@ -528,8 +515,26 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
       </div>
 
       <div className="container mx-auto px-6 py-6">
-        {/* Table */}
-        {isLoading ? (
+        {/* Tabs */}
+        <div className="flex items-center gap-1 mb-6 border-b border-border/40">
+          {(["listings", "deals"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`px-4 py-2.5 text-sm font-medium capitalize transition-colors border-b-2 -mb-px ${
+                tab === t
+                  ? "border-accent text-primary"
+                  : "border-transparent text-muted-foreground hover:text-primary"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+
+        {tab === "deals" ? (
+          <DealsManager />
+        ) : isLoading ? (
           <p className="text-muted-foreground text-center py-12">Loading listings...</p>
         ) : listings.length === 0 ? (
           <div className="text-center py-12">

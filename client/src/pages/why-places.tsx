@@ -1,5 +1,6 @@
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { ClientsStrip } from "@/components/ClientsStrip";
 import { ShieldCheck, TrendingUp, Users, Award, Building2, HeartHandshake, Download } from "lucide-react";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { aboutPageSchema, breadcrumbSchema } from "@/lib/schema";
@@ -24,7 +25,7 @@ export default function WhyPlaces() {
     {
       icon: Award,
       title: "Premium Network",
-      desc: "Direct partnerships with top developers including SODIC, Emaar, and Al Futtaim.",
+      desc: "Trusted by leading companies like talabat, Henkel, Bosch, and ACWA Power, backed by deep market relationships.",
     },
     {
       icon: Building2,
@@ -148,8 +149,11 @@ export default function WhyPlaces() {
         </div>
       </section>
 
+      {/* Our Customers — same client logo wall as the homepage */}
+      <ClientsStrip />
+
       {/* Values Grid */}
-      <section className="pt-10 pb-12">
+      <section className="pt-2 pb-12">
         <div className="container mx-auto px-4">
           <div className="text-center mb-10">
             <a
@@ -172,19 +176,19 @@ export default function WhyPlaces() {
             </h2>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
             {values.map((value, i) => (
               <div
                 key={i}
-                className="bg-background p-8 rounded-xl border border-border/60 hover:shadow-lg hover:border-accent/50 transition-all duration-300 group"
+                className="bg-background p-5 rounded-xl border border-border/60 hover:shadow-lg hover:border-accent/50 transition-all duration-300 group"
               >
-                <div className="w-14 h-14 bg-primary/5 rounded-full flex items-center justify-center mb-6 group-hover:bg-primary group-hover:text-white transition-colors text-primary">
-                  <value.icon className="w-7 h-7" />
+                <div className="w-11 h-11 bg-primary/5 rounded-full flex items-center justify-center mb-4 group-hover:bg-primary group-hover:text-white transition-colors text-primary">
+                  <value.icon className="w-5 h-5" />
                 </div>
-                <h3 className="text-xl font-serif font-bold mb-3 text-primary">
+                <h3 className="text-lg font-serif font-bold mb-2 text-primary">
                   {value.title}
                 </h3>
-                <p className="text-muted-foreground leading-relaxed">{value.desc}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">{value.desc}</p>
               </div>
             ))}
           </div>

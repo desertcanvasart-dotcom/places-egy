@@ -108,10 +108,10 @@ export function Navbar() {
                 </NavigationMenuContent>
               </NavigationMenuItem>
 
-              {/* Why PLACES */}
+              {/* About */}
               <NavigationMenuItem>
                 <Link href="/why-places" className={cn(navigationMenuTriggerStyle(), "bg-transparent text-base text-white hover:text-accent hover:bg-white/10 transition-colors px-3.5", isActive("/why-places") && "text-accent font-medium")}>
-                  Why PLACES
+                  About
                 </Link>
               </NavigationMenuItem>
 
@@ -217,8 +217,8 @@ export function Navbar() {
             )}
           </div>
 
-          {/* Why PLACES (flat) */}
-          <Link href="/why-places" onClick={closeMobile} className="text-lg font-medium py-3 border-b border-white/10 hover:text-accent">Why PLACES</Link>
+          {/* About (flat) */}
+          <Link href="/why-places" onClick={closeMobile} className="text-lg font-medium py-3 border-b border-white/10 hover:text-accent">About</Link>
 
           {/* Resources (expandable) */}
           <div className="border-b border-white/10">

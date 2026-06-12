@@ -97,6 +97,21 @@
   100% { transform: translateX(-50%); }
 }
 
+/* Slow diagonal sheen drifting across the Deal Announcement strip — drives the
+   'alive' look. Gated by motion-safe in the component so reduced-motion users
+   never see it. */
+@keyframes dealSweep {
+  0% { background-position: 150% 0; }
+  100% { background-position: -150% 0; }
+}
+
+/* Gentle zoom pulse on the Deal Announcement SQM figure — a subtle breathing
+   scale to draw the eye without a count-up. motion-safe gated in the component. */
+@keyframes dealPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
 /* Custom Utilities for Polish */
 @layer utilities {
   .text-balance {

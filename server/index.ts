@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import helmet from "helmet";
 import { registerRoutes } from "./routes";
 import { registerRedirects } from "./redirects";
+import { registerListingRedirects } from "./listing-redirect";
 import { apiLimiter } from "./rate-limit";
 import { serveStatic } from "./static";
 import { createServer } from "http";
@@ -131,6 +132,11 @@ app.use((req, res, next) => {
 
     return res.status(status).json({ message });
   });
+
+  // 301 retired listings to /listings before the static/SPA catch-all serves
+  // their (now stale) prerendered HTML. Must come after API routes and before
+  // serveStatic so it can intercept /listings/{id}-{slug} requests.
+  registerListingRedirects(app);
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route

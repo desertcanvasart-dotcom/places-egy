@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -66,11 +66,47 @@ function getInitialQuery(): string {
   return new URLSearchParams(window.location.search).get("q") ?? "";
 }
 
+const LISTINGS_CANONICAL = "https://places-egy.com/listings";
+
+// Faceted-navigation SEO: filtered/search views of /listings (any ?query) are
+// near-infinite low-value URL variations and render an empty "no matches" state
+// when a filter has no results — which Google reports as soft 404s. We mark any
+// filtered view noindex,follow and canonicalize it to the clean /listings page,
+// so only /listings itself is indexed. The clean page gets a self-canonical.
+function useListingsIndexability() {
+  useEffect(() => {
+    const hasParams = typeof window !== "undefined" && window.location.search.length > 1;
+
+    let robots = document.head.querySelector<HTMLMetaElement>('meta[name="robots"]');
+    if (!robots) {
+      robots = document.createElement("meta");
+      robots.setAttribute("name", "robots");
+      document.head.appendChild(robots);
+    }
+    robots.setAttribute("content", hasParams ? "noindex,follow" : "index,follow");
+
+    let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    if (!canonical) {
+      canonical = document.createElement("link");
+      canonical.setAttribute("rel", "canonical");
+      document.head.appendChild(canonical);
+    }
+    canonical.setAttribute("href", LISTINGS_CANONICAL);
+
+    return () => {
+      // Restore indexability when leaving so the next page isn't left noindexed.
+      robots?.setAttribute("content", "index,follow");
+    };
+  }, []);
+}
+
 export default function ListingsPage() {
   const [filters, setFilters] = useState<Filters>(getInitialFilters);
   const [searchQuery, setSearchQuery] = useState(getInitialQuery);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+
+  useListingsIndexability();
 
   const { data: listings = [], isLoading, error } = useQuery<Listing[]>({
     queryKey: ["listings"],

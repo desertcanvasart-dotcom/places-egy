@@ -2,10 +2,11 @@ import { Link } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Phone, MessageCircle, MapPin, Mail } from "lucide-react";
+import { Phone, MessageCircle, MapPin, Mail, CalendarDays } from "lucide-react";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema, contactPageSchema } from "@/lib/schema";
 import { trackEvent } from "@/lib/analytics";
+import { openCalendly } from "@/lib/calendly";
 
 const PHONE = "01063618217";
 
@@ -64,6 +65,12 @@ export default function Contact() {
                     <MessageCircle className="w-4 h-4 mr-2" /> WhatsApp
                   </Button>
                 </a>
+                <Button
+                  onClick={() => openCalendly("contact_page")}
+                  className="w-full h-12 bg-accent hover:bg-accent/90 text-accent-foreground"
+                >
+                  <CalendarDays className="w-4 h-4 mr-2" /> Book a Meeting
+                </Button>
               </div>
             </div>
 

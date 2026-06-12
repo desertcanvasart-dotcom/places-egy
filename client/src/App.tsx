@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CookieBanner } from "@/components/CookieBanner";
 import { MobileBottomBar } from "@/components/layout/MobileBottomBar";
+import { BookMeetingFloat } from "@/components/BookMeetingFloat";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { organizationSchema, websiteSchema } from "@/lib/schema";
 
@@ -239,6 +240,7 @@ function App() {
         <PageViewTracker />
         <Router />
         <MobileBottomBar />
+        <BookMeetingFloat />
         <CookieBanner />
       </TooltipProvider>
     </QueryClientProvider>
