@@ -48,8 +48,19 @@ export function DealAnnouncement({
   return (
     <section
       aria-label={`Latest closed deal: ${sqmLabel} square metres leased to ${clientName} in ${location}`}
-      className="group relative overflow-hidden rounded-2xl border border-[#ECE7D8]/10 bg-[#16161A] text-[#ECE7D8] shadow-lg shadow-black/20 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-700"
+      className="group relative overflow-hidden rounded-2xl border border-[#ECE7D8]/10 bg-[#16161A] text-[#ECE7D8] shadow-lg shadow-black/20 motion-safe:animate-[dealBreathe_3s_ease-in-out_infinite] motion-safe:will-change-transform"
     >
+      {/* Animated coral hue — a soft radial wash that drifts/pulses behind the
+          content, giving the dark banner a living glow. motion-safe gated. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 motion-safe:animate-[dealHue_6s_ease-in-out_infinite]"
+        style={{
+          background:
+            "radial-gradient(120% 140% at 20% 0%, rgba(232,64,74,0.22), transparent 55%)",
+        }}
+      />
+
       {/* Subtle grain over the charcoal, echoing the deck slides. */}
       <div
         aria-hidden
@@ -118,7 +129,7 @@ export function DealAnnouncement({
             {/* Static number with a gentle zoom pulse to draw the eye, instead
                 of a count-up. inline-block so the scale transform applies; gated
                 by motion-safe for reduced-motion users. */}
-            <span className="inline-block origin-left font-serif text-4xl font-bold leading-none tracking-tight text-[#ECE7D8] motion-safe:animate-[dealPulse_2.8s_ease-in-out_infinite] md:text-5xl">
+            <span className="font-serif text-4xl font-bold leading-none tracking-tight text-[#ECE7D8] md:text-5xl">
               {sqmLabel}
             </span>
             <span className="text-[10px] font-bold uppercase leading-tight tracking-[0.2em] text-[#ECE7D8]/55">

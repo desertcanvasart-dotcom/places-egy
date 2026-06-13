@@ -105,11 +105,18 @@
   100% { background-position: -150% 0; }
 }
 
-/* Gentle zoom pulse on the Deal Announcement SQM figure — a subtle breathing
-   scale to draw the eye without a count-up. motion-safe gated in the component. */
-@keyframes dealPulse {
+/* Gentle breathing zoom on the WHOLE Deal Announcement banner — a slow in/out
+   scale so the entire element subtly pulses to draw the eye. motion-safe gated. */
+@keyframes dealBreathe {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.06); }
+  50% { transform: scale(1.03); }
+}
+
+/* Living coral hue behind the banner content — a soft drift + opacity pulse of
+   the radial glow so the dark surface feels alive. motion-safe gated. */
+@keyframes dealHue {
+  0%, 100% { opacity: 0.7; transform: translateX(0); }
+  50% { opacity: 1; transform: translateX(6%); }
 }
 
 /* Custom Utilities for Polish */
