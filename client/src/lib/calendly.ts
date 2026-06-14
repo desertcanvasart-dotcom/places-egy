@@ -1,11 +1,8 @@
 import { trackEvent } from "@/lib/analytics";
 
-// PLACEHOLDER — replace with the real PLACES Calendly link once it exists.
-// Get it from Calendly → your event type → "Copy Link". It looks like:
-//   https://calendly.com/places-egy/consultation
-// For now this points at Calendly's public demo event so the popup actually
-// shows a working scheduler when testing the buttons.
-export const CALENDLY_URL = "https://calendly.com/d/cmt-x4k-fkm/30-minute-meeting";
+// The PLACES Calendly booking link. Used by every "Book a meeting" CTA across
+// the site (contact page, mobile bottom bar, desktop float).
+export const CALENDLY_URL = "https://calendly.com/places-egy-info/30min";
 
 const WIDGET_CSS = "https://assets.calendly.com/assets/external/widget.css";
 const WIDGET_JS = "https://assets.calendly.com/assets/external/widget.js";
