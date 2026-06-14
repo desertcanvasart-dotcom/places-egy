@@ -395,7 +395,7 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
                       value={`${listing.price_per_meter.toLocaleString()} ${listingCurrency(listing)}`}
                     />
                   )}
-                  {listing.maintenance_fees != null && (
+                  {listing.maintenance_fees != null && listing.maintenance_status !== "included" && (
                     <DetailRow
                       icon={Building2}
                       label="Maintenance Fees"

@@ -242,7 +242,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
                 <DetailBlock icon={Maximize} label="Area" value={listing.area_sqm ? `${listing.area_sqm} m²` : null} />
                 {listing.price_per_meter != null && <DetailBlock icon={Building2} label="Price/m²" value={`${listing.price_per_meter.toLocaleString()} ${listingCurrency(listing)}`} />}
                 <DetailBlock icon={Building2} label="Handover condition" value={getEnumLabel(FURNISHING_OPTIONS, listing.furnishing)} />
-                {listing.maintenance_fees != null && <DetailBlock icon={Building2} label="Maintenance Fees" value={`${listing.maintenance_fees.toLocaleString()} ${listingCurrency(listing)}`} />}
+                {listing.maintenance_fees != null && listing.maintenance_status !== "included" && <DetailBlock icon={Building2} label="Maintenance Fees" value={`${listing.maintenance_fees.toLocaleString()} ${listingCurrency(listing)}`} />}
                 {listing.maintenance_status && <DetailBlock icon={Building2} label="Maintenance" value={getEnumLabel(MAINTENANCE_STATUS_OPTIONS, listing.maintenance_status)} />}
                 {listing.floor != null && <DetailBlock icon={Building2} label="Floor" value={listing.floor} />}
                 {listing.delivery_date && <DetailBlock icon={Calendar} label="Delivery date" value={listing.delivery_date} />}
@@ -484,7 +484,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
               <DetailBlock icon={Maximize} label="Area" value={listing.area_sqm ? `${listing.area_sqm} m²` : null} />
               {listing.price_per_meter != null && <DetailBlock icon={Building2} label="Price/m²" value={`${listing.price_per_meter.toLocaleString()} ${listingCurrency(listing)}`} />}
               <DetailBlock icon={Building2} label="Handover condition" value={getEnumLabel(FURNISHING_OPTIONS, listing.furnishing)} />
-              {listing.maintenance_fees != null && <DetailBlock icon={Building2} label="Maintenance Fees" value={`${listing.maintenance_fees.toLocaleString()} ${listingCurrency(listing)}`} />}
+              {listing.maintenance_fees != null && listing.maintenance_status !== "included" && <DetailBlock icon={Building2} label="Maintenance Fees" value={`${listing.maintenance_fees.toLocaleString()} ${listingCurrency(listing)}`} />}
               {listing.maintenance_status && <DetailBlock icon={Building2} label="Maintenance" value={getEnumLabel(MAINTENANCE_STATUS_OPTIONS, listing.maintenance_status)} />}
               {listing.floor != null && <DetailBlock icon={Building2} label="Floor" value={listing.floor} />}
               {listing.delivery_date && <DetailBlock icon={Calendar} label="Delivery date" value={listing.delivery_date} />}

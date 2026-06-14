@@ -87,18 +87,31 @@ function DealDialog({
 
   const saveMutation = useMutation({
     mutationFn: async (data: DealForm) => {
-      const { id, ...rest } = data;
-      if (id) {
-        await adminFetch(`/api/admin/deals/${id}`, {
+      // Send ONLY the columns the server's strict schema accepts — never the
+      // id/created_at (or any other stray key), which a .strict() schema rejects
+      // with a 400. The edit path loads the full DB row (incl. created_at), so
+      // explicit whitelisting here is what keeps saves working.
+      const payload = {
+        client_name: data.client_name,
+        client_logo: data.client_logo || null,
+        sqm: data.sqm,
+        location: data.location || null,
+        space_type: data.space_type || null,
+        lease_format: data.lease_format || null,
+        is_active: data.is_active,
+        sort_order: data.sort_order ?? 0,
+      };
+      if (data.id) {
+        await adminFetch(`/api/admin/deals/${data.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(rest),
+          body: JSON.stringify(payload),
         });
       } else {
         await adminFetch(`/api/admin/deals`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(rest),
+          body: JSON.stringify(payload),
         });
       }
     },
@@ -107,7 +120,10 @@ function DealDialog({
       queryClient.invalidateQueries({ queryKey: ["deals"] });
       onClose();
     },
-    onError: (e: Error) => console.error("Save deal failed:", e),
+    onError: (e: Error) => {
+      console.error("Save deal failed:", e);
+      window.alert(`Could not save the deal: ${e.message}`);
+    },
   });
 
   const uploadLogo = async (file: File) => {
