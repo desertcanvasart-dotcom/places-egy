@@ -47,6 +47,7 @@ const SodicPage = lazy(() => import("@/pages/developers/sodic"));
 const TheWaterwayPage = lazy(() => import("@/pages/developers/the-waterway"));
 const MarakezPage = lazy(() => import("@/pages/developers/marakez"));
 const ImkanMisrPage = lazy(() => import("@/pages/developers/imkan-misr"));
+const MisrItaliaPage = lazy(() => import("@/pages/developers/misr-italia"));
 const TheArkDevelopmentsPage = lazy(() => import("@/pages/developers/the-ark-developments"));
 const KvrdPage = lazy(() => import("@/pages/developers/kvrd"));
 const PreDevelopmentsPage = lazy(() => import("@/pages/developers/pre-developments"));
@@ -181,6 +182,7 @@ function Router() {
       <Route path="/developers/the-waterway" component={TheWaterwayPage} />
       <Route path="/developers/marakez" component={MarakezPage} />
       <Route path="/developers/imkan-misr" component={ImkanMisrPage} />
+      <Route path="/developers/misr-italia" component={MisrItaliaPage} />
       <Route path="/developers/the-ark-developments" component={TheArkDevelopmentsPage} />
       <Route path="/developers/kvrd" component={KvrdPage} />
       <Route path="/developers/pre-developments" component={PreDevelopmentsPage} />

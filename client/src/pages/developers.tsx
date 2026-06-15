@@ -162,6 +162,12 @@ const DEVELOPERS: { name: string; logo: string; desc: string; slug?: string; log
     logoClass: "scale-125 origin-left",
   },
   {
+    name: "Misr Italia",
+    logo: "/images/Misritalia_logoo.png",
+    desc: "Leading Egyptian developer behind Cairo Business Park — Grade A administrative offices on North 90th Street, New Cairo.",
+    slug: "misr-italia",
+  },
+  {
     name: "The Ark Developments",
     logo: "/images/the-ark-developments-logo.png",
     desc: "Coalition-backed developer behind The Ark Business District — a 92-acre integrated commercial destination on South 90 Street in New Cairo.",

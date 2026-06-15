@@ -235,7 +235,7 @@ export const PROJECTS: Project[] = [
   { name: "South Gate", type: "mixed-use", location: "New Cairo · South 90 Street", developer: "wealth", image: "/images/mixed-use.jpg" },
 
   // ─── Misr Italia ─────────────────────────────────────────────────
-  { name: "Cairo Business Park", type: "business-park", location: "New Cairo · North 90 Street", developer: "misr-italia", image: "/images/business-park.jpg" },
+  { name: "Cairo Business Park", type: "business-park", location: "New Cairo · North 90 Street", developer: "misr-italia", image: "/images/cairo-business-park.webp" },
 ];
 
 export function getProjectsByDeveloper(developerSlug: string): Project[] {

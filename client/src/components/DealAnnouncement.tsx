@@ -143,11 +143,14 @@ export function DealAnnouncement({
         {/* Hairline divider between the metric and the supporting detail. */}
         <div aria-hidden className="hidden h-10 w-px bg-[#ECE7D8]/15 md:block" />
 
-        {/* Three category-encoded tags. */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          <DealTag category="Location" value={location} variant="outline" icon={<MapPin className="h-3 w-3" />} />
-          <DealTag category="Space Type" value={spaceType} variant="filled" />
-          <DealTag category="Term" value={leaseFormat} variant="outline" />
+        {/* Category-encoded tags in two rows: Space Type + Term on top (equal
+            width), Location spanning the full width below them. */}
+        <div className="flex flex-col gap-2.5">
+          <div className="flex gap-2.5">
+            <DealTag category="Space Type" value={spaceType} variant="filled" className="flex-1" />
+            <DealTag category="Term" value={leaseFormat} variant="outline" className="flex-1" />
+          </div>
+          <DealTag category="Location" value={location} variant="outline" icon={<MapPin className="h-3 w-3" />} className="w-full" />
         </div>
 
         {/* Client logo — sign-off, sits close to the tags. Right padding keeps
@@ -173,11 +176,13 @@ function DealTag({
   value,
   variant,
   icon,
+  className = "",
 }: {
   category: string;
   value: string;
   variant: "filled" | "outline";
   icon?: React.ReactNode;
+  className?: string;
 }) {
   const skin =
     variant === "filled"
@@ -188,7 +193,7 @@ function DealTag({
   if (!value) return null;
 
   return (
-    <div className={`flex flex-col gap-0.5 rounded-lg px-3 py-1.5 ${skin}`}>
+    <div className={`flex flex-col gap-0.5 rounded-lg px-3 py-1.5 ${skin} ${className}`}>
       <span className={`text-[9px] font-bold uppercase tracking-[0.18em] ${labelTone}`}>
         {category}
       </span>
