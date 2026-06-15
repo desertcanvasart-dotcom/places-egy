@@ -31,7 +31,6 @@ const CLIENTS: { name: string; logo: string }[] = [
   { name: "BTC", logo: "/images/clients/btc.png" },
   { name: "Bupa", logo: "/images/clients/bupa.png" },
   { name: "Business Square", logo: "/images/clients/business-square.png" },
-  { name: "Crédit Agricole", logo: "/images/clients/ca.png" },
   { name: "Cairo Heights 2", logo: "/images/clients/cairo-heights-2.png" },
   { name: "Cairo Heights", logo: "/images/clients/cairo-heights.png" },
   { name: "Chain Reaction 2", logo: "/images/clients/chain-reaction-2.png" },

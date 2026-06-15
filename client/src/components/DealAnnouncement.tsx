@@ -153,13 +153,13 @@ export function DealAnnouncement({
         {/* Client logo — sign-off, sits close to the tags. Right padding keeps
             it clear of the diagonal JUST CLOSED ribbon in the top-right corner. */}
         {clientLogo && (
-          <div className="flex shrink-0 items-center md:border-l md:border-[#ECE7D8]/15 md:pl-6 md:pr-10">
+          <div className="flex shrink-0 items-center md:border-l md:border-[#ECE7D8]/15 md:pl-4 md:pr-10">
             <img
               src={clientLogo}
               alt={`${clientName} logo`}
               loading="lazy"
               decoding="async"
-              className="h-11 w-auto max-w-[190px] object-contain opacity-95 brightness-0 invert md:h-14"
+              className="h-14 w-auto max-w-[220px] object-contain opacity-95 brightness-0 invert md:h-16"
             />
           </div>
         )}
