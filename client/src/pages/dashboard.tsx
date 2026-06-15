@@ -246,6 +246,7 @@ function ListingFormDialog({
   const uploadImages = async (files: FileList) => {
     setUploading(true);
     const newUrls: string[] = [];
+    const failed: string[] = [];
     for (const file of Array.from(files)) {
       const fd = new FormData();
       fd.append("file", file);
@@ -257,10 +258,19 @@ function ListingFormDialog({
         if (publicUrl) newUrls.push(publicUrl);
       } catch (err) {
         console.error("Upload failed:", err);
+        failed.push(file.name);
       }
     }
     set("images", [...(form.images || []), ...newUrls]);
     setUploading(false);
+    // Don't let failed uploads vanish silently — tell the admin which ones and
+    // why, so a rate-limit/size error is visible instead of looking like a cap.
+    if (failed.length) {
+      window.alert(
+        `${failed.length} image(s) failed to upload: ${failed.join(", ")}. ` +
+          `Please try those again.`,
+      );
+    }
   };
 
   const removeImage = (index: number) => {

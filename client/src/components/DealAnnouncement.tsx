@@ -144,21 +144,22 @@ export function DealAnnouncement({
         <div aria-hidden className="hidden h-10 w-px bg-[#ECE7D8]/15 md:block" />
 
         {/* Three category-encoded tags. */}
-        <div className="flex flex-1 flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
           <DealTag category="Location" value={location} variant="outline" icon={<MapPin className="h-3 w-3" />} />
           <DealTag category="Space Type" value={spaceType} variant="filled" />
           <DealTag category="Term" value={leaseFormat} variant="outline" />
         </div>
 
-        {/* Client logo — sign-off, pinned to the end. */}
+        {/* Client logo — sign-off, sits close to the tags. Right padding keeps
+            it clear of the diagonal JUST CLOSED ribbon in the top-right corner. */}
         {clientLogo && (
-          <div className="flex shrink-0 items-center md:justify-end md:border-l md:border-[#ECE7D8]/15 md:pl-8">
+          <div className="flex shrink-0 items-center md:border-l md:border-[#ECE7D8]/15 md:pl-6 md:pr-10">
             <img
               src={clientLogo}
               alt={`${clientName} logo`}
               loading="lazy"
               decoding="async"
-              className="h-8 w-auto max-w-[150px] object-contain opacity-90 brightness-0 invert md:h-9"
+              className="h-11 w-auto max-w-[190px] object-contain opacity-95 brightness-0 invert md:h-14"
             />
           </div>
         )}

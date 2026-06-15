@@ -4,7 +4,7 @@ import multer from "multer";
 import { storage } from "./storage";
 import { supabaseAdmin } from "./supabase";
 import { requireAdmin } from "./admin-auth";
-import { strictLimiter } from "./rate-limit";
+import { strictLimiter, uploadLimiter } from "./rate-limit";
 import { listingInsertSchema, listingUpdateSchema } from "./listing-schema";
 import { dealInsertSchema, dealUpdateSchema } from "./deal-schema";
 
@@ -290,7 +290,7 @@ export async function registerRoutes(
 
   app.post(
     "/api/admin/listings-images",
-    strictLimiter,
+    uploadLimiter,
     requireAdmin,
     upload.single("file"),
     async (req: Request, res: Response) => {
