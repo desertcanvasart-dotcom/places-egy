@@ -250,7 +250,7 @@ export function DealsManager() {
     <div>
       <div className="flex items-center justify-between mb-5">
         <p className="text-sm text-muted-foreground">
-          Up to the top 3 active deals (by sort order) appear in the homepage carousel.
+          Up to the top 20 active deals (by sort order) appear in the homepage carousel.
         </p>
         <Button onClick={() => { setEditDeal(null); setFormOpen(true); }} className="bg-accent hover:bg-accent/90 text-white">
           <Plus className="w-4 h-4 mr-2" /> Add Deal

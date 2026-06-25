@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DealAnnouncement } from "@/components/DealAnnouncement";
 import type { Deal } from "@/lib/deals";
 
-// Homepage carousel of the latest closed deals. Fetches up to 3 active deals
+// Homepage carousel of the latest closed deals. Fetches up to 20 active deals
 // from /api/deals (managed in the admin dashboard) and renders each as a
 // DealAnnouncement slide. With one deal it's a static banner; with 2–3 it
 // becomes a swipeable/auto-advancing carousel. Renders nothing when there are
@@ -82,20 +82,36 @@ export function DealAnnouncementCarousel() {
             <ChevronRight className="h-4 w-4" />
           </button>
 
-          {/* Dots — bottom-center of the strip. */}
+          {/* Position indicator — bottom-center. For a handful of deals it's a
+              simple dot row; once there are many, it becomes a windowed set of
+              dots (active + neighbours, edge dots shrink to hint "more") plus a
+              "N / total" counter, so 20 deals never turn into 20 cluttered dots. */}
           <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2">
-            {deals.map((deal, i) => (
-              <button
-                key={deal.id}
-                type="button"
-                onClick={() => go(i)}
-                aria-label={`Go to deal ${i + 1}`}
-                aria-current={i === index}
-                className={`h-1.5 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                  i === index ? "w-5 bg-accent" : "w-1.5 bg-[#ECE7D8]/40 hover:bg-[#ECE7D8]/70"
-                }`}
-              />
-            ))}
+            <div className="flex items-center gap-1.5">
+              {deals.map((deal, i) => {
+                const distance = Math.abs(i - index);
+                // With >5 deals, only render dots within 2 of the active one.
+                if (count > 5 && distance > 2) return null;
+                // Edge dots of the window shrink to signal there's more.
+                const size =
+                  i === index ? "w-5 bg-accent" : distance >= 2 && count > 5 ? "w-1 bg-[#ECE7D8]/30" : "w-1.5 bg-[#ECE7D8]/40 hover:bg-[#ECE7D8]/70";
+                return (
+                  <button
+                    key={deal.id}
+                    type="button"
+                    onClick={() => go(i)}
+                    aria-label={`Go to deal ${i + 1}`}
+                    aria-current={i === index}
+                    className={`h-1.5 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${size}`}
+                  />
+                );
+              })}
+            </div>
+            {count > 5 && (
+              <span className="text-[10px] font-bold tabular-nums tracking-wide text-[#ECE7D8]/60">
+                {index + 1} / {count}
+              </span>
+            )}
           </div>
         </>
       )}

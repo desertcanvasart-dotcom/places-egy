@@ -110,7 +110,7 @@ export async function registerRoutes(
       .eq("is_active", true)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false })
-      .limit(3);
+      .limit(20);
     if (error) return res.status(500).json({ message: error.message });
     res.json(data ?? []);
   });

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "wouter";
 import { type Listing } from "@/lib/supabase";
 import { DEVELOPER_OPTIONS, FURNISHING_OPTIONS, MAINTENANCE_STATUS_OPTIONS, getEnumLabel } from "@/lib/enums";
@@ -65,16 +65,36 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
     });
   }, [modalOpen, modalImage, images, hasMultiple]);
 
+  const goPrev = () => setCurrent((c) => (c === 0 ? images.length - 1 : c - 1));
+  const goNext = () => setCurrent((c) => (c === images.length - 1 ? 0 : c + 1));
+
   const prev = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setCurrent((c) => (c === 0 ? images.length - 1 : c - 1));
+    goPrev();
   };
 
   const next = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setCurrent((c) => (c === images.length - 1 ? 0 : c + 1));
+    goNext();
+  };
+
+  // Touch-swipe for mobile: the prev/next arrows are hover-only (no hover on
+  // touch devices), so let users swipe the image directly to change it.
+  const touchStartX = useRef<number | null>(null);
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    // Ignore tiny moves (taps); a clear horizontal swipe changes the image.
+    if (Math.abs(dx) > 40) {
+      if (dx < 0) goNext();
+      else goPrev();
+    }
+    touchStartX.current = null;
   };
 
   const whatsappMessage = encodeURIComponent(`Hi, I'm interested in the ${listing.title} listing on PLACES.`);
@@ -266,7 +286,11 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
     <>
       <Card className="group overflow-hidden border-border/50 hover:shadow-[0_12px_32px_-12px_rgba(232,64,74,0.18)] hover:-translate-y-0.5 transition-all duration-300 bg-[#FDFBF8]">
         {/* Image Carousel */}
-        <div className="relative aspect-[16/10] overflow-hidden">
+        <div
+          className="relative aspect-[16/10] overflow-hidden"
+          onTouchStart={hasMultiple ? handleTouchStart : undefined}
+          onTouchEnd={hasMultiple ? handleTouchEnd : undefined}
+        >
           <img
             src={supabaseImage(images[current], "card")}
             onError={supabaseImageOnError(images[current])}
