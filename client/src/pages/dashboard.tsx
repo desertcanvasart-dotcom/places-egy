@@ -149,25 +149,41 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
   );
 }
 
+// Sentinel for the "no selection" item — Radix Select forbids an empty-string
+// value, so we map this back to "" in onChange.
+const NONE_VALUE = "__none__";
+
 function SelectField({
   label,
   value,
   options,
   onChange,
+  clearable = false,
 }: {
   label: string;
   value: string;
   options: EnumOption[];
   onChange: (v: string) => void;
+  // When true, adds a "— None —" option so the field can be left/returned blank
+  // (e.g. Developer is optional on a listing).
+  clearable?: boolean;
 }) {
   return (
     <div className="space-y-1.5">
       <Label className="text-sm font-medium text-primary">{label}</Label>
-      <Select value={value} onValueChange={onChange}>
+      <Select
+        value={value || (clearable ? NONE_VALUE : "")}
+        onValueChange={(v) => onChange(v === NONE_VALUE ? "" : v)}
+      >
         <SelectTrigger className="bg-white">
           <SelectValue placeholder={`Select ${label.toLowerCase()}`} />
         </SelectTrigger>
         <SelectContent className="max-h-72 overflow-y-auto">
+          {clearable && (
+            <SelectItem value={NONE_VALUE}>
+              <span className="text-muted-foreground">— None —</span>
+            </SelectItem>
+          )}
           {options.map((opt) => (
             <SelectItem key={opt.value} value={opt.value}>
               {opt.label}
@@ -303,7 +319,7 @@ function ListingFormDialog({
 
             <SelectField label="Subtype" value={form.subtype} options={ENUM_OPTIONS.subtype} onChange={(v) => set("subtype", v)} />
             <SelectField label="Transaction Type" value={form.transaction_type} options={ENUM_OPTIONS.transaction_type} onChange={(v) => set("transaction_type", v)} />
-            <SelectField label="Developer" value={form.developer} options={ENUM_OPTIONS.developer} onChange={(v) => set("developer", v)} />
+            <SelectField label="Developer (optional)" value={form.developer} options={ENUM_OPTIONS.developer} onChange={(v) => set("developer", v)} clearable />
             <SelectField label="Location" value={form.location} options={ENUM_OPTIONS.location} onChange={(v) => set("location", v)} />
             <div className="space-y-1.5">
               <Label className="text-sm font-medium text-primary">Location Area</Label>

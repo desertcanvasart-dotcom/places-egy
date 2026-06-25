@@ -347,9 +347,13 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
         {/* Content */}
         <CardHeader className="p-4 pb-1.5">
           <div className="flex justify-between items-start gap-2 mb-2">
-            <div className="text-xs font-semibold text-accent uppercase tracking-wide">
-              {getEnumLabel(DEVELOPER_OPTIONS, listing.developer)}
-            </div>
+            {listing.developer ? (
+              <div className="text-xs font-semibold text-accent uppercase tracking-wide">
+                {getEnumLabel(DEVELOPER_OPTIONS, listing.developer)}
+              </div>
+            ) : (
+              <span />
+            )}
             {!hideSubtype && (
               <span className="text-[10px] font-bold uppercase tracking-wider text-primary/60 bg-primary/5 border border-primary/10 px-2.5 py-1 rounded-full">
                 {formatLabel(listing.subtype)}
