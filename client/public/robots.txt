@@ -7,4 +7,22 @@ Disallow: /dashboard
 # clean /listings page stay fully crawlable.
 Disallow: /listings?q=
 
+# AI / LLM crawlers — explicitly welcomed so PLACES content can be surfaced and
+# cited in AI search (ChatGPT, Perplexity, Google AI Overviews, Claude, etc.).
+# They get the same access as general crawlers; only /dashboard stays private.
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-Web
+User-agent: anthropic-ai
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: CCBot
+Allow: /
+Disallow: /dashboard
+Disallow: /listings?q=
+
 Sitemap: https://places-egy.com/sitemap.xml
