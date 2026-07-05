@@ -2,7 +2,14 @@
 cmds = ["npm install --include=dev"]
 
 [phases.build]
-cmds = ["npm run build"]
+# rm -rf dist BEFORE the build script runs. Our own script/build.ts already
+# does `rm dist` internally, but Railway's build cache can restore stale
+# dist/ contents AFTER the container starts (before our script runs), and
+# some layer merging then puts old files back that our new build doesn't
+# overwrite (e.g. dist/public/listings.html left over from a previous deploy
+# that has since been superseded by dist/public/listings/index.html). An
+# explicit wipe here defeats that.
+cmds = ["rm -rf dist", "npm run build"]
 
 [start]
 cmd = "npm start"
