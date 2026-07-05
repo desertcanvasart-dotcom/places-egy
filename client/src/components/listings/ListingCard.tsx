@@ -321,7 +321,9 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
 
           {hasMultiple && (
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-              {images.map((_, i) => (
+              {/* Cap dots at 12 to avoid a crowded row on listings with many
+                  images. Users can still page past image #12 via the ‹ › arrows. */}
+              {images.slice(0, 12).map((_, i) => (
                 <button
                   key={i}
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCurrent(i); }}
