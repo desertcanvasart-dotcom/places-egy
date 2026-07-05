@@ -23,6 +23,7 @@ import ts from "typescript";
 
 const SITE = "https://places-egy.com";
 const DEV_PAGES_DIR = path.resolve(process.cwd(), "client/src/pages/developers");
+const FAQ_SOURCE = path.resolve(process.cwd(), "client/src/lib/faq.ts");
 const DIST = path.resolve(process.cwd(), "dist/public");
 
 // Static (non-developer, non-listing) routes that need per-page meta. Keep in
@@ -167,6 +168,65 @@ const STATIC_ROUTES: RouteMeta[] = [
       "A high-traffic commercial corridor in east Cairo — strategically positioned on Nasr Road between Heliopolis and Nasr City, minutes from Cairo International Airport and connected to all major Cairo arteries.",
     url: `${SITE}/locations/sheraton`,
   },
+  // Admin subtype landing pages
+  {
+    route: "/admin",
+    title: "Admin Offices in Egypt — Business Parks, Buildings & Mixed-Use | PLACES",
+    description:
+      "Administrative offices, business parks, and mixed-use developments across Cairo's main business districts. Built for HQs, growing teams, multinationals, and investors.",
+    url: `${SITE}/admin`,
+  },
+  {
+    route: "/admin/business-park",
+    title: "Business Park Offices in Cairo — Campus-Scale Office Space | PLACES",
+    description:
+      "Business parks in Egypt — campus-scale office developments with parking, room to grow, and shared amenities. Suited for large corporates, regional HQs, and companies expanding beyond a single floor.",
+    url: `${SITE}/admin/business-park`,
+  },
+  {
+    route: "/admin/business-building",
+    title: "Business Building Offices in Cairo — Standalone Admin Buildings | PLACES",
+    description:
+      "Standalone administrative buildings in Cairo's main business districts. Built for HQs, regional offices, law firms, and any company where the address is part of the pitch.",
+    url: `${SITE}/admin/business-building`,
+  },
+  {
+    route: "/admin/mixed-use",
+    title: "Mixed-Use Office Space in Cairo — Offices Above Retail & F&B | PLACES",
+    description:
+      "Office units within mixed-use developments across Cairo — administrative space sitting above active retail, F&B, and community amenities. Convenience-driven addresses for growing teams.",
+    url: `${SITE}/admin/mixed-use`,
+  },
+  // Top-level indexes that weren't covered before
+  {
+    route: "/listings",
+    title: "Office Listings in Egypt — Rent or Buy Admin Office Space | PLACES",
+    description:
+      "Browse verified administrative office listings across Cairo — New Cairo, Sheikh Zayed, 6th October, Downtown, Sheraton, and Maadi. Filter by transaction type, size, developer, and location.",
+    url: `${SITE}/listings`,
+  },
+  {
+    route: "/blog",
+    title: "PLACES Insights — Egyptian Office Real Estate Market Analysis",
+    description:
+      "Market insights, investor guides, and location analysis for commercial and administrative real estate in Egypt — from the team that lives this market every day.",
+    url: `${SITE}/blog`,
+  },
+  // Legal
+  {
+    route: "/privacy-policy",
+    title: "Privacy Policy | PLACES",
+    description:
+      "How PLACES collects, uses, and protects the personal information you share when you contact us, browse listings, or engage our advisory services.",
+    url: `${SITE}/privacy-policy`,
+  },
+  {
+    route: "/terms-of-service",
+    title: "Terms of Service | PLACES",
+    description:
+      "Terms governing your use of the PLACES website, listings, and advisory services. Please read before booking a consultation or contacting our team.",
+    url: `${SITE}/terms-of-service`,
+  },
 ];
 
 export interface RouteMeta {
@@ -248,6 +308,42 @@ function extractMeta(slug: string, source: string): RouteMeta | null {
   };
 }
 
+// Extract per-section FAQ meta from client/src/lib/faq.ts. Each entry in the
+// FAQ_SECTIONS array is an object literal with id / title / intro — we map:
+//   route: `/faqs/${id}`
+//   title: `${title} — FAQs | PLACES`
+//   description: `${intro}`
+// This uses the same AST-based extraction pattern as developer pages so if
+// you edit a section's intro, the prerendered meta updates on the next build
+// automatically. Nothing to hand-write.
+export async function collectFaqSectionMeta(): Promise<RouteMeta[]> {
+  const source = await readFile(FAQ_SOURCE, "utf8");
+  const sf = ts.createSourceFile("faq.ts", source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const metas: RouteMeta[] = [];
+
+  const visit = (node: ts.Node) => {
+    // Any object literal that has BOTH `id` (string) and `intro` (string) at
+    // the top level is a FAQ section. This avoids catching subsection objects
+    // (they have `id`+`title` but no `intro`).
+    if (ts.isObjectLiteralExpression(node)) {
+      const id = getStringProp(node, "id");
+      const title = getStringProp(node, "title");
+      const intro = getStringProp(node, "intro");
+      if (id && title && intro) {
+        metas.push({
+          route: `/faqs/${id}`,
+          title: `${title} — FAQs | PLACES`,
+          description: intro,
+          url: `${SITE}/faqs/${id}`,
+        });
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sf);
+  return metas;
+}
+
 export async function collectDeveloperMeta(): Promise<RouteMeta[]> {
   const files = (await readdir(DEV_PAGES_DIR)).filter((f) => f.endsWith(".tsx"));
   const metas: RouteMeta[] = [];
@@ -317,8 +413,11 @@ export async function prerender() {
   // with what runtime useDocumentMeta renders.
   const devMetas = await collectDeveloperMeta();
 
+  // FAQ section pages — also AST-extracted from client/src/lib/faq.ts.
+  const faqMetas = await collectFaqSectionMeta();
+
   // Static pages — hardcoded above; simpler and adequate while the set is small.
-  const allMetas: RouteMeta[] = [...devMetas, ...STATIC_ROUTES];
+  const allMetas: RouteMeta[] = [...devMetas, ...faqMetas, ...STATIC_ROUTES];
 
   let written = 0;
   for (const meta of allMetas) {
@@ -332,6 +431,6 @@ export async function prerender() {
   }
 
   console.log(
-    `prerendered ${written} pages (${devMetas.length} developers + ${STATIC_ROUTES.length} static, meta-only)`,
+    `prerendered ${written} pages (${devMetas.length} developers + ${faqMetas.length} FAQ sections + ${STATIC_ROUTES.length} static, meta-only)`,
   );
 }
