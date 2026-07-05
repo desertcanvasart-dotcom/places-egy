@@ -154,16 +154,23 @@ export function DealAnnouncement({
         </div>
 
         {/* Client logo — sign-off, sits close to the tags. Right padding keeps
-            it clear of the diagonal JUST CLOSED ribbon in the top-right corner. */}
+            it clear of the diagonal JUST CLOSED ribbon in the top-right corner.
+            The inner box has a fixed width so every logo occupies the same
+            horizontal footprint regardless of the source PNG's aspect ratio —
+            a compact icon takes as much space as a wide wordmark, and no logo
+            reads as accidentally smaller than another. object-contain keeps
+            each logo's own aspect intact inside the box. */}
         {clientLogo && (
           <div className="flex shrink-0 items-center md:border-l md:border-[#ECE7D8]/15 md:pl-4 md:pr-10">
-            <img
-              src={clientLogo}
-              alt={`${clientName} logo`}
-              loading="lazy"
-              decoding="async"
-              className="h-14 w-auto max-w-[220px] object-contain opacity-95 brightness-0 invert md:h-16"
-            />
+            <div className="flex h-14 w-40 items-center justify-center md:h-16 md:w-48">
+              <img
+                src={clientLogo}
+                alt={`${clientName} logo`}
+                loading="lazy"
+                decoding="async"
+                className="max-h-full max-w-full object-contain opacity-95 brightness-0 invert"
+              />
+            </div>
           </div>
         )}
       </div>
