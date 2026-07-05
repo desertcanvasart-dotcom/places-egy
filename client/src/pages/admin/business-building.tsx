@@ -6,7 +6,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { ListingCard } from "@/components/listings/ListingCard";
 import { supabase, type Listing } from "@/lib/supabase";
-import { ArrowRight, MapPin, Building2, ChevronRight, Building, ShoppingBag, Briefcase, Scale, Landmark, Sparkles, TrendingUp, AlertTriangle, Maximize, ClipboardCheck, FileText } from "lucide-react";
+import { ArrowRight, MapPin, Building2, ChevronRight, Building, ShoppingBag, Briefcase, Scale, Landmark, Sparkles, TrendingUp, AlertTriangle, Maximize, FileText } from "lucide-react";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema, itemListSchema } from "@/lib/schema";
 import { listingUrl } from "@/lib/listings";

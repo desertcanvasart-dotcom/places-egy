@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/Navbar";
@@ -36,7 +36,7 @@ function readCategoryFromQuery(search: string): string | undefined {
 }
 
 export default function BlogIndexPage() {
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
   const search = typeof window !== "undefined" ? window.location.search : "";
   const page = readPageFromQuery(search);
   const category = readCategoryFromQuery(search);

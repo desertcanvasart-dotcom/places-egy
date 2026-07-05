@@ -2,7 +2,7 @@ import { Link } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Phone, MessageCircle, MapPin, Mail, CalendarDays } from "lucide-react";
+import { Phone, MessageCircle, CalendarDays } from "lucide-react";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema, contactPageSchema } from "@/lib/schema";
 import { trackEvent } from "@/lib/analytics";

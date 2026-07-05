@@ -8,7 +8,7 @@ import { ServicesExplorer } from "@/components/ServicesExplorer";
 import { DeveloperStrip } from "@/components/DeveloperStrip";
 import { DealAnnouncementCarousel } from "@/components/DealAnnouncementCarousel";
 import { ListingCard } from "@/components/listings/ListingCard";
-import { ArrowRight, Building2, TrendingUp, Handshake, ClipboardList, BarChart3, ShieldCheck, CheckCircle2, MapPin, Maximize2, Repeat, Coins } from "lucide-react";
+import { ArrowRight, Building2, ClipboardList, BarChart3, ShieldCheck, CheckCircle2, Coins } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase, type Listing } from "@/lib/supabase";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
@@ -43,13 +43,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-
-function formatLabel(value: string | null | undefined): string {
-  if (!value) return "";
-  return value
-    .replace(/[-_]/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-}
 
 export default function Home() {
   const { data: listings = [] } = useQuery<Listing[]>({

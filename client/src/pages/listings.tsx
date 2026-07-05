@@ -12,7 +12,7 @@ import { breadcrumbSchema, itemListSchema } from "@/lib/schema";
 import { listingUrl } from "@/lib/listings";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { SlidersHorizontal, Search, Loader2, LayoutGrid, List } from "lucide-react";
+import { SlidersHorizontal, Search, LayoutGrid, List } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
