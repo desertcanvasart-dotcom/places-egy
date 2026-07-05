@@ -419,12 +419,43 @@ export async function prerender() {
   // Static pages — hardcoded above; simpler and adequate while the set is small.
   const allMetas: RouteMeta[] = [...devMetas, ...faqMetas, ...STATIC_ROUTES];
 
+  // Determine which routes will need to be written as directory indexes.
+  // If any other route's path starts with `${route}/`, then writing `route.html`
+  // would collide with the `route/` directory that already contains those
+  // child prerenders — Express's directory-handling would 301 /route → /route/,
+  // and our trailing-slash-removing middleware would 301 back → /route,
+  // producing an infinite redirect loop. Writing `route/index.html` instead
+  // makes Express serve it directly on a request for /route with no redirect.
+  //
+  // Also considers listing-detail prerenders under dist/public/listings/ that
+  // are written by build-listings-seo.ts after us — for those we look at what
+  // will be on disk, hence the /listings hardcode. Same for /blog which has
+  // per-post prerenders that build-sitemap.ts emits into the sitemap.
+  const routesWithChildren = new Set<string>();
+  for (const meta of allMetas) {
+    for (const other of allMetas) {
+      if (other.route === meta.route) continue;
+      if (other.route.startsWith(`${meta.route}/`)) {
+        routesWithChildren.add(meta.route);
+        break;
+      }
+    }
+  }
+  // Additionally: build-listings-seo.ts writes dist/public/listings/<id>-<slug>.html
+  // afterwards, so /listings is always a directory route even though nothing
+  // in STATIC_ROUTES declares a child under /listings/. Same principle for
+  // /blog once we prerender individual posts (not today).
+  routesWithChildren.add("/listings");
+
   let written = 0;
   for (const meta of allMetas) {
     const html = injectMeta(shell, meta);
-    // Write dist/public/<route>.html — express.static resolves /<route> to
-    // this file before the SPA catch-all.
-    const outPath = path.join(DIST, `${meta.route}.html`);
+    // If this route has child prerenders under it, write foo/index.html so
+    // Express serves it on a bare /foo request without the directory-redirect
+    // handshake. Otherwise write foo.html and rely on `extensions: ["html"]`.
+    const outPath = routesWithChildren.has(meta.route)
+      ? path.join(DIST, meta.route, "index.html")
+      : path.join(DIST, `${meta.route}.html`);
     await mkdir(path.dirname(outPath), { recursive: true });
     await writeFile(outPath, html, "utf8");
     written++;
