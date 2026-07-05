@@ -25,6 +25,106 @@ const SITE = "https://places-egy.com";
 const DEV_PAGES_DIR = path.resolve(process.cwd(), "client/src/pages/developers");
 const DIST = path.resolve(process.cwd(), "dist/public");
 
+// Static (non-developer, non-listing) routes that need per-page meta. Keep in
+// lockstep with the runtime page's title/description if you edit them — the
+// crawler-visible copy comes from here at build time, the browser-visible copy
+// comes from the page. Adding a new static route is one entry: hardcoded title
+// + description + url. When we outgrow this, refactor to a useDocumentMeta
+// hook and extract via AST like collectDeveloperMeta does.
+const STATIC_ROUTES: RouteMeta[] = [
+  {
+    route: "/why-places",
+    title: "Why PLACES — Egypt's Administrative Office Real Estate Specialists",
+    description:
+      "Meet the team and mission behind PLACES — Egypt's specialized partner for administrative office real estate across Cairo, New Cairo, Sheikh Zayed, 6th October, Downtown Cairo, Sheraton, and Maadi.",
+    url: `${SITE}/why-places`,
+  },
+  {
+    route: "/services",
+    title: "Services — Office Leasing, Sales, Resale & Investment | PLACES",
+    description:
+      "PLACES delivers full-cycle office real estate services in Egypt: leasing, primary property purchases, resale transactions, investment consultation, and income-generating property advisory.",
+    url: `${SITE}/services`,
+  },
+  {
+    route: "/services/leasing",
+    title: "Office Leasing in Cairo & Egypt — Corporate Leasing | PLACES",
+    description:
+      "End-to-end office leasing across Cairo's key business districts. PLACES handles market surveys, shortlisting, due diligence, and negotiation for HQs, growing companies, and multinationals.",
+    url: `${SITE}/services/leasing`,
+  },
+  {
+    route: "/services/primary-property",
+    title: "Primary Property Purchase — Buy Directly from Developers | PLACES",
+    description:
+      "Buy office units directly from Egypt's top developers, with developer-verified pricing, incentives, and payment plans. PLACES represents you at the primary transaction.",
+    url: `${SITE}/services/primary-property`,
+  },
+  {
+    route: "/services/property-resale",
+    title: "Office Resale — Buy & Sell Existing Units in Egypt | PLACES",
+    description:
+      "Buy or sell office units on the resale market across Cairo. PLACES matches sellers with qualified buyers and handles pricing, marketing, and negotiation end-to-end.",
+    url: `${SITE}/services/property-resale`,
+  },
+  {
+    route: "/services/investment-consultation",
+    title: "Office Real Estate Investment Consultation | PLACES",
+    description:
+      "Investment consultation for office real estate in Egypt — yield analysis, market timing, exit strategy, and portfolio structuring for corporate buyers and private investors.",
+    url: `${SITE}/services/investment-consultation`,
+  },
+  {
+    route: "/services/income-generating-property",
+    title: "Income-Generating Office Property in Egypt | PLACES",
+    description:
+      "Acquire pre-leased office assets in Cairo for immediate rental income. PLACES sources yield-ready units with verified tenants, lease terms, and service charge history.",
+    url: `${SITE}/services/income-generating-property`,
+  },
+  {
+    route: "/locations",
+    title: "Office Real Estate Locations — New Cairo, Sheikh Zayed, 6th October, Downtown, Sheraton, Maadi | PLACES",
+    description:
+      "PLACES operates across Cairo's six most active commercial and administrative districts — each with its own demand profile, tenant mix, and investment dynamics.",
+    url: `${SITE}/locations`,
+  },
+  {
+    route: "/glossary",
+    title: "Real Estate Glossary — Office Leasing & Investment Terms | PLACES",
+    description:
+      "A working glossary of administrative real estate terms — leasing, financing, contracts, unit specs — used by PLACES and Egypt's office market professionals.",
+    url: `${SITE}/glossary`,
+  },
+  {
+    route: "/faqs",
+    title: "Office Real Estate FAQs — Buying, Leasing & Investing in Egypt | PLACES",
+    description:
+      "Answers to the questions Egyptian office buyers, tenants, and investors ask most — from early-stage thinking to contracts, developer selection, and location strategy.",
+    url: `${SITE}/faqs`,
+  },
+  {
+    route: "/contact",
+    title: "Contact PLACES — Talk to an Office Real Estate Advisor",
+    description:
+      "Get in touch with PLACES for office leasing, sales, or investment advice across Egypt. Direct line, WhatsApp, or Calendly — same-day response.",
+    url: `${SITE}/contact`,
+  },
+  {
+    route: "/developers",
+    title: "Office Developers in Egypt — Trusted Real Estate Partners | PLACES",
+    description:
+      "PLACES works with 50+ verified office developers across Egypt — Emaar, Marakez, SODIC, Palm Hills, ORA, and more. Browse projects, credentials, and available units.",
+    url: `${SITE}/developers`,
+  },
+  {
+    route: "/projects",
+    title: "Office Projects in Cairo — Business Parks, Buildings & Mixed-Use | PLACES",
+    description:
+      "Explore administrative office projects across Cairo — business parks, standalone buildings, and mixed-use developments. Curated by PLACES, updated as new projects break ground.",
+    url: `${SITE}/projects`,
+  },
+];
+
 export interface RouteMeta {
   /** Route path, e.g. /developers/akoya */
   route: string;
@@ -154,6 +254,14 @@ function injectMeta(shell: string, meta: RouteMeta): string {
     /<meta\s+property="og:url"\s+content="[^"]*"\s*\/>/,
     `<meta property="og:url" content="${u}" />`,
   );
+  html = html.replace(
+    /<meta\s+name="twitter:title"\s+content="[^"]*"\s*\/>/,
+    `<meta name="twitter:title" content="${t}" />`,
+  );
+  html = html.replace(
+    /<meta\s+name="twitter:description"\s+content="[^"]*"\s*\/>/,
+    `<meta name="twitter:description" content="${d}" />`,
+  );
   return html;
 }
 
@@ -161,18 +269,25 @@ export async function prerender() {
   const shellPath = path.join(DIST, "index.html");
   const shell = await readFile(shellPath, "utf8");
 
-  const metas = await collectDeveloperMeta();
-  let written = 0;
+  // Developer pages — extracted from source via AST so meta stays in lockstep
+  // with what runtime useDocumentMeta renders.
+  const devMetas = await collectDeveloperMeta();
 
-  for (const meta of metas) {
+  // Static pages — hardcoded above; simpler and adequate while the set is small.
+  const allMetas: RouteMeta[] = [...devMetas, ...STATIC_ROUTES];
+
+  let written = 0;
+  for (const meta of allMetas) {
     const html = injectMeta(shell, meta);
-    // Write dist/public/developers/<slug>.html — express.static resolves
-    // /developers/<slug> to this file before the SPA catch-all.
+    // Write dist/public/<route>.html — express.static resolves /<route> to
+    // this file before the SPA catch-all.
     const outPath = path.join(DIST, `${meta.route}.html`);
     await mkdir(path.dirname(outPath), { recursive: true });
     await writeFile(outPath, html, "utf8");
     written++;
   }
 
-  console.log(`prerendered ${written} developer pages (meta-only)`);
+  console.log(
+    `prerendered ${written} pages (${devMetas.length} developers + ${STATIC_ROUTES.length} static, meta-only)`,
+  );
 }
