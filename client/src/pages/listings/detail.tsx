@@ -171,7 +171,20 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
     setMetaTag("og:description", description, "property");
     setMetaTag("og:url", url, "property");
     setMetaTag("og:type", "product", "property");
-    if (image) setMetaTag("og:image", image, "property");
+    if (image) {
+      setMetaTag("og:image", image, "property");
+      // The static og:image:width/height/type/alt tags in index.html describe
+      // the site-level opengraph.jpg (1280x720 JPEG). When we override og:image
+      // to a listing's own photo, those dimension tags become misleading —
+      // scrapers will trust them and render the wrong aspect ratio. Drop them
+      // so scrapers infer dims from the image URL itself.
+      document.head.querySelector('meta[property="og:image:width"]')?.remove();
+      document.head.querySelector('meta[property="og:image:height"]')?.remove();
+      document.head.querySelector('meta[property="og:image:type"]')?.remove();
+      document.head.querySelector('meta[property="og:image:alt"]')?.remove();
+      document.head.querySelector('meta[property="og:image:secure_url"]')?.remove();
+      document.head.querySelector('meta[name="twitter:image:alt"]')?.remove();
+    }
     setMetaTag("twitter:card", image ? "summary_large_image" : "summary");
     setMetaTag("twitter:title", title);
     setMetaTag("twitter:description", description);

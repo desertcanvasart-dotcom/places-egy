@@ -80,7 +80,19 @@ export default function BlogPostPage() {
     setMetaTag("og:description", description, "property");
     setMetaTag("og:url", url, "property");
     setMetaTag("og:type", "article", "property");
-    if (image) setMetaTag("og:image", image, "property");
+    if (image) {
+      setMetaTag("og:image", image, "property");
+      // Drop the static og:image:width/height/type/alt/secure_url from
+      // index.html — those describe the site-level opengraph.jpg, not this
+      // post's featured image. Leaving them in place causes social scrapers
+      // to render the wrong aspect ratio.
+      document.head.querySelector('meta[property="og:image:width"]')?.remove();
+      document.head.querySelector('meta[property="og:image:height"]')?.remove();
+      document.head.querySelector('meta[property="og:image:type"]')?.remove();
+      document.head.querySelector('meta[property="og:image:alt"]')?.remove();
+      document.head.querySelector('meta[property="og:image:secure_url"]')?.remove();
+      document.head.querySelector('meta[name="twitter:image:alt"]')?.remove();
+    }
     setMetaTag("twitter:card", image ? "summary_large_image" : "summary");
     setMetaTag("twitter:title", title);
     setMetaTag("twitter:description", description);
