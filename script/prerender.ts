@@ -1,4 +1,4 @@
-import { readFile, writeFile, mkdir, readdir } from "fs/promises";
+import { readFile, writeFile, mkdir, readdir, unlink } from "fs/promises";
 import path from "path";
 import ts from "typescript";
 
@@ -459,6 +459,20 @@ export async function prerender() {
     await mkdir(path.dirname(outPath), { recursive: true });
     await writeFile(outPath, html, "utf8");
     written++;
+
+    // Defense-in-depth: if this route uses foo/index.html, actively remove any
+    // sibling foo.html left over from a previous build (in case the deploy
+    // environment doesn't wipe dist/ cleanly between builds). Both files
+    // existing is what caused the redirect loop we just fixed.
+    if (routesWithChildren.has(meta.route)) {
+      const stale = path.join(DIST, `${meta.route}.html`);
+      try {
+        await unlink(stale);
+        console.warn(`[prerender] removed stale ${stale}`);
+      } catch {
+        // ENOENT is the healthy case — nothing to remove.
+      }
+    }
   }
 
   console.log(
