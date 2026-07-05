@@ -23,7 +23,7 @@ export default function MixedUseMall() {
     queryKey: ["mixed-use-listings"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("listings")
+        .from<Listing>("listings")
         .select("*")
         .eq("subtype", "mixed-use")
         .order("id", { ascending: false })

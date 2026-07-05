@@ -23,7 +23,7 @@ export default function BusinessPark() {
     queryKey: ["business-park-listings"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("listings")
+        .from<Listing>("listings")
         .select("*")
         .eq("subtype", "business-park")
         .order("id", { ascending: false })

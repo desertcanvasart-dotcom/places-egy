@@ -1,9 +1,17 @@
-import { createClient } from "@supabase/supabase-js";
+// Public (anonymous-key) Supabase access is now handled by pgrest — a ~1KB
+// hand-rolled PostgREST client (client/src/lib/pgrest.ts) instead of the
+// ~100KB @supabase/supabase-js SDK that pulls in auth-js + realtime-js +
+// storage-js + their transitive deps. Server-side admin code (server/*)
+// still uses the SDK because it needs storage-js for uploads and the
+// service-role client for RLS bypass.
+//
+// This file now only re-exports pgrest under the `supabase` name so existing
+// call sites (`supabase.from("listings").select("*")...`) keep working with
+// no changes, plus the shared Listing type.
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+import { pgrest } from "@/lib/pgrest";
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = pgrest;
 
 export type Listing = {
   id: number;

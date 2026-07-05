@@ -79,7 +79,7 @@ export default function LocationDetail() {
     enabled: !!content,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("listings")
+        .from<Listing>("listings")
         .select("*")
         .eq("property_type", "admin")
         .eq("location", content!.displayName)
@@ -97,7 +97,7 @@ export default function LocationDetail() {
     enabled: !!content,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("listings")
+        .from<Listing>("listings")
         .select("project, developer, property_type, subtype")
         .eq("property_type", "admin")
         .eq("location", content!.displayName);

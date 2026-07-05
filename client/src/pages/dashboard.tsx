@@ -474,7 +474,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
     queryKey: ["admin-listings"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("listings")
+        .from<Listing>("listings")
         .select("*")
         .order("id", { ascending: false });
       if (error) throw error;

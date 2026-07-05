@@ -79,7 +79,7 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
     queryKey: ["listing", id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("listings")
+        .from<Listing>("listings")
         .select("*")
         .eq("id", id)
         .maybeSingle();
@@ -96,7 +96,7 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
     queryFn: async () => {
       if (!listing?.subtype) return [];
       const { data, error } = await supabase
-        .from("listings")
+        .from<Listing>("listings")
         .select("*")
         .eq("subtype", listing.subtype)
         .neq("id", listing.id)

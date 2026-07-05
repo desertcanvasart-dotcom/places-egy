@@ -28,7 +28,7 @@ export default function PropertyResale() {
     queryKey: ["resale-listings"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("listings")
+        .from<Listing>("listings")
         .select("*")
         .eq("property_type", "admin")
         .eq("transaction_type", "sale")

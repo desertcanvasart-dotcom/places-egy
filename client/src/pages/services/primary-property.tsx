@@ -28,7 +28,7 @@ export default function PrimaryProperty() {
     queryKey: ["primary-property-listings"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("listings")
+        .from<Listing>("listings")
         .select("*")
         .eq("property_type", "admin")
         .eq("transaction_type", "sale")
