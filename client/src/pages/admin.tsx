@@ -305,7 +305,7 @@ export default function AdminOffices() {
                   decoding="async"
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-primary/95 via-primary/50 to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-t from-primary/95 via-primary/50 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-5">
                   <div className="flex items-center gap-2 mb-1">
                     <MapPin className="w-3.5 h-3.5 text-accent shrink-0" />

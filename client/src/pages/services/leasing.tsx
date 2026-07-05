@@ -54,7 +54,7 @@ export default function Leasing() {
           {/* Brand-tinted darken layer for added depth and contrast */}
           <div className="absolute inset-0 bg-primary/25" />
           {/* Slightly darker top so the centered text reads cleanly; fades to page bg at the bottom */}
-          <div className="absolute inset-0 bg-gradient-to-b from-background/15 via-background/55 to-background" />
+          <div className="absolute inset-0 bg-linear-to-b from-background/15 via-background/55 to-background" />
         </div>
         <div className="relative z-10 container mx-auto px-6 md:px-10 text-center">
           <nav className="flex items-center justify-center gap-1.5 text-sm font-medium text-muted-foreground mb-6">
