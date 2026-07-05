@@ -267,7 +267,7 @@ export default function InvestmentConsultation() {
       {/* Section 7 — Final CTA */}
       <section className="py-8">
         <div className="container mx-auto px-6 md:px-10">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8 py-12 border-t border-border/40">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8 py-8 md:py-12 border-t border-border/40">
             <div>
               <h2 className="text-2xl md:text-4xl font-serif font-bold text-primary mb-2">
                 Not sure where to invest?

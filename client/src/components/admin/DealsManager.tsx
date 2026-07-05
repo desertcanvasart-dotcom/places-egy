@@ -258,9 +258,9 @@ export function DealsManager() {
       </div>
 
       {isLoading ? (
-        <p className="text-muted-foreground text-center py-12">Loading deals…</p>
+        <p className="text-muted-foreground text-center py-8 md:py-12">Loading deals…</p>
       ) : deals.length === 0 ? (
-        <div className="text-center py-12">
+        <div className="text-center py-8 md:py-12">
           <p className="text-muted-foreground mb-4">No deals yet.</p>
           <Button onClick={() => { setEditDeal(null); setFormOpen(true); }} className="bg-primary text-white">
             <Plus className="w-4 h-4 mr-2" /> Add Your First Deal

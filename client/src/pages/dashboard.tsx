@@ -561,9 +561,9 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
         {tab === "deals" ? (
           <DealsManager />
         ) : isLoading ? (
-          <p className="text-muted-foreground text-center py-12">Loading listings...</p>
+          <p className="text-muted-foreground text-center py-8 md:py-12">Loading listings...</p>
         ) : listings.length === 0 ? (
-          <div className="text-center py-12">
+          <div className="text-center py-8 md:py-12">
             <p className="text-muted-foreground mb-4">No listings yet.</p>
             <Button onClick={handleAdd} className="bg-primary text-white">
               <Plus className="w-4 h-4 mr-2" /> Add Your First Listing

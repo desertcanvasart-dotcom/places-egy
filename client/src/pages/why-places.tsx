@@ -265,7 +265,7 @@ export default function WhyPlaces() {
 
       {/* Consultation CTA — compact card with a left accent stripe and a
           horizontal copy/button layout. */}
-      <section className="py-12">
+      <section className="py-8 md:py-12">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 rounded-xl border border-border/60 border-l-4 border-l-accent bg-background p-6 md:py-5 md:px-7">
             <div>

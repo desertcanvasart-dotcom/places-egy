@@ -94,7 +94,7 @@ export default function MixedUseMall() {
       </section>
 
       {/* Statement */}
-      <section className="py-12">
+      <section className="py-8 md:py-12">
         <div className="container mx-auto px-6 md:px-10">
           <div className="border-l-4 border-accent pl-6 md:pl-8">
             <p className="text-2xl md:text-3xl font-serif font-bold text-primary leading-snug mb-4 max-w-4xl">
@@ -163,7 +163,7 @@ export default function MixedUseMall() {
       )}
 
       {/* Is this right for you? */}
-      <section className="py-12">
+      <section className="py-8 md:py-12">
         <div className="container mx-auto px-6 md:px-10">
           <div className="mb-10">
             <h2 className="text-2xl md:text-4xl font-serif font-bold text-primary mb-3">
@@ -260,7 +260,7 @@ export default function MixedUseMall() {
 
       {/* Section 4 — Top office units in mixed-use */}
       {topMixedUseListings.length > 0 && (
-      <section id="mixed-use-listings" className="py-12 scroll-mt-24">
+      <section id="mixed-use-listings" className="py-8 md:py-12 scroll-mt-24">
         <div className="container mx-auto px-6 md:px-10">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10">
             <h2 className="text-2xl md:text-4xl font-serif font-bold text-primary">
@@ -293,7 +293,7 @@ export default function MixedUseMall() {
       )}
 
       {/* How PLACES checks every office */}
-      <section className="py-12">
+      <section className="py-8 md:py-12">
         <div className="container mx-auto px-6 md:px-10">
           <div className="relative bg-primary rounded-3xl overflow-hidden p-8 md:p-14">
             {/* Subtle accent glow */}
@@ -346,7 +346,7 @@ export default function MixedUseMall() {
       </section>
 
       {/* Where Cairo's mixed-use developments are */}
-      <section className="py-12">
+      <section className="py-8 md:py-12">
         <div className="container mx-auto px-6 md:px-10">
           <div className="mb-10">
             <h2 className="text-2xl md:text-4xl font-serif font-bold text-primary mb-3">

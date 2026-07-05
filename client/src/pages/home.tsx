@@ -154,7 +154,7 @@ export default function Home() {
 
       {/* Curated Opportunities */}
       <FadeInSection>
-        <section className="py-12">
+        <section className="py-8 md:py-12">
           <div className="container mx-auto px-6 md:px-10 max-w-7xl">
             <div className="flex justify-between items-center mb-8">
               <span className="inline-flex items-center gap-2.5 text-xs font-bold uppercase tracking-wider text-accent bg-accent/10 px-4 py-2 rounded-full shadow-sm shadow-accent/20">
@@ -193,7 +193,7 @@ export default function Home() {
 
       {/* Services */}
       <FadeInSection>
-        <section className="py-12">
+        <section className="py-8 md:py-12">
           <div className="container mx-auto px-6 md:px-10 max-w-7xl">
             <div className="mb-16">
               <h2 className="text-4xl md:text-5xl font-serif font-bold text-primary mb-4">Comprehensive real estate services</h2>
@@ -248,7 +248,7 @@ export default function Home() {
 
       {/* How It Works */}
       <FadeInSection>
-        <section className="py-12">
+        <section className="py-8 md:py-12">
           <div className="container mx-auto px-6 md:px-10 max-w-7xl">
             <div className="bg-primary/95 text-white rounded-3xl p-10 md:p-14 shadow-lg shadow-primary/5">
               <div className="text-center mb-10 max-w-2xl mx-auto">
@@ -287,7 +287,7 @@ export default function Home() {
 
       {/* Locations Preview */}
       <FadeInSection>
-        <section className="py-12">
+        <section className="py-8 md:py-12">
           <div className="container mx-auto px-6 md:px-10 max-w-7xl">
             <div className="flex flex-col md:flex-row justify-between items-end mb-12">
               <div>
@@ -333,7 +333,7 @@ export default function Home() {
 
       {/* FAQ */}
       <FadeInSection>
-        <section className="py-12">
+        <section className="py-8 md:py-12">
           <div className="container mx-auto px-6 md:px-10 max-w-7xl">
             <h2 className="text-2xl md:text-4xl font-serif font-bold text-primary mb-8">Frequently asked questions</h2>
             <Accordion type="single" collapsible className="w-full">
@@ -379,7 +379,7 @@ export default function Home() {
 
       {/* Final CTA */}
       <FadeInSection>
-        <section className="py-12">
+        <section className="py-8 md:py-12">
           <div className="container mx-auto px-6 md:px-10 max-w-7xl">
             <div className="bg-white rounded-3xl shadow-xl shadow-primary/5 border border-border/40 p-12 md:p-20 text-center">
               <h2 className="text-4xl md:text-5xl font-serif font-bold text-primary mb-6">Need personalized guidance?</h2>

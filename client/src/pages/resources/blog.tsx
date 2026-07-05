@@ -153,7 +153,7 @@ export default function BlogIndexPage() {
         </div>
       )}
 
-      <div className="container mx-auto px-6 md:px-10 py-12">
+      <div className="container mx-auto px-6 md:px-10 py-8 md:py-12">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />

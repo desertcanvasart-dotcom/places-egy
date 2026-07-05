@@ -472,7 +472,7 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
 
       {/* Similar units — score-ranked off-ramp for users who aren't sold */}
       {similarListings.length > 0 && (
-        <section className="py-12 bg-secondary/30 border-t border-border/40">
+        <section className="py-8 md:py-12 bg-secondary/30 border-t border-border/40">
           <div className="container mx-auto px-6 md:px-10">
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
               <div>

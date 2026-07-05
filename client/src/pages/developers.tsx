@@ -293,7 +293,7 @@ export default function Developers() {
       </section>
 
       {/* CTA */}
-      <section className="py-12">
+      <section className="py-8 md:py-12">
         <div className="container mx-auto px-6 md:px-10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8 py-10 border-t border-border/40">
             <div>

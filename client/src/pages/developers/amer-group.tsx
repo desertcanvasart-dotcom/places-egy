@@ -274,7 +274,7 @@ export default function AmerGroupPage() {
       </section>
 
       {/* FAQ */}
-      <section className="py-12">
+      <section className="py-8 md:py-12">
         <div className="container mx-auto px-6 md:px-10">
           <div className="mb-8">
             <span className="text-xs font-bold uppercase tracking-wider text-accent">
