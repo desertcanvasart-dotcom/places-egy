@@ -123,6 +123,50 @@ const STATIC_ROUTES: RouteMeta[] = [
       "Explore administrative office projects across Cairo — business parks, standalone buildings, and mixed-use developments. Curated by PLACES, updated as new projects break ground.",
     url: `${SITE}/projects`,
   },
+  // Location detail pages. Titles + descriptions mirror the displayName +
+  // subtitle in client/src/lib/location-content.ts. Keep in sync if edited.
+  {
+    route: "/locations/new-cairo",
+    title: "Office Space in New Cairo — Business Parks & Mixed-Use | PLACES",
+    description:
+      "Egypt's fastest growing business hub — home to the highest concentration of business parks, mixed-use developments, and commercial destinations east of Cairo.",
+    url: `${SITE}/locations/new-cairo`,
+  },
+  {
+    route: "/locations/sheikh-zayed",
+    title: "Office Space in Sheikh Zayed — West Cairo's Business Corridor | PLACES",
+    description:
+      "West Cairo's most connected business corridor — a growing hub for mixed-use commercial developments along the 26th of July Axis, serving a high-income residential base.",
+    url: `${SITE}/locations/sheikh-zayed`,
+  },
+  {
+    route: "/locations/maadi",
+    title: "Office Space in Maadi — Corporate & Expat District | PLACES",
+    description:
+      "Cairo's most established expatriate and corporate district — a quiet, well-connected address on the east bank of the Nile, preferred by multinationals, embassies, and professional services firms.",
+    url: `${SITE}/locations/maadi`,
+  },
+  {
+    route: "/locations/downtown-cairo",
+    title: "Office Space in Downtown Cairo — Egypt's Original Business Center | PLACES",
+    description:
+      "Egypt's original business center — a high-footfall district with unmatched centrality, government proximity, and metro connectivity, attracting legal firms, financial institutions, and boutique offices.",
+    url: `${SITE}/locations/downtown-cairo`,
+  },
+  {
+    route: "/locations/6th-october",
+    title: "Office Space in 6th October — West Cairo's Planned Business Hub | PLACES",
+    description:
+      "One of Egypt's largest planned cities west of Cairo — an established commercial and industrial hub with mature infrastructure, competitive pricing, and strong road connectivity via the Cairo–Alexandria Desert Road.",
+    url: `${SITE}/locations/6th-october`,
+  },
+  {
+    route: "/locations/sheraton",
+    title: "Office Space in Sheraton — East Cairo's Airport Corridor | PLACES",
+    description:
+      "A high-traffic commercial corridor in east Cairo — strategically positioned on Nasr Road between Heliopolis and Nasr City, minutes from Cairo International Airport and connected to all major Cairo arteries.",
+    url: `${SITE}/locations/sheraton`,
+  },
 ];
 
 export interface RouteMeta {
