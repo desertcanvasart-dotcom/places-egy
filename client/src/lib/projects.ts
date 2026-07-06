@@ -66,6 +66,27 @@ export const DEVELOPER_DISPLAY_NAMES: Record<string, string> = {
   "el-hazek": "El Hazek Group",
   wealth: "Wealth Developments",
   "misr-italia": "Misr Italia",
+  modad: "Modad Developments",
+  "al-borouj-misr": "Al Borouj Misr",
+  "serac-developments": "Serac Developments",
+  "urbnlanes-development": "Urbnlanes Development",
+  paio: "Paio",
+  "starlight-developments": "Starlight Developments",
+  "shoura-developments": "Shoura Developments",
+  "urban-smart-development": "Urban Smart Development",
+  "tameer-development": "TAMEER Development",
+  "mountain-view": "Mountain View",
+  "qatari-diar": "Qatari Diar",
+  "mainmarks-development": "Mainmarks Development",
+  "metawee-development": "Metawee Development",
+  rocc: "Rocc",
+  "east-main": "East Main",
+  hdp: "HDP",
+  "eden-group": "Eden Group",
+  badreldin: "Badreldin",
+  "inertia-egypt": "Inertia Egypt",
+  "orascom-development": "Orascom Development",
+  "saudi-egyptian-developers": "Saudi Egyptian Developers",
 };
 
 // Human-readable display labels for each ProjectType — used as card badges.
@@ -236,6 +257,9 @@ export const PROJECTS: Project[] = [
 
   // ─── Misr Italia ─────────────────────────────────────────────────
   { name: "Cairo Business Park", type: "business-park", location: "New Cairo · North 90 Street", developer: "misr-italia", image: "/images/cairo-business-park.webp" },
+
+  // ─── Modad ───────────────────────────────────────────────────────
+  { name: "Brackets Mall", type: "mixed-use", location: "New Cairo · North 90 Street", developer: "modad", image: "/images/Brackets-mall-new-cairo.webp" },
 ];
 
 export function getProjectsByDeveloper(developerSlug: string): Project[] {

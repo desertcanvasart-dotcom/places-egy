@@ -168,6 +168,12 @@ const DEVELOPERS: { name: string; logo: string; desc: string; slug?: string; log
     slug: "misr-italia",
   },
   {
+    name: "Modad Developments",
+    logo: "/images/modad-developments-logo.png",
+    desc: "Egyptian construction and real estate group with 490+ projects across 27 governorates — built 80% of NBE's branch network — now delivering Brackets Mall on North 90 Street, New Cairo.",
+    slug: "modad",
+  },
+  {
     name: "The Ark Developments",
     logo: "/images/the-ark-developments-logo.png",
     desc: "Coalition-backed developer behind The Ark Business District — a 92-acre integrated commercial destination on South 90 Street in New Cairo.",
