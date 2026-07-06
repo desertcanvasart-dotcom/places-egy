@@ -155,20 +155,22 @@ export function DealAnnouncement({
 
         {/* Client logo — sign-off, sits close to the tags. Right padding keeps
             it clear of the diagonal JUST CLOSED ribbon in the top-right corner.
-            The inner box has a fixed width so every logo occupies the same
-            horizontal footprint regardless of the source PNG's aspect ratio —
-            a compact icon takes as much space as a wide wordmark, and no logo
-            reads as accidentally smaller than another. object-contain keeps
-            each logo's own aspect intact inside the box. */}
+            The inner box has a fixed size so every logo occupies the same
+            footprint regardless of the source PNG's aspect ratio. We give the
+            img w-full h-full so it scales to the box, then object-contain
+            preserves the logo's own aspect inside those bounds — this makes
+            compact icons visually the same size as wide wordmarks, which the
+            previous max-h/max-w-only rules did not achieve (small source PNGs
+            with transparent padding stayed tiny). */}
         {clientLogo && (
           <div className="flex shrink-0 items-center md:border-l md:border-[#ECE7D8]/15 md:pl-4 md:pr-10">
-            <div className="flex h-14 w-40 items-center justify-center md:h-16 md:w-48">
+            <div className="flex h-16 w-44 items-center justify-center md:h-20 md:w-56">
               <img
                 src={clientLogo}
                 alt={`${clientName} logo`}
                 loading="lazy"
                 decoding="async"
-                className="max-h-full max-w-full object-contain opacity-95 brightness-0 invert"
+                className="w-full h-full object-contain opacity-95 brightness-0 invert"
               />
             </div>
           </div>
