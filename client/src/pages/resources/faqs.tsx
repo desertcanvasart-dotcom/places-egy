@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema } from "@/lib/schema";
+import { useDocumentMeta } from "@/lib/use-document-meta";
 import {
   FAQ_SECTIONS,
   FAQ_ALL_ITEMS,
@@ -90,6 +91,13 @@ function fireGtag(name: string, params: Record<string, unknown>) {
 }
 
 export default function FAQIndexPage() {
+  useDocumentMeta({
+    title: "Office Real Estate FAQs — Buying, Leasing & Investing in Egypt | PLACES",
+    description:
+      "Answers to the questions Egyptian office buyers, tenants, and investors ask most — from early-stage thinking to contracts, developer selection, and location strategy.",
+    url: "https://places-egy.com/faqs",
+  });
+
   const [search, setSearch] = useState("");
   const normalizedSearch = search.toLowerCase().trim();
 

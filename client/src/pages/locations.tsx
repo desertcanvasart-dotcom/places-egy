@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { MapPin } from "lucide-react";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema, locationsCollectionSchema } from "@/lib/schema";
+import { useDocumentMeta } from "@/lib/use-document-meta";
 
 const LOCATIONS = [
   {
@@ -46,6 +47,14 @@ const LOCATIONS = [
 ];
 
 export default function Locations() {
+  useDocumentMeta({
+    title:
+      "Office Real Estate Locations — New Cairo, Sheikh Zayed, 6th October, Downtown, Sheraton, Maadi | PLACES",
+    description:
+      "PLACES operates across Cairo's six most active commercial and administrative districts — each with its own demand profile, tenant mix, and investment dynamics.",
+    url: "https://places-egy.com/locations",
+  });
+
   return (
     <div className="min-h-screen flex flex-col font-sans bg-background">
       <SchemaMarkup

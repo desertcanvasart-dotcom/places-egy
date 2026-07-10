@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Users } from "lucide-react";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema, itemListSchema } from "@/lib/schema";
+import { useDocumentMeta } from "@/lib/use-document-meta";
 
 // `logoClass` is an optional override for logos whose source PNG has internal
 // transparent padding — applied as extra classes on the <img> element so the
@@ -231,6 +232,13 @@ const DEVELOPERS: { name: string; logo: string; desc: string; slug?: string; log
 ];
 
 export default function Developers() {
+  useDocumentMeta({
+    title: "Office Developers in Egypt — Trusted Real Estate Partners | PLACES",
+    description:
+      "PLACES works with 50+ verified office developers across Egypt — Emaar, Marakez, SODIC, Palm Hills, ORA, and more. Browse developer portfolios, projects, and available units.",
+    url: "https://places-egy.com/developers",
+  });
+
   return (
     <div className="min-h-screen flex flex-col font-sans bg-background">
       <SchemaMarkup

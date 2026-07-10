@@ -7,8 +7,16 @@ import { GLOSSARY_TERMS, GlossaryTerm } from "@/lib/glossary-data";
 import { Badge } from "@/components/ui/badge";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema, glossarySchema } from "@/lib/schema";
+import { useDocumentMeta } from "@/lib/use-document-meta";
 
 export default function GlossaryPage() {
+  useDocumentMeta({
+    title: "Real Estate Glossary — Office Leasing & Investment Terms | PLACES",
+    description:
+      "A working glossary of administrative real estate terms — leasing, financing, contracts, unit specs — used by PLACES and Egypt's office market professionals.",
+    url: "https://places-egy.com/glossary",
+  });
+
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
 

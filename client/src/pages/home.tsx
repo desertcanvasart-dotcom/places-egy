@@ -13,6 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase, type Listing } from "@/lib/supabase";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { faqSchema } from "@/lib/schema";
+import { useDocumentMeta } from "@/lib/use-document-meta";
 
 const HOME_FAQS = [
   {
@@ -45,6 +46,13 @@ import {
 } from "@/components/ui/accordion";
 
 export default function Home() {
+  useDocumentMeta({
+    title: "Admin Offices for Rent & Sale in Egypt | PLACES",
+    description:
+      "PLACES connects businesses and investors with administrative offices across Egypt's top business districts — New Cairo, Sheikh Zayed, 6th October, Downtown, Sheraton, and Maadi.",
+    url: "https://places-egy.com/",
+  });
+
   const { data: listings = [] } = useQuery<Listing[]>({
     queryKey: ["listings"],
     queryFn: async () => {

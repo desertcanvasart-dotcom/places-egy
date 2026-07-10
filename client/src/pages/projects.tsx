@@ -14,6 +14,7 @@ import {
 import { ArrowRight, Building2, MapPin, Search, X } from "lucide-react";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema, itemListSchema } from "@/lib/schema";
+import { useDocumentMeta } from "@/lib/use-document-meta";
 import {
   PROJECTS,
   PROJECT_TYPE_LABELS,
@@ -43,6 +44,13 @@ function getInitialState() {
 }
 
 export default function ProjectsPage() {
+  useDocumentMeta({
+    title: "Office Projects in Cairo — Business Parks, Buildings & Mixed-Use | PLACES",
+    description:
+      "Explore administrative office projects across Cairo — business parks, standalone buildings, and mixed-use developments. Curated by PLACES, updated as new projects break ground.",
+    url: "https://places-egy.com/projects",
+  });
+
   const [, setLocation] = useLocation();
   const initial = getInitialState();
   const [q, setQ] = useState(initial.q);

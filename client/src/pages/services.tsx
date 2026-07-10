@@ -13,6 +13,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema } from "@/lib/schema";
+import { useDocumentMeta } from "@/lib/use-document-meta";
 
 const SERVICES: { icon: LucideIcon; name: string; desc: string; slug: string }[] = [
   {
@@ -48,6 +49,13 @@ const SERVICES: { icon: LucideIcon; name: string; desc: string; slug: string }[]
 ];
 
 export default function Services() {
+  useDocumentMeta({
+    title: "Services — Leasing, Sales, Resale & Investment | PLACES",
+    description:
+      "PLACES delivers full-cycle office real estate services in Egypt: leasing, primary purchases, resale, investment consultation, and income-generating property advisory.",
+    url: "https://places-egy.com/services",
+  });
+
   return (
     <div className="min-h-screen flex flex-col font-sans bg-background">
       {/* Hazy faded background image — fixed so it stays put as the user

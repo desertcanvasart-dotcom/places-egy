@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/Navbar";
@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema, blogIndexSchema } from "@/lib/schema";
+import { useDocumentMeta } from "@/lib/use-document-meta";
 import {
   fetchPosts,
   fetchCategories,
@@ -36,6 +37,13 @@ function readCategoryFromQuery(search: string): string | undefined {
 }
 
 export default function BlogIndexPage() {
+  useDocumentMeta({
+    title: "PLACES Insights — Egyptian Office Real Estate Market Analysis",
+    description:
+      "Market insights, investor guides, and location analysis for commercial and administrative real estate in Egypt — from the team that lives this market every day.",
+    url: "https://places-egy.com/blog",
+  });
+
   const [, setLocation] = useLocation();
   const search = typeof window !== "undefined" ? window.location.search : "";
   const page = readPageFromQuery(search);
@@ -51,15 +59,9 @@ export default function BlogIndexPage() {
     queryFn: fetchCategories,
   });
 
-  // Static head meta — index page describes the whole blog, individual posts
-  // override these on the detail page.
-  useEffect(() => {
-    const previousTitle = document.title;
-    document.title = "Insights — PLACES";
-    return () => {
-      document.title = previousTitle;
-    };
-  }, []);
+  // Title/meta handled by useDocumentMeta() above — this replaces the earlier
+  // useEffect that only set the title with a stale value ("Insights — PLACES")
+  // that didn't match the sitemap or the per-page prerender.
 
   const posts = postsData?.posts ?? [];
   const totalPages = postsData?.totalPages ?? 1;

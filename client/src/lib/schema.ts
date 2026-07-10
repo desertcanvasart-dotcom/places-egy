@@ -219,11 +219,31 @@ export function glossarySchema(terms: { term: string; definition: string }[]) {
   };
 }
 
+// Approximate centroids for Cairo's six business districts PLACES serves.
+// Values are the district center in decimal degrees (WGS84). Used to populate
+// `geo` on Place entities so LLMs and Google Maps can associate location pages
+// with actual coordinates — unlocks "office near X" style queries and
+// improves local pack ranking.
+const DISTRICT_GEO: Record<string, { latitude: number; longitude: number }> = {
+  "New Cairo": { latitude: 30.0286, longitude: 31.4972 },
+  "Sheikh Zayed": { latitude: 30.0713, longitude: 30.9749 },
+  "6th October": { latitude: 29.9694, longitude: 30.9375 },
+  "Downtown Cairo": { latitude: 30.0444, longitude: 31.2357 },
+  Sheraton: { latitude: 30.1010, longitude: 31.3648 },
+  Maadi: { latitude: 29.9603, longitude: 31.2569 },
+};
+
+// Google Maps search URL for a district — used as `hasMap` on Place entities.
+function districtMapUrl(name: string): string {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name + ", Cairo, Egypt")}`;
+}
+
 export function placeSchema(opts: {
   name: string;
   description: string;
   url?: string;
 }) {
+  const geo = DISTRICT_GEO[opts.name];
   return {
     "@context": "https://schema.org",
     "@type": "Place",
@@ -232,8 +252,17 @@ export function placeSchema(opts: {
     address: {
       "@type": "PostalAddress",
       addressRegion: opts.name,
+      addressLocality: "Cairo",
       addressCountry: "EG",
     },
+    ...(geo && {
+      geo: {
+        "@type": "GeoCoordinates",
+        latitude: geo.latitude,
+        longitude: geo.longitude,
+      },
+      hasMap: districtMapUrl(opts.name),
+    }),
     ...(opts.url && { url: `${BASE_URL}${opts.url}` }),
   };
 }
@@ -246,16 +275,28 @@ export function locationsCollectionSchema(
     "@type": "CollectionPage",
     name: "PLACES Locations",
     url: `${BASE_URL}/locations`,
-    hasPart: places.map((p) => ({
-      "@type": "Place",
-      name: p.name,
-      description: p.description,
-      address: {
-        "@type": "PostalAddress",
-        addressRegion: p.name,
-        addressCountry: "EG",
-      },
-    })),
+    hasPart: places.map((p) => {
+      const geo = DISTRICT_GEO[p.name];
+      return {
+        "@type": "Place",
+        name: p.name,
+        description: p.description,
+        address: {
+          "@type": "PostalAddress",
+          addressRegion: p.name,
+          addressLocality: "Cairo",
+          addressCountry: "EG",
+        },
+        ...(geo && {
+          geo: {
+            "@type": "GeoCoordinates",
+            latitude: geo.latitude,
+            longitude: geo.longitude,
+          },
+          hasMap: districtMapUrl(p.name),
+        }),
+      };
+    }),
   };
 }
 

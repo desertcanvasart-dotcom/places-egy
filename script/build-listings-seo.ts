@@ -35,6 +35,11 @@ interface ListingRow {
   description: string | null;
   currency: string | null;
   images: string[] | null;
+  // Timestamp fields we ask Supabase for so the sitemap can emit real
+  // <lastmod> values. If neither column exists in the listings table,
+  // PostgREST returns them as undefined and the sitemap omits <lastmod>.
+  updated_at?: string | null;
+  created_at?: string | null;
 }
 
 // Mirror of client/src/lib/faq.ts slugify — keep in lockstep so the URLs we emit
@@ -85,14 +90,30 @@ async function fetchListings(): Promise<ListingRow[]> {
   }
   // Use the REST endpoint directly to avoid bundling the supabase client into
   // the build script. Select only the columns we need for URLs + meta.
-  const fields = "id,title,property_type,location,area_sqm,subtype,transaction_type,description,currency,images";
-  const endpoint = `${url}/rest/v1/listings?select=${fields}&property_type=eq.admin&order=id.desc`;
-  const res = await fetch(endpoint, {
-    headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: "application/json" },
-  });
-  if (!res.ok) throw new Error(`Supabase /listings returned ${res.status} ${res.statusText}`);
-  const rows = (await res.json()) as ListingRow[];
-  return Array.isArray(rows) ? rows : [];
+  // updated_at/created_at may not exist on the table — try with them first,
+  // fall back to the guaranteed core fields on error so the build still ships.
+  const coreFields = "id,title,property_type,location,area_sqm,subtype,transaction_type,description,currency,images";
+  const attempts = [
+    `${coreFields},updated_at,created_at`,
+    coreFields,
+  ];
+  for (const fields of attempts) {
+    const endpoint = `${url}/rest/v1/listings?select=${fields}&property_type=eq.admin&order=id.desc`;
+    const res = await fetch(endpoint, {
+      headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: "application/json" },
+    });
+    if (res.ok) {
+      const rows = (await res.json()) as ListingRow[];
+      return Array.isArray(rows) ? rows : [];
+    }
+    if (res.status !== 400) {
+      throw new Error(`Supabase /listings returned ${res.status} ${res.statusText}`);
+    }
+    // 400 usually means a column we asked for doesn't exist. Try the next
+    // attempt with fewer columns before giving up.
+    console.warn(`[listings-seo] Supabase 400 with fields=${fields}, retrying with fewer columns`);
+  }
+  throw new Error("Supabase /listings returned 400 for all column attempts");
 }
 
 function attr(value: string): string {
@@ -121,16 +142,25 @@ function injectListingMeta(shell: string, l: ListingRow, fullUrl: string): strin
   return html;
 }
 
-function buildSitemapEntries(listings: { path: string }[]): string {
+function buildSitemapEntries(
+  listings: { path: string; row: ListingRow }[],
+): string {
   return listings
-    .map(
-      ({ path: p }) =>
+    .map(({ path: p, row }) => {
+      // Prefer updated_at (row edited) over created_at (row inserted). Both
+      // are ISO timestamps from Supabase; strip to YYYY-MM-DD for the sitemap.
+      const raw = row.updated_at ?? row.created_at ?? null;
+      const lastmod = raw ? new Date(raw).toISOString().split("T")[0] : "";
+      const lastmodLine = lastmod ? `    <lastmod>${lastmod}</lastmod>\n` : "";
+      return (
         `  <url>\n` +
         `    <loc>${SITE_ORIGIN}${p}</loc>\n` +
+        lastmodLine +
         `    <changefreq>${LISTING_CHANGEFREQ}</changefreq>\n` +
         `    <priority>${LISTING_PRIORITY}</priority>\n` +
-        `  </url>`,
-    )
+        `  </url>`
+      );
+    })
     .join("\n");
 }
 

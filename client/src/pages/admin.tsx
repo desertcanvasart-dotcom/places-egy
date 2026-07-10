@@ -8,6 +8,7 @@ import { ListingCard } from "@/components/listings/ListingCard";
 import { DeveloperStrip } from "@/components/DeveloperStrip";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema } from "@/lib/schema";
+import { useDocumentMeta } from "@/lib/use-document-meta";
 import {
   Accordion,
   AccordionContent,
@@ -33,6 +34,13 @@ import {
 } from "lucide-react";
 
 export default function AdminOffices() {
+  useDocumentMeta({
+    title: "Admin Offices in Egypt — Business Parks, Buildings & Mixed-Use | PLACES",
+    description:
+      "Administrative offices, business parks, and mixed-use developments across Cairo's main business districts. Built for HQs, growing teams, multinationals, and investors.",
+    url: "https://places-egy.com/admin",
+  });
+
   const { data: adminListings = [] } = useQuery<Listing[]>({
     queryKey: ["admin-listings"],
     queryFn: async () => {

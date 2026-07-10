@@ -7,10 +7,18 @@ import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema, contactPageSchema } from "@/lib/schema";
 import { trackEvent } from "@/lib/analytics";
 import { openCalendly } from "@/lib/calendly";
+import { useDocumentMeta } from "@/lib/use-document-meta";
 
 const PHONE = "01063618217";
 
 export default function Contact() {
+  useDocumentMeta({
+    title: "Contact PLACES — Talk to an Office Real Estate Advisor",
+    description:
+      "Get in touch with PLACES for office leasing, sales, or investment advice across Egypt. Direct line, WhatsApp, or Calendly — same-day response.",
+    url: "https://places-egy.com/contact",
+  });
+
   const whatsappMessage = encodeURIComponent("Hi, I'd like to learn more about PLACES and your available properties.");
   const handleCallClick = () => trackEvent("call_click", { source: "contact_page" });
   const handleWhatsappClick = () => trackEvent("whatsapp_click", { source: "contact_page" });

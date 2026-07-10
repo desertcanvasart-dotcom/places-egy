@@ -4,8 +4,15 @@ import { ClientsStrip } from "@/components/ClientsStrip";
 import { ShieldCheck, TrendingUp, Users, Award, Building2, HeartHandshake, Download } from "lucide-react";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { aboutPageSchema, breadcrumbSchema } from "@/lib/schema";
+import { useDocumentMeta } from "@/lib/use-document-meta";
 
 export default function WhyPlaces() {
+  useDocumentMeta({
+    title: "Why PLACES — Egypt's Administrative Office Real Estate Specialists",
+    description:
+      "Meet the team and mission behind PLACES — Egypt's specialized partner for administrative office real estate across Cairo, New Cairo, Sheikh Zayed, 6th October, Downtown, Sheraton, and Maadi.",
+    url: "https://places-egy.com/why-places",
+  });
   const values = [
     {
       icon: ShieldCheck,
