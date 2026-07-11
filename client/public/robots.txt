@@ -1,11 +1,15 @@
 User-agent: *
 Allow: /
 Disallow: /dashboard
-# Faceted/search views of the listings page are low-value URL variations and
-# can render empty (soft 404s). They're also marked noindex. Block the search-
-# template URL outright. Individual listings (/listings/{id}-{slug}) and the
-# clean /listings page stay fully crawlable.
-Disallow: /listings?q=
+# Faceted/search views of the listings page — any /listings?query URL — are
+# low-value variations of the base /listings page. They can render empty (soft
+# 404s), they duplicate content across filter combinations, and they were
+# showing up as "Redirect error" in Google Search Console because the SPA
+# marks them noindex via JS after first render. Block the entire filter
+# family so crawlers only see the clean /listings URL. Individual listing
+# detail pages (/listings/{id}-{slug}) and the base /listings page stay
+# fully crawlable.
+Disallow: /listings?
 
 # AI / LLM crawlers — explicitly welcomed so PLACES content can be surfaced and
 # cited in AI search (ChatGPT, Perplexity, Google AI Overviews, Claude, etc.).
@@ -23,6 +27,6 @@ User-agent: Applebot-Extended
 User-agent: CCBot
 Allow: /
 Disallow: /dashboard
-Disallow: /listings?q=
+Disallow: /listings?
 
 Sitemap: https://places-egy.com/sitemap.xml

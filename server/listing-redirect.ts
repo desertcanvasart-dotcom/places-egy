@@ -1,18 +1,64 @@
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { supabaseAdmin } from "./supabase";
 
-// Server-side 301 for retired listings.
+// Server-side retired-listing handling.
 //
 // Listing detail pages live at /listings/{id}-{slug}. When an office is sold the
 // row is deleted from Supabase, but Google has the URL indexed (it's in the
-// sitemap + prerendered). Previously the SPA served a 200 page that JS-redirected
-// to /listings — which Google reads as a SOFT 404. This middleware instead does a
-// real 301 to /listings the moment the listing no longer exists, so link equity
-// is preserved and crawl errors don't accumulate.
+// sitemap + prerendered). We handle retired listings differently for crawlers
+// vs humans:
 //
-// Existence is checked against Supabase and cached briefly so we don't hit the DB
-// on every crawl of a still-live listing. Both outcomes (exists / gone) are
-// cached; the TTL keeps a freshly-deleted listing redirecting within ~1 minute.
+// - Crawlers (Googlebot, Bingbot, ClaudeBot, GPTBot, etc.) get **HTTP 410 Gone**.
+//   Google Search Console previously reported blanket 301-to-/listings as
+//   "Redirect error" (it reads as a soft-404 — same URL family, different
+//   meaning). 410 explicitly says "this page is permanently removed" and Google
+//   drops the URL from the index within days without any error being reported.
+//
+// - Real users (regular browsers) get a **301 to /listings** so they land on
+//   something useful rather than a bare 410 page. This preserves the friendly
+//   redirect for someone who clicked an old bookmark.
+//
+// The bot detection is a permissive substring match on the User-Agent header.
+// It's fine if we mislabel some bot as a browser or vice versa — the fallback
+// is either a browser sees a slightly abrupt 410 (rare) or Google follows a
+// 301 (which was the old behavior anyway).
+//
+// Existence is checked against Supabase and cached briefly so we don't hit the
+// DB on every crawl of a still-live listing. Both outcomes (exists / gone) are
+// cached; the TTL keeps a freshly-deleted listing responding correctly within
+// ~1 minute.
+
+const BOT_UA_PATTERNS = [
+  "googlebot",
+  "bingbot",
+  "slurp",             // Yahoo
+  "duckduckbot",
+  "baiduspider",
+  "yandex",
+  "sogou",
+  "exabot",
+  "facebot",
+  "ia_archiver",
+  "gptbot",            // OpenAI
+  "chatgpt-user",
+  "oai-searchbot",
+  "claudebot",         // Anthropic
+  "claude-web",
+  "anthropic-ai",
+  "perplexitybot",
+  "perplexity-user",
+  "google-extended",   // Google AI
+  "applebot",
+  "ccbot",             // Common Crawl
+  "meta-externalagent",
+  "amazonbot",
+  "bytespider",
+];
+
+function isBot(req: Request): boolean {
+  const ua = (req.headers["user-agent"] ?? "").toLowerCase();
+  return BOT_UA_PATTERNS.some((p) => ua.includes(p));
+}
 
 const CACHE_TTL_MS = 60_000;
 
@@ -58,8 +104,14 @@ export function registerListingRedirects(app: Express) {
     listingExists(id, now)
       .then((exists) => {
         if (exists) return next();
-        // Retired listing → permanent redirect to the listings index.
-        res.redirect(301, "/listings");
+        // Retired listing.
+        // Crawlers → 410 Gone (permanent removal signal for Google/etc.).
+        // Humans → 301 to /listings so they land on something useful.
+        if (isBot(req)) {
+          res.status(410).set("Content-Type", "text/plain").send("Gone");
+        } else {
+          res.redirect(301, "/listings");
+        }
       })
       .catch(() => next()); // fail open on unexpected errors
   });

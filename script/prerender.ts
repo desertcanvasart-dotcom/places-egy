@@ -157,12 +157,41 @@ function injectMeta(shell: string, meta: RouteMeta): string {
   return html;
 }
 
+// Per-page meta for the two "index" URLs that Cloudflare rewrites to
+// serve from /listings/index.html and /developers/index.html. Without
+// this, those files are copies of the SPA shell whose canonical points
+// at the homepage — Google Search Console reports "Redirect error"
+// because it reads a URL that says it's canonical'd elsewhere. Writing
+// proper per-page meta into these two paths fixes that.
+//
+// Why write foo/index.html specifically: the Cloudflare rewrite rule
+// (added when Railway's build cache was serving stale foo.html files)
+// rewrites /listings → /listings/index.html at the edge, and same for
+// /developers. So the file path we need to author is exactly foo/index.html.
+const INDEX_ROUTES: RouteMeta[] = [
+  {
+    route: "/listings",
+    title: "Office Listings in Egypt — Rent or Buy Admin Office Space | PLACES",
+    description:
+      "Browse verified administrative office listings across Cairo — New Cairo, Sheikh Zayed, 6th October, Downtown, Sheraton, and Maadi. Filter by transaction type, size, developer, and location.",
+    url: `${SITE}/listings`,
+  },
+  {
+    route: "/developers",
+    title: "Office Developers in Egypt — Trusted Real Estate Partners | PLACES",
+    description:
+      "PLACES works with 50+ verified office developers across Egypt — Emaar, Marakez, SODIC, Palm Hills, ORA, and more. Browse developer portfolios, projects, and available units.",
+    url: `${SITE}/developers`,
+  },
+];
+
 export async function prerender() {
   const shellPath = path.join(DIST, "index.html");
   const shell = await readFile(shellPath, "utf8");
 
   const metas = await collectDeveloperMeta();
-  let written = 0;
+  let developerWritten = 0;
+  let indexWritten = 0;
 
   for (const meta of metas) {
     const html = injectMeta(shell, meta);
@@ -171,8 +200,21 @@ export async function prerender() {
     const outPath = path.join(DIST, `${meta.route}.html`);
     await mkdir(path.dirname(outPath), { recursive: true });
     await writeFile(outPath, html, "utf8");
-    written++;
+    developerWritten++;
   }
 
-  console.log(`prerendered ${written} developer pages (meta-only)`);
+  // Also write dist/public/{listings,developers}/index.html so the Cloudflare
+  // rewrite serves proper per-page meta instead of the raw SPA shell (which
+  // has the homepage canonical hardcoded).
+  for (const meta of INDEX_ROUTES) {
+    const html = injectMeta(shell, meta);
+    const outPath = path.join(DIST, meta.route, "index.html");
+    await mkdir(path.dirname(outPath), { recursive: true });
+    await writeFile(outPath, html, "utf8");
+    indexWritten++;
+  }
+
+  console.log(
+    `prerendered ${developerWritten} developer pages + ${indexWritten} index shells (meta-only)`,
+  );
 }
