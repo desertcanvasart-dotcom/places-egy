@@ -23,6 +23,7 @@ import {
   type BlogPost,
 } from "@/lib/blog";
 import { trackEvent } from "@/lib/analytics";
+import { useScrollDepth } from "@/lib/use-scroll-depth";
 
 const BASE_URL = "https://places-egy.com";
 
@@ -39,6 +40,8 @@ function setMetaTag(key: string, value: string, attr: "name" | "property" = "nam
 export default function BlogPostPage() {
   const { slug } = useParams<{ slug: string }>();
   const [, setLocation] = useLocation();
+
+  useScrollDepth(`/blog/${slug}`);
 
   const { data: post, isLoading, isError } = useQuery<BlogPost | null>({
     queryKey: ["blog-post", slug],

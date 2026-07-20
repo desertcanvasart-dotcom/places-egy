@@ -126,6 +126,36 @@
       gtag('config', 'G-V2FVS9XZ5D', { send_page_view: false });
     </script>
 
+    <!-- Microsoft Clarity — session recordings, heatmaps, click tracking.
+         Only loads after the user accepts cookies (respects the same
+         cookie_consent localStorage flag GA4 uses). CookieBanner.tsx also
+         re-checks on accept and loads Clarity live at that moment so a
+         first-visit accept starts recording immediately without a reload.
+
+         Replace CLARITY_PROJECT_ID below with the actual project ID from
+         clarity.microsoft.com. Leave as null to disable Clarity entirely
+         until an ID is provided. -->
+    <script>
+      window.__CLARITY_PROJECT_ID = null; // e.g. "abc123def4"
+
+      window.__loadClarity = function () {
+        if (!window.__CLARITY_PROJECT_ID) return;
+        if (window.clarity) return; // already loaded
+        (function(c,l,a,r,i,t,y){
+          c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+          t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+          y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        })(window, document, "clarity", "script", window.__CLARITY_PROJECT_ID);
+      };
+
+      // Load Clarity now if the user already consented in a prior session.
+      try {
+        if (localStorage.getItem('cookie_consent') === 'accepted') {
+          window.__loadClarity();
+        }
+      } catch (e) {}
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <!-- Importing Figtree for Headings and Plus Jakarta Sans for Body (Modern/Clean) -->

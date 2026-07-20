@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Cookie, X } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 
 const STORAGE_KEY = "cookie_consent";
 
@@ -36,6 +37,12 @@ export function CookieBanner() {
         analytics_storage: "granted",
       });
     }
+    // Load Microsoft Clarity now that the user has consented (index.html
+    // defines __loadClarity as a no-op if the project ID isn't configured).
+    const loadClarity = (window as unknown as { __loadClarity?: () => void }).__loadClarity;
+    if (typeof loadClarity === "function") loadClarity();
+
+    trackEvent("cookie_consent", { decision: "accepted" });
     setConsent("accepted");
   };
 
@@ -43,6 +50,7 @@ export function CookieBanner() {
     try {
       localStorage.setItem(STORAGE_KEY, "rejected");
     } catch {}
+    trackEvent("cookie_consent", { decision: "rejected" });
     setConsent("rejected");
   };
 

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DealAnnouncement } from "@/components/DealAnnouncement";
 import type { Deal } from "@/lib/deals";
+import { trackEvent } from "@/lib/analytics";
 
 // Homepage carousel of the latest closed deals. Fetches up to 20 active deals
 // from /api/deals (managed in the admin dashboard) and renders each as a
@@ -25,8 +26,21 @@ export function DealAnnouncementCarousel() {
   const multiple = count > 1;
 
   const go = useCallback(
-    (next: number) => setIndex(((next % count) + count) % count),
-    [count],
+    (next: number) => {
+      const normalized = ((next % count) + count) % count;
+      setIndex(normalized);
+      // Only track manual navigation (user clicked ‹ ›). The auto-advance
+      // path calls setIndex directly, not go(), so it doesn't fire this event.
+      const deal = deals[normalized];
+      if (deal) {
+        trackEvent("deal_strip_navigate", {
+          index: normalized,
+          deal_id: deal.id,
+          client_name: deal.client_name,
+        });
+      }
+    },
+    [count, deals],
   );
 
   // Gentle auto-advance, paused for reduced-motion users.

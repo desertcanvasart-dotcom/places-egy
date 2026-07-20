@@ -111,6 +111,56 @@ function PageViewTracker() {
   return null;
 }
 
+// Fires a `click_outbound` GA4 event whenever the user clicks any link whose
+// href points to a different origin than the site. Also captures a
+// `download_pdf` event for any anchor with a download attribute pointing at
+// a .pdf file (so we can count company-profile downloads without wiring
+// individual onClicks on the ~2 anchors that download the file).
+//
+// One global delegated listener > 10 individual onClick handlers scattered
+// through templates — same effect, one place to maintain.
+function OutboundClickTracker() {
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      const target = (e.target as HTMLElement | null)?.closest?.("a");
+      if (!target) return;
+      const href = (target as HTMLAnchorElement).href;
+      if (!href) return;
+
+      const gtag = (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag;
+      if (typeof gtag !== "function") return;
+
+      const isPdfDownload =
+        (target as HTMLAnchorElement).hasAttribute("download") &&
+        /\.pdf(\?.*)?$/i.test(href);
+      if (isPdfDownload) {
+        gtag("event", "download_pdf", {
+          file_name: href.split("/").pop()?.split("?")[0] ?? href,
+          file_url: href,
+        });
+        return;
+      }
+
+      // Outbound = different origin from the current page.
+      try {
+        const url = new URL(href, window.location.href);
+        if (url.origin !== window.location.origin) {
+          gtag("event", "click_outbound", {
+            link_domain: url.hostname,
+            link_url: href,
+            link_text: (target.textContent || "").trim().slice(0, 100),
+          });
+        }
+      } catch {
+        // Malformed href — ignore.
+      }
+    }
+    document.addEventListener("click", onClick, { capture: true });
+    return () => document.removeEventListener("click", onClick, { capture: true });
+  }, []);
+  return null;
+}
+
 const SITE_ORIGIN = "https://places-egy.com";
 
 // Keep <link rel="canonical"> pointed at the current path on every route.
@@ -242,6 +292,7 @@ function App() {
         <ScrollToTop />
         <CanonicalTag />
         <PageViewTracker />
+        <OutboundClickTracker />
         <Router />
         <MobileBottomBar />
         <BookMeetingFloat />

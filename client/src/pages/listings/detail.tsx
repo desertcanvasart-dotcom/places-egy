@@ -13,6 +13,7 @@ import { listingUrl, parseListingId } from "@/lib/listings";
 import { listingCurrency } from "@/lib/currency";
 import { supabaseImage, supabaseImageOnError } from "@/lib/image-url";
 import { trackEvent } from "@/lib/analytics";
+import { useScrollDepth } from "@/lib/use-scroll-depth";
 import {
   ArrowRight,
   ChevronLeft,
@@ -73,6 +74,19 @@ export default function ListingDetailPage() {
 function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
   const [, setLocation] = useLocation();
   const [imageIndex, setImageIndex] = useState(0);
+
+  useScrollDepth(`/listings/${idSlug}`);
+
+  // Track gallery navigation — fires when user views images beyond the first.
+  // Gives us "gallery engagement rate" per listing (are people browsing all
+  // photos, or bouncing after one?).
+  useEffect(() => {
+    if (imageIndex === 0) return;
+    trackEvent("listing_gallery_view", {
+      listing_id: id,
+      image_index: imageIndex,
+    });
+  }, [imageIndex, id]);
 
   const { data: listing, isLoading, isError } = useQuery<Listing | null>({
     queryKey: ["listing", id],

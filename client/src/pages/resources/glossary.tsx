@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema, glossarySchema } from "@/lib/schema";
 import { useDocumentMeta } from "@/lib/use-document-meta";
+import { trackEvent } from "@/lib/analytics";
 
 export default function GlossaryPage() {
   useDocumentMeta({
@@ -19,6 +20,25 @@ export default function GlossaryPage() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
+
+  // Track glossary search after 800ms of idle — see which real-estate terms
+  // people are actually looking up. Great signal for future content.
+  useEffect(() => {
+    if (!searchQuery.trim()) return;
+    const timer = setTimeout(() => {
+      trackEvent("glossary_search", {
+        search_term: searchQuery.trim().toLowerCase(),
+      });
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Track letter filter clicks
+  useEffect(() => {
+    if (selectedLetter) {
+      trackEvent("glossary_letter_click", { letter: selectedLetter });
+    }
+  }, [selectedLetter]);
 
   const alphabet = "#ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 

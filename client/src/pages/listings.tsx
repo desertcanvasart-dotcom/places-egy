@@ -10,6 +10,7 @@ import { DEVELOPER_DISPLAY_NAMES } from "@/lib/projects";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema, itemListSchema } from "@/lib/schema";
 import { listingUrl } from "@/lib/listings";
+import { trackEvent } from "@/lib/analytics";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SlidersHorizontal, Search, LayoutGrid, List } from "lucide-react";
@@ -206,6 +207,43 @@ export default function ListingsPage() {
         return sorted.sort((a, b) => b.id - a.id);
     }
   }, [filteredListings, sortBy]);
+
+  // Track search queries after the user stops typing for 800ms. Debouncing
+  // avoids flooding GA4 with partial keystroke queries ("n", "ne", "new"…)
+  // and lets us report only the queries the user actually settled on, plus
+  // how many results those queries produced.
+  useEffect(() => {
+    if (!searchQuery.trim()) return;
+    const timer = setTimeout(() => {
+      trackEvent("listings_search", {
+        search_term: searchQuery.trim().toLowerCase(),
+        result_count: sortedListings.length,
+      });
+    }, 800);
+    return () => clearTimeout(timer);
+    // Intentionally excluding sortedListings from deps — we only want the
+    // fire on query change, not every re-sort.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery]);
+
+  // Track filter/sort/view changes so we can see which filter combinations
+  // are actually used vs ignored. Skips the initial mount (defaults).
+  useEffect(() => {
+    if (filters === DEFAULT_FILTERS) return;
+    trackEvent("listings_filter_change", {
+      transaction_type: filters.transactionType ?? null,
+      subtype: filters.subtype.join(",") || null,
+      location: filters.location ?? null,
+      developer: filters.developer ?? null,
+      furnishing: filters.furnishing.join(",") || null,
+      price_min: filters.priceRange[0],
+      price_max: filters.priceRange[1],
+      sort_by: sortBy,
+      view_mode: viewMode,
+      result_count: sortedListings.length,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters, sortBy, viewMode]);
 
   const activeFilterChips = (() => {
     const chips: { label: string; clear: () => void }[] = [];
