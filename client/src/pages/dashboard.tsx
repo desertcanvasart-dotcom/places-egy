@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase, type Listing } from "@/lib/supabase";
 import { DealsManager } from "@/components/admin/DealsManager";
+import { ClientLogosManager } from "@/components/admin/ClientLogosManager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -469,7 +470,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
   const queryClient = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
   const [editListing, setEditListing] = useState<ListingForm | null>(null);
-  const [tab, setTab] = useState<"listings" | "deals">("listings");
+  const [tab, setTab] = useState<"listings" | "deals" | "logos">("listings");
   const { data: listings = [], isLoading } = useQuery<Listing[]>({
     queryKey: ["admin-listings"],
     queryFn: async () => {
@@ -543,23 +544,29 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
       <div className="container mx-auto px-6 py-6">
         {/* Tabs */}
         <div className="flex items-center gap-1 mb-6 border-b border-border/40">
-          {(["listings", "deals"] as const).map((t) => (
+          {([
+            { key: "listings", label: "Listings" },
+            { key: "deals", label: "Deals" },
+            { key: "logos", label: "Client Logos" },
+          ] as const).map(({ key, label }) => (
             <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`px-4 py-2.5 text-sm font-medium capitalize transition-colors border-b-2 -mb-px ${
-                tab === t
+              key={key}
+              onClick={() => setTab(key)}
+              className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+                tab === key
                   ? "border-accent text-primary"
                   : "border-transparent text-muted-foreground hover:text-primary"
               }`}
             >
-              {t}
+              {label}
             </button>
           ))}
         </div>
 
         {tab === "deals" ? (
           <DealsManager />
+        ) : tab === "logos" ? (
+          <ClientLogosManager />
         ) : isLoading ? (
           <p className="text-muted-foreground text-center py-8 md:py-12">Loading listings...</p>
         ) : listings.length === 0 ? (

@@ -6,6 +6,7 @@ import { requireAdmin } from "./admin-auth";
 import { strictLimiter, uploadLimiter } from "./rate-limit";
 import { listingInsertSchema, listingUpdateSchema } from "./listing-schema";
 import { dealInsertSchema, dealUpdateSchema } from "./deal-schema";
+import { clientLogoInsertSchema, clientLogoUpdateSchema } from "./client-logo-schema";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -282,6 +283,109 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Invalid id" });
       }
       const { error } = await supabaseAdmin.from("deals").delete().eq("id", id);
+      if (error) return res.status(400).json({ message: error.message });
+      res.json({ ok: true });
+    },
+  );
+
+  // ── Client logos ─────────────────────────────────────────────────────────
+  // Renders on the /why-places "Companies We've Placed" strip. Public GET
+  // returns only active logos in display order; admin CRUD mirrors the deals
+  // pattern exactly.
+
+  app.get("/api/client-logos", async (_req: Request, res: Response) => {
+    if (!supabaseAdmin) return res.json([]);
+    const { data, error } = await supabaseAdmin
+      .from("client_logos")
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true })
+      .order("name", { ascending: true });
+    if (error) return res.status(500).json({ message: error.message });
+    res.json(data ?? []);
+  });
+
+  app.get(
+    "/api/admin/client-logos",
+    strictLimiter,
+    requireAdmin,
+    async (_req: Request, res: Response) => {
+      if (!supabaseAdmin) {
+        return res.status(503).json({ message: "Supabase not configured" });
+      }
+      // Admin view: all logos (incl. inactive), in display order.
+      const { data, error } = await supabaseAdmin
+        .from("client_logos")
+        .select("*")
+        .order("sort_order", { ascending: true })
+        .order("name", { ascending: true });
+      if (error) return res.status(400).json({ message: error.message });
+      res.json(data ?? []);
+    },
+  );
+
+  app.post(
+    "/api/admin/client-logos",
+    strictLimiter,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      if (!supabaseAdmin) {
+        return res.status(503).json({ message: "Supabase not configured" });
+      }
+      const parsed = clientLogoInsertSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid client logo payload" });
+      }
+      const { error, data } = await supabaseAdmin
+        .from("client_logos")
+        .insert(parsed.data)
+        .select()
+        .single();
+      if (error) return res.status(400).json({ message: error.message });
+      res.json(data);
+    },
+  );
+
+  app.patch(
+    "/api/admin/client-logos/:id",
+    strictLimiter,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      if (!supabaseAdmin) {
+        return res.status(503).json({ message: "Supabase not configured" });
+      }
+      const id = Number(req.params.id);
+      if (!Number.isFinite(id)) {
+        return res.status(400).json({ message: "Invalid id" });
+      }
+      const parsed = clientLogoUpdateSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid client logo payload" });
+      }
+      const { error, data } = await supabaseAdmin
+        .from("client_logos")
+        .update(parsed.data)
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) return res.status(400).json({ message: error.message });
+      res.json(data);
+    },
+  );
+
+  app.delete(
+    "/api/admin/client-logos/:id",
+    strictLimiter,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      if (!supabaseAdmin) {
+        return res.status(503).json({ message: "Supabase not configured" });
+      }
+      const id = Number(req.params.id);
+      if (!Number.isFinite(id)) {
+        return res.status(400).json({ message: "Invalid id" });
+      }
+      const { error } = await supabaseAdmin.from("client_logos").delete().eq("id", id);
       if (error) return res.status(400).json({ message: error.message });
       res.json({ ok: true });
     },
