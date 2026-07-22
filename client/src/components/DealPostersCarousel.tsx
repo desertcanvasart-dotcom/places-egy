@@ -71,7 +71,7 @@ export function DealPostersCarousel() {
           {/* Poster — aspect-[4/5] matches the Canva poster ratio (1080×1350).
               object-contain keeps the whole design visible even if the source
               PNG has a slightly different aspect. */}
-          <div className="relative w-full max-w-2xl mx-auto aspect-[4/5] rounded-2xl overflow-hidden shadow-2xl bg-neutral-100">
+          <div className="relative w-full max-w-[220px] md:max-w-[260px] mx-auto aspect-[4/5] rounded-xl overflow-hidden shadow-xl bg-neutral-100">
             <img
               key={current.id}
               src={current.poster_url}
