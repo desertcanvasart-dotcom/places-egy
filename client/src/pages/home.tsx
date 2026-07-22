@@ -161,12 +161,6 @@ export default function Home() {
         </section>
       </FadeInSection>
 
-      {/* Latest Closed Deals posters — Canva-designed announcement PNGs uploaded
-          via the admin dashboard. Renders nothing when there are no active posters. */}
-      <FadeInSection>
-        <DealPostersCarousel />
-      </FadeInSection>
-
       {/* Curated Opportunities */}
       <FadeInSection>
         <section className="py-8 md:py-12">
@@ -204,6 +198,12 @@ export default function Home() {
       {/* Developer Logo Strip */}
       <FadeInSection>
         <DeveloperStrip />
+      </FadeInSection>
+
+      {/* Latest Closed Deals posters — Canva-designed announcement PNGs uploaded
+          via the admin dashboard. Renders nothing when there are no active posters. */}
+      <FadeInSection>
+        <DealPostersCarousel />
       </FadeInSection>
 
       {/* Services */}
