@@ -7,6 +7,7 @@ import { strictLimiter, uploadLimiter } from "./rate-limit";
 import { listingInsertSchema, listingUpdateSchema } from "./listing-schema";
 import { dealInsertSchema, dealUpdateSchema } from "./deal-schema";
 import { clientLogoInsertSchema, clientLogoUpdateSchema } from "./client-logo-schema";
+import { popupInsertSchema, popupUpdateSchema, computeContentHash } from "./popup-schema";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -386,6 +387,126 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Invalid id" });
       }
       const { error } = await supabaseAdmin.from("client_logos").delete().eq("id", id);
+      if (error) return res.status(400).json({ message: error.message });
+      res.json({ ok: true });
+    },
+  );
+
+  // ── Popups ───────────────────────────────────────────────────────────────
+  // Homepage "Done Deal" announcement popup (see /why-places design spec).
+  // One active popup at a time; the public GET returns whichever active row
+  // is oldest by sort_order, or null if none. Client dismisses by hashing the
+  // returned content_hash into localStorage — editing any content field
+  // recomputes the hash (see computeContentHash) so previously-dismissed
+  // devices see the new version once.
+
+  app.get("/api/popup", async (_req: Request, res: Response) => {
+    if (!supabaseAdmin) return res.json(null);
+    const { data, error } = await supabaseAdmin
+      .from("popups")
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) return res.status(500).json({ message: error.message });
+    res.json(data ?? null);
+  });
+
+  app.get(
+    "/api/admin/popups",
+    strictLimiter,
+    requireAdmin,
+    async (_req: Request, res: Response) => {
+      if (!supabaseAdmin) {
+        return res.status(503).json({ message: "Supabase not configured" });
+      }
+      const { data, error } = await supabaseAdmin
+        .from("popups")
+        .select("*")
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: false });
+      if (error) return res.status(400).json({ message: error.message });
+      res.json(data ?? []);
+    },
+  );
+
+  app.post(
+    "/api/admin/popups",
+    strictLimiter,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      if (!supabaseAdmin) {
+        return res.status(503).json({ message: "Supabase not configured" });
+      }
+      const parsed = popupInsertSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid popup payload" });
+      }
+      const content_hash = computeContentHash(parsed.data);
+      const { error, data } = await supabaseAdmin
+        .from("popups")
+        .insert({ ...parsed.data, content_hash })
+        .select()
+        .single();
+      if (error) return res.status(400).json({ message: error.message });
+      res.json(data);
+    },
+  );
+
+  app.patch(
+    "/api/admin/popups/:id",
+    strictLimiter,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      if (!supabaseAdmin) {
+        return res.status(503).json({ message: "Supabase not configured" });
+      }
+      const id = Number(req.params.id);
+      if (!Number.isFinite(id)) {
+        return res.status(400).json({ message: "Invalid id" });
+      }
+      const parsed = popupUpdateSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid popup payload" });
+      }
+
+      // Recompute content_hash if ANY hashable field changed. We fetch the
+      // current row first so partial PATCHes still produce a canonical hash
+      // over the merged state.
+      const { data: current } = await supabaseAdmin
+        .from("popups")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+      const merged = { ...(current ?? {}), ...parsed.data };
+      const content_hash = computeContentHash(merged);
+
+      const { error, data } = await supabaseAdmin
+        .from("popups")
+        .update({ ...parsed.data, content_hash })
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) return res.status(400).json({ message: error.message });
+      res.json(data);
+    },
+  );
+
+  app.delete(
+    "/api/admin/popups/:id",
+    strictLimiter,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      if (!supabaseAdmin) {
+        return res.status(503).json({ message: "Supabase not configured" });
+      }
+      const id = Number(req.params.id);
+      if (!Number.isFinite(id)) {
+        return res.status(400).json({ message: "Invalid id" });
+      }
+      const { error } = await supabaseAdmin.from("popups").delete().eq("id", id);
       if (error) return res.status(400).json({ message: error.message });
       res.json({ ok: true });
     },
