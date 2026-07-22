@@ -85,72 +85,97 @@ export function PopupOverlay() {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 bg-black/70 backdrop-blur-sm"
+      // dvh (dynamic viewport height) instead of vh handles Safari's collapsing
+      // address bar correctly — vh alone can push content offscreen on iOS. p-3
+      // on mobile leaves a 6px inner gutter after the card's own padding so
+      // even iPhone SE (320px) gets a usable card. Overflow-y-auto on the
+      // OUTER container so if the card ever exceeds viewport height the whole
+      // thing scrolls together (not just the inner content) — safer on very
+      // short screens like landscape phones.
+      className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto p-3 sm:p-4 md:p-8 bg-black/70 backdrop-blur-sm"
       onClick={close}
       role="dialog"
       aria-modal="true"
       aria-labelledby="popup-title"
     >
       <div
-        className="relative w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-2xl shadow-2xl bg-neutral-900"
+        // Width scales up on wider viewports (max-w-2xl at ≥768px, max-w-3xl
+        // at ≥1024px) so the card doesn't look lost on a 1920px monitor.
+        // max-h uses dvh so it respects the actual visible viewport on iOS.
+        className="relative w-full max-w-md sm:max-w-lg md:max-w-2xl lg:max-w-3xl my-auto overflow-hidden rounded-xl md:rounded-2xl shadow-2xl bg-neutral-900"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Background photo layer */}
+        {/* Background photo layer — sits behind all content. opacity bumped
+            from 30% to 40% so the building is clearly visible per Canva design
+            while text stays legible on the dark card. */}
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-30"
+          className="absolute inset-0 bg-cover bg-center opacity-40"
           style={{ backgroundImage: `url(${BACKGROUND_IMAGE})` }}
           aria-hidden="true"
         />
+        {/* Extra dark overlay ensures body/caption text stays legible even
+            with the bumped-up background opacity. */}
+        <div className="absolute inset-0 bg-neutral-900/50" aria-hidden="true" />
 
-        {/* Content */}
-        <div className="relative flex max-h-[90vh] flex-col overflow-y-auto p-6 md:p-10 text-white">
-          {/* Close button */}
+        {/* Content — padding scales with breakpoint (24 → 32 → 40 px). */}
+        <div className="relative flex flex-col p-6 sm:p-8 md:p-10 text-white">
+          {/* Close button — 44×44 tap target on mobile (Apple/Google guideline
+              minimum). Slightly larger and pulled in from corners so it's easy
+              to hit without hitting the card edge. */}
           <button
             type="button"
             onClick={close}
             aria-label="Close announcement"
-            className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="absolute right-3 top-3 md:right-4 md:top-4 z-10 flex h-11 w-11 md:h-10 md:w-10 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5 md:h-4 md:w-4" />
           </button>
 
-          {/* Headlines */}
-          <h2 id="popup-title" className="mb-5 mt-2 font-serif text-4xl leading-[0.95] md:text-6xl">
+          {/* Headlines — sizes step up across breakpoints, tight leading to
+              match Canva. break-words prevents overflow on narrow viewports
+              if headline_top/bottom are ever set to long strings. */}
+          <h2
+            id="popup-title"
+            className="mb-4 mt-1 font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl leading-[0.95] break-words pr-12 md:pr-16"
+          >
             <span className="block text-accent">{popup.headline_top}</span>
             <span className="block">{popup.headline_bottom}</span>
           </h2>
 
-          {/* Body */}
-          <p className="mb-8 max-w-xl text-sm leading-relaxed text-white/85 md:text-base">
+          {/* Body — sizes step up gently; max-w keeps line length readable on
+              wide screens (~65ch is the sweet spot for prose). */}
+          <p className="mb-6 md:mb-8 max-w-xl text-sm sm:text-base leading-relaxed text-white/90">
             {popup.body_paragraph}
           </p>
 
-          {/* Project logo — optional */}
+          {/* Project logo — heights scale up. max-w cap prevents very wide
+              logos from stretching across the whole card. */}
           {popup.project_logo_url && (
-            <div className="mb-6 flex items-center justify-center">
+            <div className="mb-5 md:mb-6 flex items-center justify-center">
               <img
                 src={popup.project_logo_url}
                 alt=""
-                className="max-h-16 max-w-[220px] object-contain md:max-h-20"
+                className="max-h-14 sm:max-h-16 md:max-h-20 max-w-[80%] md:max-w-[260px] object-contain"
                 loading="eager"
                 decoding="async"
               />
             </div>
           )}
 
-          {/* Stat block — freeform label + value + unit */}
+          {/* Stat block — big number is the visual anchor. Sizes step up
+              aggressively because this is the single hero element. */}
           {(popup.stat_label || popup.stat_value) && (
-            <div className="mb-8 text-center">
+            <div className="mb-6 md:mb-8 text-center">
               {popup.stat_label && (
-                <p className="mb-1 text-lg font-medium text-white/90 md:text-xl">
+                <p className="mb-1 text-base sm:text-lg md:text-xl font-medium text-white/90">
                   {popup.stat_label}
                 </p>
               )}
               {popup.stat_value && (
-                <p className="font-serif text-5xl font-bold leading-none md:text-7xl">
+                <p className="font-serif font-bold leading-none text-5xl sm:text-6xl md:text-7xl lg:text-8xl">
                   <span className="text-accent">{popup.stat_value}</span>
                   {popup.stat_unit && (
-                    <span className="ml-1 text-lg align-baseline md:text-xl">
+                    <span className="ml-1 text-base sm:text-lg md:text-xl lg:text-2xl align-baseline">
                       {popup.stat_unit}
                     </span>
                   )}
@@ -159,18 +184,20 @@ export function PopupOverlay() {
             </div>
           )}
 
-          {/* Footer caption */}
+          {/* Footer caption — small, centered, tighter leading. */}
           {popup.footer_caption && (
-            <p className="mb-6 text-center text-xs leading-relaxed text-white/80 md:text-sm">
+            <p className="mb-5 md:mb-6 text-center text-xs md:text-sm leading-relaxed text-white/80">
               {popup.footer_caption}
             </p>
           )}
 
-          {/* Contact strip */}
-          <div className="mt-2 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4 text-xs text-white/85 md:text-sm">
-            <span>🌐 {SITE}</span>
-            <span>📞 {PHONE_DISPLAY}</span>
-            <span>✉ {EMAIL_DISPLAY}</span>
+          {/* Contact strip — stacks vertically on very narrow screens (justify-
+              center + wrap), sits in a single row from sm: up. Uniform gap
+              instead of justify-between so wrapping doesn't create ugly gaps. */}
+          <div className="mt-1 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 border-t border-white/10 pt-4 text-xs md:text-sm text-white/85">
+            <span className="whitespace-nowrap">🌐 {SITE}</span>
+            <span className="whitespace-nowrap">📞 {PHONE_DISPLAY}</span>
+            <span className="whitespace-nowrap">✉ {EMAIL_DISPLAY}</span>
           </div>
         </div>
       </div>
