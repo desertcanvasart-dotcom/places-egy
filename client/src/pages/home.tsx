@@ -14,7 +14,6 @@ import { supabase, type Listing } from "@/lib/supabase";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { faqSchema } from "@/lib/schema";
 import { useDocumentMeta } from "@/lib/use-document-meta";
-import { PopupOverlay } from "@/components/PopupOverlay";
 
 const HOME_FAQS = [
   {
@@ -69,7 +68,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen font-sans flex flex-col bg-background">
-      <PopupOverlay />
       <SchemaMarkup schema={faqSchema(HOME_FAQS)} />
       <Navbar />
 
