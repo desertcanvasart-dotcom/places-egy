@@ -7,6 +7,7 @@ import { CountUp } from "@/components/ui/count-up";
 import { ServicesExplorer } from "@/components/ServicesExplorer";
 import { DeveloperStrip } from "@/components/DeveloperStrip";
 import { DealAnnouncementCarousel } from "@/components/DealAnnouncementCarousel";
+import { DealPostersCarousel } from "@/components/DealPostersCarousel";
 import { ListingCard } from "@/components/listings/ListingCard";
 import { ArrowRight, Building2, ClipboardList, BarChart3, ShieldCheck, CheckCircle2, Coins } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -158,6 +159,12 @@ export default function Home() {
             <DealAnnouncementCarousel />
           </div>
         </section>
+      </FadeInSection>
+
+      {/* Latest Closed Deals posters — Canva-designed announcement PNGs uploaded
+          via the admin dashboard. Renders nothing when there are no active posters. */}
+      <FadeInSection>
+        <DealPostersCarousel />
       </FadeInSection>
 
       {/* Curated Opportunities */}

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase, type Listing } from "@/lib/supabase";
 import { DealsManager } from "@/components/admin/DealsManager";
 import { ClientLogosManager } from "@/components/admin/ClientLogosManager";
+import { DealPostersManager } from "@/components/admin/DealPostersManager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -470,7 +471,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
   const queryClient = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
   const [editListing, setEditListing] = useState<ListingForm | null>(null);
-  const [tab, setTab] = useState<"listings" | "deals" | "logos">("listings");
+  const [tab, setTab] = useState<"listings" | "deals" | "logos" | "posters">("listings");
   const { data: listings = [], isLoading } = useQuery<Listing[]>({
     queryKey: ["admin-listings"],
     queryFn: async () => {
@@ -548,6 +549,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
             { key: "listings", label: "Listings" },
             { key: "deals", label: "Deals" },
             { key: "logos", label: "Client Logos" },
+            { key: "posters", label: "Deal Posters" },
           ] as const).map(({ key, label }) => (
             <button
               key={key}
@@ -567,6 +569,8 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
           <DealsManager />
         ) : tab === "logos" ? (
           <ClientLogosManager />
+        ) : tab === "posters" ? (
+          <DealPostersManager />
         ) : isLoading ? (
           <p className="text-muted-foreground text-center py-8 md:py-12">Loading listings...</p>
         ) : listings.length === 0 ? (
