@@ -99,10 +99,16 @@ export function PopupOverlay() {
       aria-labelledby="popup-title"
     >
       <div
-        // Width scales up on wider viewports (max-w-2xl at ≥768px, max-w-3xl
-        // at ≥1024px) so the card doesn't look lost on a 1920px monitor.
-        // max-h uses dvh so it respects the actual visible viewport on iOS.
-        className="relative w-full max-w-md sm:max-w-lg md:max-w-2xl lg:max-w-3xl my-auto overflow-hidden rounded-xl md:rounded-2xl shadow-2xl bg-neutral-900"
+        // Card sizing bumped up from the earlier compact modal to feel more
+        // like the poster it was designed as, but still normal container-
+        // driven sizing (not aspect-ratio-driven) so centering behaves
+        // predictably. Mobile: 90% of viewport (max-w-md at 375px). Tablet:
+        // max-w-xl. Desktop md: max-w-2xl. Desktop lg: max-w-4xl — sits at
+        // ~896px wide on a 1920px screen, ~60% viewport, which is the
+        // commanding-but-not-fullscreen sweet spot.
+        // mx-auto + the parent's items-center + justify-center guarantees
+        // dead-center placement on every breakpoint.
+        className="relative w-full max-w-md sm:max-w-xl md:max-w-2xl lg:max-w-4xl mx-auto my-auto overflow-hidden rounded-xl md:rounded-2xl shadow-2xl bg-neutral-900"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Background photo layer — sits behind all content. opacity bumped
@@ -136,15 +142,15 @@ export function PopupOverlay() {
               if headline_top/bottom are ever set to long strings. */}
           <h2
             id="popup-title"
-            className="mb-4 mt-1 font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl leading-[0.95] break-words pr-12 md:pr-16"
+            className="mb-4 mt-1 font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl leading-[0.95] break-words pr-12 md:pr-16"
           >
             <span className="block text-accent">{popup.headline_top}</span>
-            <span className="block">{popup.headline_bottom}</span>
+            <span className="block text-white">{popup.headline_bottom}</span>
           </h2>
 
           {/* Body — sizes step up gently; max-w keeps line length readable on
               wide screens (~65ch is the sweet spot for prose). */}
-          <p className="mb-6 md:mb-8 max-w-xl text-sm sm:text-base leading-relaxed text-white/90">
+          <p className="mb-6 md:mb-8 max-w-2xl text-sm sm:text-base md:text-lg leading-relaxed text-white/90">
             {popup.body_paragraph}
           </p>
 
@@ -155,7 +161,7 @@ export function PopupOverlay() {
               <img
                 src={popup.project_logo_url}
                 alt=""
-                className="max-h-14 sm:max-h-16 md:max-h-20 max-w-[80%] md:max-w-[260px] object-contain"
+                className="max-h-16 sm:max-h-20 md:max-h-24 lg:max-h-28 max-w-[80%] md:max-w-[320px] object-contain"
                 loading="eager"
                 decoding="async"
               />
@@ -167,15 +173,15 @@ export function PopupOverlay() {
           {(popup.stat_label || popup.stat_value) && (
             <div className="mb-6 md:mb-8 text-center">
               {popup.stat_label && (
-                <p className="mb-1 text-base sm:text-lg md:text-xl font-medium text-white/90">
+                <p className="mb-2 text-lg sm:text-xl md:text-2xl font-medium text-white/90">
                   {popup.stat_label}
                 </p>
               )}
               {popup.stat_value && (
-                <p className="font-serif font-bold leading-none text-5xl sm:text-6xl md:text-7xl lg:text-8xl">
+                <p className="font-serif font-bold leading-none text-6xl sm:text-7xl md:text-8xl lg:text-9xl">
                   <span className="text-accent">{popup.stat_value}</span>
                   {popup.stat_unit && (
-                    <span className="ml-1 text-base sm:text-lg md:text-xl lg:text-2xl align-baseline">
+                    <span className="ml-1 text-lg sm:text-xl md:text-2xl lg:text-3xl align-baseline">
                       {popup.stat_unit}
                     </span>
                   )}
