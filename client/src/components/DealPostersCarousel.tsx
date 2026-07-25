@@ -23,18 +23,24 @@ export function DealPostersCarousel() {
       <div className="container mx-auto px-6 md:px-10 max-w-7xl">
         <div className="flex flex-wrap gap-4 md:gap-6 justify-start">
           {posters.map((poster, i) => (
-            <div
-              key={poster.id}
-              className="w-40 md:w-60 aspect-4/5 rounded-xl overflow-hidden shadow-lg bg-white animate-[posterPulse_4s_ease-in-out_infinite] motion-reduce:animate-none"
-              style={{ animationDelay: `${(i % 5) * 0.4}s` }}
-            >
-              <img
-                src={poster.poster_url}
-                alt={poster.caption ?? "Closed deal announcement"}
-                loading="lazy"
-                decoding="async"
-                className="w-full h-full object-contain"
-              />
+            <div key={poster.id} className="w-40 md:w-60 shrink-0">
+              <div
+                className="w-full aspect-4/5 rounded-xl overflow-hidden shadow-lg bg-white animate-[posterPulse_4s_ease-in-out_infinite] motion-reduce:animate-none"
+                style={{ animationDelay: `${(i % 5) * 0.4}s` }}
+              >
+                <img
+                  src={poster.poster_url}
+                  alt={poster.caption ?? "Closed deal announcement"}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              {poster.caption && (
+                <p className="mt-3 text-xs md:text-sm text-primary/80 text-center line-clamp-1">
+                  {poster.caption}
+                </p>
+              )}
             </div>
           ))}
         </div>
