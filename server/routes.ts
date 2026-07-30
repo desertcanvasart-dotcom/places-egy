@@ -7,7 +7,6 @@ import { strictLimiter, uploadLimiter } from "./rate-limit";
 import { listingInsertSchema, listingUpdateSchema } from "./listing-schema";
 import { dealInsertSchema, dealUpdateSchema } from "./deal-schema";
 import { clientLogoInsertSchema, clientLogoUpdateSchema } from "./client-logo-schema";
-import { dealPosterInsertSchema, dealPosterUpdateSchema } from "./deal-poster-schema";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -387,110 +386,6 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Invalid id" });
       }
       const { error } = await supabaseAdmin.from("client_logos").delete().eq("id", id);
-      if (error) return res.status(400).json({ message: error.message });
-      res.json({ ok: true });
-    },
-  );
-
-  // ── Deal Posters ─────────────────────────────────────────────────────────
-  // Homepage "Latest Closed Deals" section — the team designs each poster in
-  // Canva, exports PNG, uploads via /dashboard "Deal Posters" tab. Just image
-  // files + sort_order + is_active + optional caption. No text editing on the
-  // site — the design lives entirely in Canva.
-
-  app.get("/api/deal-posters", async (_req: Request, res: Response) => {
-    if (!supabaseAdmin) return res.json([]);
-    const { data, error } = await supabaseAdmin
-      .from("deal_posters")
-      .select("*")
-      .eq("is_active", true)
-      .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: false })
-      .limit(30);
-    if (error) return res.status(500).json({ message: error.message });
-    res.json(data ?? []);
-  });
-
-  app.get(
-    "/api/admin/deal-posters",
-    strictLimiter,
-    requireAdmin,
-    async (_req: Request, res: Response) => {
-      if (!supabaseAdmin) {
-        return res.status(503).json({ message: "Supabase not configured" });
-      }
-      const { data, error } = await supabaseAdmin
-        .from("deal_posters")
-        .select("*")
-        .order("sort_order", { ascending: true })
-        .order("created_at", { ascending: false });
-      if (error) return res.status(400).json({ message: error.message });
-      res.json(data ?? []);
-    },
-  );
-
-  app.post(
-    "/api/admin/deal-posters",
-    strictLimiter,
-    requireAdmin,
-    async (req: Request, res: Response) => {
-      if (!supabaseAdmin) {
-        return res.status(503).json({ message: "Supabase not configured" });
-      }
-      const parsed = dealPosterInsertSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ message: "Invalid deal poster payload" });
-      }
-      const { error, data } = await supabaseAdmin
-        .from("deal_posters")
-        .insert(parsed.data)
-        .select()
-        .single();
-      if (error) return res.status(400).json({ message: error.message });
-      res.json(data);
-    },
-  );
-
-  app.patch(
-    "/api/admin/deal-posters/:id",
-    strictLimiter,
-    requireAdmin,
-    async (req: Request, res: Response) => {
-      if (!supabaseAdmin) {
-        return res.status(503).json({ message: "Supabase not configured" });
-      }
-      const id = Number(req.params.id);
-      if (!Number.isFinite(id)) {
-        return res.status(400).json({ message: "Invalid id" });
-      }
-      const parsed = dealPosterUpdateSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ message: "Invalid deal poster payload" });
-      }
-      const { error, data } = await supabaseAdmin
-        .from("deal_posters")
-        .update(parsed.data)
-        .eq("id", id)
-        .select()
-        .single();
-      if (error) return res.status(400).json({ message: error.message });
-      res.json(data);
-    },
-  );
-
-  app.delete(
-    "/api/admin/deal-posters/:id",
-    strictLimiter,
-    requireAdmin,
-    async (req: Request, res: Response) => {
-      if (!supabaseAdmin) {
-        return res.status(503).json({ message: "Supabase not configured" });
-      }
-      const id = Number(req.params.id);
-      if (!Number.isFinite(id)) {
-        return res.status(400).json({ message: "Invalid id" });
-      }
-      const { error } = await supabaseAdmin.from("deal_posters").delete().eq("id", id);
       if (error) return res.status(400).json({ message: error.message });
       res.json({ ok: true });
     },
