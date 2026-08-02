@@ -359,7 +359,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
               <span />
             )}
             {!hideSubtype && (
-              <span className="text-[10px] font-bold uppercase tracking-wider text-primary/60 bg-primary/5 border border-primary/10 px-2.5 py-1 rounded-full">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-primary/60 bg-primary/5 border border-primary/10 px-2.5 py-1 rounded-full whitespace-nowrap shrink-0">
                 {formatLabel(listing.subtype)}
               </span>
             )}
