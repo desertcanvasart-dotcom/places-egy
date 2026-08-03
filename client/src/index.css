@@ -209,8 +209,14 @@
 }
 
 /* Arabic blog content variant. Applied on top of .blog-content when the post
-   is Arabic — swaps the font family + flips list bullets to the right side,
-   which the default LTR .blog-content leaves on the left. */
+   is Arabic — swaps the font family, forces RTL text direction on the WP
+   HTML body (which arrives without dir attributes), and flips list bullets
+   and blockquote border to the right side. */
+.blog-content-ar {
+  direction: rtl;
+  text-align: right;
+  unicode-bidi: plaintext;
+}
 .blog-content-ar,
 .blog-content-ar h2,
 .blog-content-ar h3,

@@ -65,9 +65,9 @@ const COPY = {
   ar: {
     breadcrumbHome: "الرئيسية",
     breadcrumbBlog: "المدونة",
-    heading: "رؤى بلاسز",
+    heading: "PLACES Insights",
     subheading:
-      "رؤى السوق ودلائل المستثمرين وتحليل المواقع للعقارات الإدارية والتجارية في مصر — من الفريق الذي يعيش هذا السوق كل يوم.",
+      "تحليلات ونصائح حول سوق العقارات الإدارية والتجارية في مصر — من فريق يعمل داخل السوق كل يوم.",
     all: "الكل",
     empty: "لا توجد مقالات في هذا القسم حتى الآن — تفقد لاحقًا.",
     browseAll: "تصفح جميع المقالات",
@@ -92,7 +92,7 @@ export default function BlogIndexPage({ lang = "en" }: { lang?: BlogLang }) {
 
   useDocumentMeta({
     title: isAr
-      ? "رؤى بلاسز — تحليل سوق العقارات الإدارية في مصر"
+      ? "PLACES Insights — تحليل سوق العقارات الإدارية في مصر"
       : "PLACES Insights — Egyptian Office Real Estate Market Analysis",
     description: t.subheading,
     url: `https://places-egy.com${basePath}`,
