@@ -70,12 +70,17 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express,
 ): Promise<Server> {
-  // GET /api/blog/posts?page=1&per_page=9&category=market-insights
+  // GET /api/blog/posts?page=1&per_page=9&category=market-insights&lang=en|ar
+  // The `lang` param is Polylang's language filter — exposed to the REST API
+  // by our custom snippet in WP's Code Snippets plugin. Only "en" or "ar"
+  // reach WP; anything else is stripped so we never leak arbitrary params.
   app.get("/api/blog/posts", async (req: Request, res: Response) => {
     const params = new URLSearchParams();
     params.set("_embed", "true");
     params.set("page", String(req.query.page ?? 1));
     params.set("per_page", String(req.query.per_page ?? 9));
+    const lang = String(req.query.lang ?? "");
+    if (lang === "en" || lang === "ar") params.set("lang", lang);
     if (req.query.category) {
       // Frontend passes category SLUG, but WP /posts expects category ID.
       // Resolve slug → id first.
@@ -88,10 +93,12 @@ export async function registerRoutes(
     return proxyToWp(`/posts?${params.toString()}`, res);
   });
 
-  // GET /api/blog/posts/:slug — single post by slug
+  // GET /api/blog/posts/:slug?lang=en|ar — single post by slug
   app.get("/api/blog/posts/:slug", async (req: Request, res: Response) => {
     const slug = encodeURIComponent(String(req.params.slug));
-    return proxyToWp(`/posts?slug=${slug}&_embed=true`, res);
+    const lang = String(req.query.lang ?? "");
+    const langParam = lang === "en" || lang === "ar" ? `&lang=${lang}` : "";
+    return proxyToWp(`/posts?slug=${slug}&_embed=true${langParam}`, res);
   });
 
   // GET /api/blog/categories — list of all categories

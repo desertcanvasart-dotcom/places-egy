@@ -15,17 +15,54 @@ import {
 import DOMPurify from "dompurify";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema, blogPostingSchema } from "@/lib/schema";
+import { BlogLangSwitcher } from "@/components/blog/BlogLangSwitcher";
 import {
   fetchPost,
   fetchRelatedPosts,
   formatPostDate,
   stripHtml,
+  type BlogLang,
   type BlogPost,
 } from "@/lib/blog";
 import { trackEvent } from "@/lib/analytics";
 import { useScrollDepth } from "@/lib/use-scroll-depth";
 
 const BASE_URL = "https://places-egy.com";
+
+const COPY = {
+  en: {
+    home: "Home",
+    blog: "Blog",
+    minRead: "min read",
+    tags: "Tags",
+    writtenBy: "Written by",
+    authorBio:
+      "Part of the PLACES advisory team — specialists in Egypt's commercial and administrative real estate market.",
+    readNext: "Read next",
+    readNextSub: "More from the PLACES team.",
+    ctaHeading: "Want our take on your specific situation?",
+    ctaBody: "Free 15-minute consultation with a PLACES advisor.",
+    ctaButton: "Talk to an advisor",
+    backToAll: "Back to all posts",
+    defaultCategory: "Insights",
+  },
+  ar: {
+    home: "الرئيسية",
+    blog: "المدونة",
+    minRead: "دقيقة قراءة",
+    tags: "الوسوم",
+    writtenBy: "بقلم",
+    authorBio:
+      "جزء من فريق بلاسز الاستشاري — متخصصون في سوق العقارات التجارية والإدارية في مصر.",
+    readNext: "اقرأ المزيد",
+    readNextSub: "المزيد من فريق بلاسز.",
+    ctaHeading: "تريد رأينا في حالتك بالذات؟",
+    ctaBody: "استشارة مجانية لمدة 15 دقيقة مع مستشار بلاسز.",
+    ctaButton: "تحدث مع مستشار",
+    backToAll: "العودة إلى جميع المقالات",
+    defaultCategory: "رؤى",
+  },
+} as const;
 
 function setMetaTag(key: string, value: string, attr: "name" | "property" = "name") {
   let el = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${key}"]`);
@@ -37,39 +74,54 @@ function setMetaTag(key: string, value: string, attr: "name" | "property" = "nam
   el.setAttribute("content", value);
 }
 
-export default function BlogPostPage() {
+function setLinkTag(rel: string, href: string, hreflang?: string) {
+  const selector = hreflang
+    ? `link[rel="${rel}"][hreflang="${hreflang}"]`
+    : `link[rel="${rel}"]`;
+  let el = document.head.querySelector<HTMLLinkElement>(selector);
+  if (!el) {
+    el = document.createElement("link");
+    el.setAttribute("rel", rel);
+    if (hreflang) el.setAttribute("hreflang", hreflang);
+    document.head.appendChild(el);
+  }
+  el.setAttribute("href", href);
+}
+
+export default function BlogPostPage({ lang = "en" }: { lang?: BlogLang }) {
+  const isAr = lang === "ar";
+  const t = COPY[lang];
+  const basePath = isAr ? "/ar/blog" : "/blog";
+
   const { slug } = useParams<{ slug: string }>();
   const [, setLocation] = useLocation();
 
-  useScrollDepth(`/blog/${slug}`);
+  useScrollDepth(`${basePath}/${slug}`);
 
   const { data: post, isLoading, isError } = useQuery<BlogPost | null>({
-    queryKey: ["blog-post", slug],
-    queryFn: () => fetchPost(slug ?? ""),
+    queryKey: ["blog-post", lang, slug],
+    queryFn: () => fetchPost(slug ?? "", lang),
     enabled: Boolean(slug),
   });
 
   const { data: related = [] } = useQuery<BlogPost[]>({
-    queryKey: ["blog-related", post?.id],
+    queryKey: ["blog-related", lang, post?.id],
     queryFn: () => (post ? fetchRelatedPosts(post, 3) : Promise.resolve([])),
     enabled: Boolean(post),
   });
 
-  // Soft redirect to /blog if the slug doesn't exist (vs hard 404).
   useEffect(() => {
     if (!isLoading && !isError && post === null) {
-      setLocation("/blog", { replace: true });
+      setLocation(basePath, { replace: true });
     }
-  }, [isLoading, isError, post, setLocation]);
+  }, [isLoading, isError, post, setLocation, basePath]);
 
-  // Per-post meta tags + GA4 read event. WP's SEO plugin (Rank Math/Yoast)
-  // populates post.seo when the data layer is wired to the live API.
   useEffect(() => {
     if (!post) return;
 
     const title = post.seo.title || `${post.title} — PLACES`;
     const description = post.seo.description || stripHtml(post.excerpt);
-    const url = `${BASE_URL}/blog/${post.slug}`;
+    const url = `${BASE_URL}${basePath}/${post.slug}`;
     const image = post.featuredImage?.url
       ? post.featuredImage.url.startsWith("http")
         ? post.featuredImage.url
@@ -83,12 +135,9 @@ export default function BlogPostPage() {
     setMetaTag("og:description", description, "property");
     setMetaTag("og:url", url, "property");
     setMetaTag("og:type", "article", "property");
+    setMetaTag("og:locale", isAr ? "ar_EG" : "en_EG", "property");
     if (image) {
       setMetaTag("og:image", image, "property");
-      // Drop the static og:image:width/height/type/alt/secure_url from
-      // index.html — those describe the site-level opengraph.jpg, not this
-      // post's featured image. Leaving them in place causes social scrapers
-      // to render the wrong aspect ratio.
       document.head.querySelector('meta[property="og:image:width"]')?.remove();
       document.head.querySelector('meta[property="og:image:height"]')?.remove();
       document.head.querySelector('meta[property="og:image:type"]')?.remove();
@@ -101,21 +150,35 @@ export default function BlogPostPage() {
     setMetaTag("twitter:description", description);
     if (image) setMetaTag("twitter:image", image);
 
+    // hreflang tags — tell Google that this post has an alternate-language
+    // version at the mirrored URL (if it exists). Even if the mirror is
+    // missing, listing both is standard practice and Google handles gracefully.
+    const enUrl = `${BASE_URL}/blog/${post.slug}`;
+    const arUrl = `${BASE_URL}/ar/blog/${post.slug}`;
+    setLinkTag("alternate", enUrl, "en");
+    setLinkTag("alternate", arUrl, "ar");
+    setLinkTag("alternate", enUrl, "x-default");
+    setLinkTag("canonical", url);
+
     trackEvent("blog_post_view", {
       post_id: post.id,
       post_slug: post.slug,
       post_title: post.title,
       post_category: post.categories[0]?.slug,
+      lang,
     });
 
     return () => {
       document.title = previousTitle;
     };
-  }, [post]);
+  }, [post, basePath, isAr, lang]);
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col font-sans bg-background">
+      <div
+        className="min-h-screen flex flex-col font-sans bg-background"
+        dir={isAr ? "rtl" : "ltr"}
+      >
         <Navbar />
         <div className="flex-1 flex items-center justify-center pt-32">
           <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
@@ -128,27 +191,36 @@ export default function BlogPostPage() {
   if (!post) return null;
 
   return (
-    <div className="min-h-screen flex flex-col font-sans bg-background">
+    <div
+      className="min-h-screen flex flex-col font-sans bg-background"
+      dir={isAr ? "rtl" : "ltr"}
+    >
       <SchemaMarkup
         schema={breadcrumbSchema([
-          { name: "Home", url: "/" },
-          { name: "Blog", url: "/blog" },
-          { name: post.title, url: `/blog/${post.slug}` },
+          { name: t.home, url: "/" },
+          { name: t.blog, url: basePath },
+          { name: post.title, url: `${basePath}/${post.slug}` },
         ])}
       />
       <SchemaMarkup schema={blogPostingSchema(post)} />
       <Navbar />
 
-      {/* Header */}
       <section className="pt-32 pb-8">
         <div className="container mx-auto px-6 md:px-10 max-w-3xl">
-          <nav className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground mb-6 flex-wrap">
-            <Link href="/" className="hover:text-primary transition-colors">Home</Link>
-            <ChevronRight className="w-3.5 h-3.5" />
-            <Link href="/blog" className="hover:text-primary transition-colors">Blog</Link>
-            <ChevronRight className="w-3.5 h-3.5" />
-            <span className="text-primary line-clamp-1">{post.title}</span>
-          </nav>
+          <div className="flex items-start justify-between gap-4 mb-6">
+            <nav className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground flex-wrap">
+              <Link href="/" className="hover:text-primary transition-colors">
+                {t.home}
+              </Link>
+              <ChevronRight className={`w-3.5 h-3.5 ${isAr ? "rotate-180" : ""}`} />
+              <Link href={basePath} className="hover:text-primary transition-colors">
+                {t.blog}
+              </Link>
+              <ChevronRight className={`w-3.5 h-3.5 ${isAr ? "rotate-180" : ""}`} />
+              <span className="text-primary line-clamp-1">{post.title}</span>
+            </nav>
+            <BlogLangSwitcher lang={lang} />
+          </div>
 
           <div className="flex items-center gap-2 mb-4">
             {post.categories.map((c) => (
@@ -161,7 +233,11 @@ export default function BlogPostPage() {
             ))}
           </div>
 
-          <h1 className="text-3xl md:text-5xl font-serif font-bold text-primary leading-tight mb-6">
+          <h1
+            className={`text-3xl md:text-5xl font-bold text-primary leading-tight mb-6 ${
+              isAr ? "font-serif-ar" : "font-serif"
+            }`}
+          >
             {post.title}
           </h1>
 
@@ -173,13 +249,12 @@ export default function BlogPostPage() {
             </span>
             <span className="flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5" />
-              {post.readingTimeMinutes} min read
+              {post.readingTimeMinutes} {t.minRead}
             </span>
           </div>
         </div>
       </section>
 
-      {/* Featured image */}
       {post.featuredImage && (
         <section className="pb-10">
           <div className="container mx-auto px-6 md:px-10 max-w-4xl">
@@ -196,28 +271,24 @@ export default function BlogPostPage() {
         </section>
       )}
 
-      {/* Body — WP REST returns rendered HTML. We sanitize client-side with
-          DOMPurify because WP's own sanitization only restricts low-privilege
-          authors; admin/editor roles can publish raw <script>. */}
       <article className="pb-12">
         <div className="container mx-auto px-6 md:px-10 max-w-3xl">
           <div
-            className="blog-content"
+            className={`blog-content ${isAr ? "blog-content-ar" : ""}`}
             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
           />
 
-          {/* Tags */}
           {post.tags.length > 0 && (
             <div className="mt-10 pt-6 border-t border-border/40 flex flex-wrap gap-2">
               <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground mr-2 self-center">
-                Tags
+                {t.tags}
               </span>
-              {post.tags.map((t) => (
+              {post.tags.map((tag) => (
                 <span
-                  key={t.slug}
+                  key={tag.slug}
                   className="text-xs font-medium text-primary/70 bg-primary/5 border border-primary/10 px-3 py-1 rounded-full"
                 >
-                  {t.name}
+                  {tag.name}
                 </span>
               ))}
             </div>
@@ -225,38 +296,40 @@ export default function BlogPostPage() {
         </div>
       </article>
 
-      {/* Author byline */}
       <section className="pb-12">
         <div className="container mx-auto px-6 md:px-10 max-w-3xl">
           <div className="bg-secondary/40 border border-border/40 rounded-2xl p-6 md:p-8">
             <p className="text-xs font-bold uppercase tracking-widest text-accent mb-2">
-              Written by
+              {t.writtenBy}
             </p>
-            <h3 className="text-lg font-serif font-bold text-primary mb-1">
+            <h3
+              className={`text-lg font-bold text-primary mb-1 ${
+                isAr ? "font-serif-ar" : "font-serif"
+              }`}
+            >
               {post.author.name}
             </h3>
-            <p className="text-sm text-muted-foreground">
-              Part of the PLACES advisory team — specialists in Egypt's commercial and administrative real estate market.
-            </p>
+            <p className="text-sm text-muted-foreground">{t.authorBio}</p>
           </div>
         </div>
       </section>
 
-      {/* Related posts */}
       {related.length > 0 && (
         <section className="pb-16 border-t border-border/40 pt-12">
           <div className="container mx-auto px-6 md:px-10">
-            <h2 className="text-2xl md:text-3xl font-serif font-bold text-primary mb-2">
-              Read next
+            <h2
+              className={`text-2xl md:text-3xl font-bold text-primary mb-2 ${
+                isAr ? "font-serif-ar" : "font-serif"
+              }`}
+            >
+              {t.readNext}
             </h2>
-            <p className="text-muted-foreground mb-8">
-              More from the PLACES team.
-            </p>
+            <p className="text-muted-foreground mb-8">{t.readNextSub}</p>
             <div className="grid md:grid-cols-3 gap-6">
               {related.map((p) => (
                 <Link
                   key={p.id}
-                  href={`/blog/${p.slug}`}
+                  href={`${basePath}/${p.slug}`}
                   className="group flex flex-col bg-white rounded-2xl border border-border/40 overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
                 >
                   <div className="relative aspect-[16/10] overflow-hidden bg-muted">
@@ -272,9 +345,13 @@ export default function BlogPostPage() {
                   </div>
                   <div className="p-5">
                     <span className="text-[11px] font-bold uppercase tracking-widest text-accent">
-                      {p.categories[0]?.name ?? "Insights"}
+                      {p.categories[0]?.name ?? t.defaultCategory}
                     </span>
-                    <h3 className="text-base font-serif font-bold text-primary mt-2 leading-snug group-hover:text-accent transition-colors line-clamp-2">
+                    <h3
+                      className={`text-base font-bold text-primary mt-2 leading-snug group-hover:text-accent transition-colors line-clamp-2 ${
+                        isAr ? "font-serif-ar" : "font-serif"
+                      }`}
+                    >
                       {p.title}
                     </h3>
                   </div>
@@ -285,32 +362,35 @@ export default function BlogPostPage() {
         </section>
       )}
 
-      {/* Bottom CTA */}
       <section className="pb-16">
         <div className="container mx-auto px-6 md:px-10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 py-10 border-t border-border/40">
             <div>
-              <h2 className="text-2xl md:text-3xl font-serif font-bold text-primary mb-1">
-                Want our take on your specific situation?
+              <h2
+                className={`text-2xl md:text-3xl font-bold text-primary mb-1 ${
+                  isAr ? "font-serif-ar" : "font-serif"
+                }`}
+              >
+                {t.ctaHeading}
               </h2>
-              <p className="text-muted-foreground">
-                Free 15-minute consultation with a PLACES advisor.
-              </p>
+              <p className="text-muted-foreground">{t.ctaBody}</p>
             </div>
             <Link href="/contact">
               <Button
                 size="lg"
                 className="bg-accent hover:bg-accent/90 text-white px-8 h-12 text-base font-medium shadow-lg shadow-accent/30 transition-all hover:scale-105 shrink-0"
               >
-                Talk to an advisor <ArrowRight className="ml-2 w-4 h-4" />
+                {t.ctaButton}{" "}
+                <ArrowRight className={`ml-2 w-4 h-4 ${isAr ? "rotate-180" : ""}`} />
               </Button>
             </Link>
           </div>
           <Link
-            href="/blog"
+            href={basePath}
             className="mt-6 inline-flex items-center text-sm font-medium text-primary hover:text-accent transition-colors"
           >
-            <ChevronLeft className="w-4 h-4 mr-1" /> Back to all posts
+            <ChevronLeft className={`w-4 h-4 mr-1 ${isAr ? "rotate-180" : ""}`} />{" "}
+            {t.backToAll}
           </Link>
         </div>
       </section>

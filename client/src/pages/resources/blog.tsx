@@ -15,11 +15,13 @@ import {
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema, blogIndexSchema } from "@/lib/schema";
 import { useDocumentMeta } from "@/lib/use-document-meta";
+import { BlogLangSwitcher } from "@/components/blog/BlogLangSwitcher";
 import {
   fetchPosts,
   fetchCategories,
   formatPostDate,
   stripHtml,
+  type BlogLang,
   type BlogPost,
 } from "@/lib/blog";
 
@@ -36,12 +38,64 @@ function readCategoryFromQuery(search: string): string | undefined {
   return params.get("category") ?? undefined;
 }
 
-export default function BlogIndexPage() {
-  useDocumentMeta({
-    title: "PLACES Insights — Egyptian Office Real Estate Market Analysis",
-    description:
+// UI copy per language. Kept small — this is only the shell, post bodies come
+// from WordPress.
+const COPY = {
+  en: {
+    breadcrumbHome: "Home",
+    breadcrumbBlog: "Blog",
+    heading: "PLACES Insights",
+    subheading:
       "Market insights, investor guides, and location analysis for commercial and administrative real estate in Egypt — from the team that lives this market every day.",
-    url: "https://places-egy.com/blog",
+    all: "All",
+    empty: "No posts in this category yet — check back soon.",
+    browseAll: "Browse all posts",
+    featured: "Featured",
+    defaultCategory: "Insights",
+    minRead: "min read",
+    min: "min",
+    newer: "Newer posts",
+    older: "Older posts",
+    pageOf: (p: number, t: number) => `Page ${p} of ${t}`,
+    ctaHeading: "Want our take on your specific situation?",
+    ctaBody:
+      "Book a free 15-minute consultation with a PLACES advisor — we'll walk you through your options directly.",
+    ctaButton: "Talk to an advisor",
+  },
+  ar: {
+    breadcrumbHome: "الرئيسية",
+    breadcrumbBlog: "المدونة",
+    heading: "رؤى بلاسز",
+    subheading:
+      "رؤى السوق ودلائل المستثمرين وتحليل المواقع للعقارات الإدارية والتجارية في مصر — من الفريق الذي يعيش هذا السوق كل يوم.",
+    all: "الكل",
+    empty: "لا توجد مقالات في هذا القسم حتى الآن — تفقد لاحقًا.",
+    browseAll: "تصفح جميع المقالات",
+    featured: "المميز",
+    defaultCategory: "رؤى",
+    minRead: "دقيقة قراءة",
+    min: "دقيقة",
+    newer: "المقالات الأحدث",
+    older: "المقالات الأقدم",
+    pageOf: (p: number, t: number) => `صفحة ${p} من ${t}`,
+    ctaHeading: "تريد رأينا في حالتك بالذات؟",
+    ctaBody:
+      "احجز استشارة مجانية لمدة 15 دقيقة مع مستشار بلاسز — سنشرح لك خياراتك مباشرة.",
+    ctaButton: "تحدث مع مستشار",
+  },
+} as const;
+
+export default function BlogIndexPage({ lang = "en" }: { lang?: BlogLang }) {
+  const isAr = lang === "ar";
+  const t = COPY[lang];
+  const basePath = isAr ? "/ar/blog" : "/blog";
+
+  useDocumentMeta({
+    title: isAr
+      ? "رؤى بلاسز — تحليل سوق العقارات الإدارية في مصر"
+      : "PLACES Insights — Egyptian Office Real Estate Market Analysis",
+    description: t.subheading,
+    url: `https://places-egy.com${basePath}`,
   });
 
   const [, setLocation] = useLocation();
@@ -50,8 +104,8 @@ export default function BlogIndexPage() {
   const category = readCategoryFromQuery(search);
 
   const { data: postsData, isLoading } = useQuery({
-    queryKey: ["blog-posts", page, category],
-    queryFn: () => fetchPosts({ page, perPage: POSTS_PER_PAGE, category }),
+    queryKey: ["blog-posts", lang, page, category],
+    queryFn: () => fetchPosts({ page, perPage: POSTS_PER_PAGE, category, lang }),
   });
 
   const { data: categories } = useQuery({
@@ -59,32 +113,25 @@ export default function BlogIndexPage() {
     queryFn: fetchCategories,
   });
 
-  // Title/meta handled by useDocumentMeta() above — this replaces the earlier
-  // useEffect that only set the title with a stale value ("Insights — PLACES")
-  // that didn't match the sitemap or the per-page prerender.
-
   const posts = postsData?.posts ?? [];
   const totalPages = postsData?.totalPages ?? 1;
 
   const featured = posts[0];
   const rest = posts.slice(1);
 
-  // Pagination URLs preserve current category filter.
   const buildPageUrl = (p: number) => {
     const params = new URLSearchParams();
     if (p > 1) params.set("page", String(p));
     if (category) params.set("category", category);
     const q = params.toString();
-    return `/blog${q ? `?${q}` : ""}`;
+    return `${basePath}${q ? `?${q}` : ""}`;
   };
 
   const buildCategoryUrl = (slug?: string) => {
-    if (!slug) return "/blog";
-    return `/blog?category=${slug}`;
+    if (!slug) return basePath;
+    return `${basePath}?category=${slug}`;
   };
 
-  // For the schema's blogPost array we want all posts on this page (not just
-  // the featured one), with their excerpts as descriptions.
   const schemaPosts = useMemo(
     () =>
       posts.map((p) => ({
@@ -97,34 +144,42 @@ export default function BlogIndexPage() {
   );
 
   return (
-    <div className="min-h-screen flex flex-col font-sans bg-background">
+    <div
+      className="min-h-screen flex flex-col font-sans bg-background"
+      dir={isAr ? "rtl" : "ltr"}
+    >
       <SchemaMarkup
         schema={breadcrumbSchema([
-          { name: "Home", url: "/" },
-          { name: "Blog", url: "/blog" },
+          { name: t.breadcrumbHome, url: "/" },
+          { name: t.breadcrumbBlog, url: basePath },
         ])}
       />
       <SchemaMarkup schema={blogIndexSchema({ posts: schemaPosts })} />
       <Navbar />
 
-      {/* Hero */}
       <section className="pt-32 pb-6">
         <div className="container mx-auto px-6 md:px-10">
-          <nav className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground mb-6">
-            <Link href="/" className="hover:text-primary transition-colors">Home</Link>
-            <ChevronRight className="w-3.5 h-3.5" />
-            <span className="text-primary">Blog</span>
-          </nav>
-          <h1 className="text-3xl md:text-[3.25rem] font-serif font-bold text-primary mb-4 leading-tight">
-            PLACES Insights
+          <div className="flex items-start justify-between gap-4 mb-6">
+            <nav className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+              <Link href="/" className="hover:text-primary transition-colors">
+                {t.breadcrumbHome}
+              </Link>
+              <ChevronRight className={`w-3.5 h-3.5 ${isAr ? "rotate-180" : ""}`} />
+              <span className="text-primary">{t.breadcrumbBlog}</span>
+            </nav>
+            <BlogLangSwitcher lang={lang} />
+          </div>
+          <h1
+            className={`text-3xl md:text-[3.25rem] font-bold text-primary mb-4 leading-tight ${
+              isAr ? "font-serif-ar" : "font-serif"
+            }`}
+          >
+            {t.heading}
           </h1>
-          <p className="text-lg text-muted-foreground max-w-3xl">
-            Market insights, investor guides, and location analysis for commercial and administrative real estate in Egypt — from the team that lives this market every day.
-          </p>
+          <p className="text-lg text-muted-foreground max-w-3xl">{t.subheading}</p>
         </div>
       </section>
 
-      {/* Category filter */}
       {categories && categories.length > 0 && (
         <div className="border-b border-border/40">
           <div className="container mx-auto px-6 md:px-10 py-4 flex flex-wrap gap-2">
@@ -136,7 +191,7 @@ export default function BlogIndexPage() {
                   : "border-border/60 text-primary/70 hover:border-primary hover:text-primary"
               }`}
             >
-              All
+              {t.all}
             </button>
             {categories.map((c) => (
               <button
@@ -162,28 +217,33 @@ export default function BlogIndexPage() {
           </div>
         ) : posts.length === 0 ? (
           <div className="text-center py-20">
-            <p className="text-muted-foreground">No posts in this category yet — check back soon.</p>
-            <Link href="/blog">
+            <p className="text-muted-foreground">{t.empty}</p>
+            <Link href={basePath}>
               <Button variant="outline" className="mt-6">
-                Browse all posts
+                {t.browseAll}
               </Button>
             </Link>
           </div>
         ) : (
           <>
-            {/* Featured post (only on first page, no category filter) */}
-            {page === 1 && !category && featured && <FeaturedCard post={featured} />}
+            {page === 1 && !category && featured && (
+              <FeaturedCard post={featured} basePath={basePath} t={t} isAr={isAr} />
+            )}
 
-            {/* Grid of remaining posts */}
             {(page === 1 && !category ? rest : posts).length > 0 && (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-10">
                 {(page === 1 && !category ? rest : posts).map((post) => (
-                  <PostCard key={post.id} post={post} />
+                  <PostCard
+                    key={post.id}
+                    post={post}
+                    basePath={basePath}
+                    t={t}
+                    isAr={isAr}
+                  />
                 ))}
               </div>
             )}
 
-            {/* Pagination */}
             {totalPages > 1 && (
               <nav className="flex items-center justify-between mt-14 pt-8 border-t border-border/40">
                 {page > 1 ? (
@@ -191,20 +251,22 @@ export default function BlogIndexPage() {
                     href={buildPageUrl(page - 1)}
                     className="inline-flex items-center text-sm font-medium text-primary hover:text-accent transition-colors"
                   >
-                    <ChevronLeft className="w-4 h-4 mr-1" /> Newer posts
+                    <ChevronLeft className={`w-4 h-4 mr-1 ${isAr ? "rotate-180" : ""}`} />
+                    {t.newer}
                   </Link>
                 ) : (
                   <span />
                 )}
                 <span className="text-sm text-muted-foreground">
-                  Page {page} of {totalPages}
+                  {t.pageOf(page, totalPages)}
                 </span>
                 {page < totalPages ? (
                   <Link
                     href={buildPageUrl(page + 1)}
                     className="inline-flex items-center text-sm font-medium text-primary hover:text-accent transition-colors"
                   >
-                    Older posts <ChevronRight className="w-4 h-4 ml-1" />
+                    {t.older}{" "}
+                    <ChevronRight className={`w-4 h-4 ml-1 ${isAr ? "rotate-180" : ""}`} />
                   </Link>
                 ) : (
                   <span />
@@ -214,21 +276,23 @@ export default function BlogIndexPage() {
           </>
         )}
 
-        {/* Final CTA */}
         <section className="mt-20">
           <div className="bg-primary rounded-3xl p-10 md:p-14 text-center">
-            <h2 className="text-2xl md:text-3xl font-serif font-bold text-white mb-3">
-              Want our take on your specific situation?
+            <h2
+              className={`text-2xl md:text-3xl font-bold text-white mb-3 ${
+                isAr ? "font-serif-ar" : "font-serif"
+              }`}
+            >
+              {t.ctaHeading}
             </h2>
-            <p className="text-white/70 mb-8 max-w-xl mx-auto">
-              Book a free 15-minute consultation with a PLACES advisor — we'll walk you through your options directly.
-            </p>
+            <p className="text-white/70 mb-8 max-w-xl mx-auto">{t.ctaBody}</p>
             <Link href="/contact">
               <Button
                 size="lg"
                 className="bg-accent hover:bg-accent/90 text-white px-8 h-12 text-base font-medium shadow-lg shadow-accent/30 transition-all hover:scale-105"
               >
-                Talk to an advisor <ArrowRight className="ml-2 w-4 h-4" />
+                {t.ctaButton}{" "}
+                <ArrowRight className={`ml-2 w-4 h-4 ${isAr ? "rotate-180" : ""}`} />
               </Button>
             </Link>
           </div>
@@ -240,10 +304,40 @@ export default function BlogIndexPage() {
   );
 }
 
-function FeaturedCard({ post }: { post: BlogPost }) {
+type Copy = {
+  breadcrumbHome: string;
+  breadcrumbBlog: string;
+  heading: string;
+  subheading: string;
+  all: string;
+  empty: string;
+  browseAll: string;
+  featured: string;
+  defaultCategory: string;
+  minRead: string;
+  min: string;
+  newer: string;
+  older: string;
+  pageOf: (p: number, t: number) => string;
+  ctaHeading: string;
+  ctaBody: string;
+  ctaButton: string;
+};
+
+function FeaturedCard({
+  post,
+  basePath,
+  t,
+  isAr,
+}: {
+  post: BlogPost;
+  basePath: string;
+  t: Copy;
+  isAr: boolean;
+}) {
   return (
     <Link
-      href={`/blog/${post.slug}`}
+      href={`${basePath}/${post.slug}`}
       className="group grid md:grid-cols-2 gap-8 items-center bg-white rounded-3xl border border-border/40 overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
     >
       <div className="relative aspect-[4/3] md:aspect-auto md:h-full overflow-hidden bg-muted">
@@ -260,12 +354,16 @@ function FeaturedCard({ post }: { post: BlogPost }) {
       <div className="p-8 md:p-10">
         <div className="flex items-center gap-2 mb-3">
           <span className="text-[11px] font-bold uppercase tracking-widest text-accent">
-            {post.categories[0]?.name ?? "Insights"}
+            {post.categories[0]?.name ?? t.defaultCategory}
           </span>
           <span className="text-muted-foreground/50">·</span>
-          <span className="text-xs text-muted-foreground">Featured</span>
+          <span className="text-xs text-muted-foreground">{t.featured}</span>
         </div>
-        <h2 className="text-2xl md:text-3xl font-serif font-bold text-primary mb-3 leading-tight group-hover:text-accent transition-colors">
+        <h2
+          className={`text-2xl md:text-3xl font-bold text-primary mb-3 leading-tight group-hover:text-accent transition-colors ${
+            isAr ? "font-serif-ar" : "font-serif"
+          }`}
+        >
           {post.title}
         </h2>
         <p className="text-muted-foreground leading-relaxed mb-5 line-clamp-3">
@@ -278,7 +376,7 @@ function FeaturedCard({ post }: { post: BlogPost }) {
           </span>
           <span className="flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5" />
-            {post.readingTimeMinutes} min read
+            {post.readingTimeMinutes} {t.minRead}
           </span>
         </div>
       </div>
@@ -286,10 +384,20 @@ function FeaturedCard({ post }: { post: BlogPost }) {
   );
 }
 
-function PostCard({ post }: { post: BlogPost }) {
+function PostCard({
+  post,
+  basePath,
+  t,
+  isAr,
+}: {
+  post: BlogPost;
+  basePath: string;
+  t: Copy;
+  isAr: boolean;
+}) {
   return (
     <Link
-      href={`/blog/${post.slug}`}
+      href={`${basePath}/${post.slug}`}
       className="group flex flex-col bg-white rounded-2xl border border-border/40 overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-muted">
@@ -305,9 +413,13 @@ function PostCard({ post }: { post: BlogPost }) {
       </div>
       <div className="p-6 flex flex-col flex-1">
         <span className="text-[11px] font-bold uppercase tracking-widest text-accent mb-2">
-          {post.categories[0]?.name ?? "Insights"}
+          {post.categories[0]?.name ?? t.defaultCategory}
         </span>
-        <h3 className="text-lg font-serif font-bold text-primary mb-2 leading-snug group-hover:text-accent transition-colors line-clamp-2">
+        <h3
+          className={`text-lg font-bold text-primary mb-2 leading-snug group-hover:text-accent transition-colors line-clamp-2 ${
+            isAr ? "font-serif-ar" : "font-serif"
+          }`}
+        >
           {post.title}
         </h3>
         <p className="text-sm text-muted-foreground leading-relaxed mb-4 flex-1 line-clamp-3">
@@ -321,7 +433,7 @@ function PostCard({ post }: { post: BlogPost }) {
           <span className="text-muted-foreground/40">·</span>
           <span className="flex items-center gap-1.5">
             <Clock className="w-3 h-3" />
-            {post.readingTimeMinutes} min
+            {post.readingTimeMinutes} {t.min}
           </span>
         </div>
       </div>

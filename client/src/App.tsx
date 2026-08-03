@@ -220,8 +220,10 @@ function Router() {
       <Route path="/glossary" component={GlossaryPage} />
       <Route path="/faqs" component={FAQIndexPage} />
       <Route path="/faqs/:slug" component={FAQSectionPage} />
-      <Route path="/blog" component={BlogIndexPage} />
-      <Route path="/blog/:slug" component={BlogPostPage} />
+      <Route path="/blog">{() => <BlogIndexPage />}</Route>
+      <Route path="/blog/:slug">{() => <BlogPostPage />}</Route>
+      <Route path="/ar/blog">{() => <BlogIndexPage lang="ar" />}</Route>
+      <Route path="/ar/blog/:slug">{() => <BlogPostPage lang="ar" />}</Route>
 
       {/* Developer detail pages — must come before the generic /developers/:name fallback */}
       <Route path="/developers/emaar" component={EmaarPage} />

@@ -61,6 +61,10 @@
   --font-sans: 'Plus Jakarta Sans', sans-serif;
   --font-serif: 'Figtree', sans-serif;
   --font-heading: 'Figtree', sans-serif;
+  /* Arabic display font — used inside the Arabic blog for headings + rendered
+     WP content. Cairo has good weight coverage and pairs cleanly with our
+     Latin stack. */
+  --font-serif-ar: 'Cairo', 'Tajawal', 'Segoe UI', sans-serif;
   
   --radius: 0.5rem;
 }
@@ -202,4 +206,33 @@
   border: 0;
   border-top: 1px solid rgba(0,0,0,0.1);
   margin: 2rem 0;
+}
+
+/* Arabic blog content variant. Applied on top of .blog-content when the post
+   is Arabic — swaps the font family + flips list bullets to the right side,
+   which the default LTR .blog-content leaves on the left. */
+.blog-content-ar,
+.blog-content-ar h2,
+.blog-content-ar h3,
+.blog-content-ar p,
+.blog-content-ar li,
+.blog-content-ar blockquote {
+  font-family: var(--font-serif-ar);
+  line-height: 1.8;
+}
+.blog-content-ar ul,
+.blog-content-ar ol {
+  padding-left: 0;
+  padding-right: 1.25rem;
+}
+.blog-content-ar blockquote {
+  border-left: 0;
+  border-right: 3px solid var(--color-accent);
+  padding-left: 0;
+  padding-right: 1.25rem;
+}
+
+/* Arabic-serif Tailwind utility used by titles/headings on Arabic pages. */
+.font-serif-ar {
+  font-family: var(--font-serif-ar);
 }

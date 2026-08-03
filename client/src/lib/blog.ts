@@ -27,6 +27,8 @@ export type BlogImage = {
   height?: number;
 };
 
+export type BlogLang = "en" | "ar";
+
 export type BlogPost = {
   id: number;
   slug: string;
@@ -39,6 +41,7 @@ export type BlogPost = {
   featuredImage?: BlogImage;
   categories: BlogCategory[];
   tags: BlogTag[];
+  lang: BlogLang;
   seo: {
     title?: string;
     description?: string;
@@ -49,6 +52,7 @@ export type FetchPostsOptions = {
   page?: number;
   perPage?: number;
   category?: string;
+  lang?: BlogLang;
 };
 
 export type PostsResponse = {
@@ -78,6 +82,7 @@ type WpPost = {
   title: { rendered: string };
   content: { rendered: string };
   excerpt: { rendered: string };
+  lang?: string; // added by our Polylang REST snippet
   meta?: Record<string, unknown>;
   // Yoast SEO injects this when the plugin is active.
   yoast_head_json?: {
@@ -148,6 +153,7 @@ function mapWpPost(wp: WpPost): BlogPost {
       : undefined,
     categories: categories.map((c) => ({ name: c.name, slug: c.slug })),
     tags: tags.map((t) => ({ name: t.name, slug: t.slug })),
+    lang: wp.lang === "ar" ? "ar" : "en",
     seo: {
       title: seoTitle ? decodeHtmlEntities(seoTitle) : undefined,
       description: seoDescription ? decodeHtmlEntities(seoDescription) : undefined,
@@ -163,6 +169,7 @@ export async function fetchPosts(opts: FetchPostsOptions = {}): Promise<PostsRes
   params.set("page", String(page));
   params.set("per_page", String(perPage));
   if (opts.category) params.set("category", opts.category);
+  if (opts.lang) params.set("lang", opts.lang);
 
   const res = await fetch(`/api/blog/posts?${params.toString()}`);
   if (!res.ok) {
@@ -186,8 +193,9 @@ export async function fetchPosts(opts: FetchPostsOptions = {}): Promise<PostsRes
   };
 }
 
-export async function fetchPost(slug: string): Promise<BlogPost | null> {
-  const res = await fetch(`/api/blog/posts/${encodeURIComponent(slug)}`);
+export async function fetchPost(slug: string, lang?: BlogLang): Promise<BlogPost | null> {
+  const langParam = lang ? `?lang=${lang}` : "";
+  const res = await fetch(`/api/blog/posts/${encodeURIComponent(slug)}${langParam}`);
   if (!res.ok) {
     if (res.status === 404) return null;
     throw new Error(`Failed to fetch post: ${res.status}`);
