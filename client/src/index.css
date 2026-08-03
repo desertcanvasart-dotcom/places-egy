@@ -242,3 +242,47 @@
 .font-serif-ar {
   font-family: var(--font-serif-ar);
 }
+
+/* Listing "About this unit" description. Rendered from markdown so admins can
+   author headings, bold text, and bullet lists inside the description field
+   (Supabase stores raw markdown). Sanitized with DOMPurify before injection. */
+.listing-description {
+  color: var(--color-muted-foreground, #555);
+  line-height: 1.7;
+  font-size: 1rem;
+}
+.listing-description > * + * { margin-top: 0.9rem; }
+.listing-description h1,
+.listing-description h2 {
+  font-family: var(--font-serif, Figtree, serif);
+  font-weight: 700;
+  color: var(--color-primary);
+  font-size: 1.35rem;
+  margin-top: 1.75rem;
+  line-height: 1.3;
+}
+.listing-description h3 {
+  font-family: var(--font-serif, Figtree, serif);
+  font-weight: 700;
+  color: var(--color-primary);
+  font-size: 1.1rem;
+  margin-top: 1.5rem;
+}
+.listing-description strong { color: var(--color-primary); font-weight: 600; }
+.listing-description ul,
+.listing-description ol { padding-left: 1.25rem; }
+.listing-description ul { list-style: disc; }
+.listing-description ol { list-style: decimal; }
+.listing-description li + li { margin-top: 0.4rem; }
+.listing-description a { color: var(--color-accent); text-decoration: underline; }
+.listing-description blockquote {
+  border-left: 3px solid var(--color-accent);
+  padding-left: 1rem;
+  font-style: italic;
+  color: var(--color-primary);
+}
+.listing-description hr {
+  border: 0;
+  border-top: 1px solid rgba(0,0,0,0.1);
+  margin: 1.5rem 0;
+}

@@ -14,6 +14,8 @@ import { listingCurrency } from "@/lib/currency";
 import { supabaseImage, supabaseImageOnError } from "@/lib/image-url";
 import { trackEvent } from "@/lib/analytics";
 import { useScrollDepth } from "@/lib/use-scroll-depth";
+import DOMPurify from "dompurify";
+import { marked } from "marked";
 import {
   ArrowRight,
   ChevronLeft,
@@ -388,9 +390,14 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
                   <h2 className="text-xl md:text-2xl font-serif font-bold text-primary mb-4">
                     About this unit
                   </h2>
-                  <p className="text-base text-muted-foreground leading-relaxed whitespace-pre-line">
-                    {listing.description}
-                  </p>
+                  <div
+                    className="listing-description"
+                    dangerouslySetInnerHTML={{
+                      __html: DOMPurify.sanitize(
+                        marked.parse(listing.description, { async: false }) as string,
+                      ),
+                    }}
+                  />
                 </div>
               )}
 
