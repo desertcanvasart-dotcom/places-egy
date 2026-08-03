@@ -32,6 +32,12 @@ export const listingInsertSchema = z
     maintenance_fees: z.number().finite().nonnegative().nullable().optional(),
     maintenance_status: z.string().max(50).optional(),
     floor: z.number().int().nullable().optional(),
+    // Cairo pin-drop coordinates (WGS84). Optional — legacy listings without
+    // pins render as list-only, not on the map. Ranges gently constrained so
+    // an obviously-broken value (e.g. accidental 0,0 in the Gulf of Guinea)
+    // trips validation instead of silently landing a pin at the wrong spot.
+    latitude: z.number().finite().min(-90).max(90).nullable().optional(),
+    longitude: z.number().finite().min(-180).max(180).nullable().optional(),
   })
   .strict();
 

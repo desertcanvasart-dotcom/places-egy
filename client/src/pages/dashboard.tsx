@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase, type Listing } from "@/lib/supabase";
 import { DealsManager } from "@/components/admin/DealsManager";
 import { ClientLogosManager } from "@/components/admin/ClientLogosManager";
+import { ListingPinInput } from "@/components/admin/ListingPinInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -96,6 +97,8 @@ const EMPTY_FORM: ListingForm = {
   maintenance_fees: 0,
   maintenance_status: "",
   floor: 0,
+  latitude: null,
+  longitude: null,
 };
 
 function LoginScreen({ onLogin }: { onLogin: () => void }) {
@@ -326,6 +329,19 @@ function ListingFormDialog({
               <Label className="text-sm font-medium text-primary">Location Area</Label>
               <Input value={form.location_area} onChange={(e) => set("location_area", e.target.value)} placeholder="e.g. Fifth Settlement" className="bg-white" />
             </div>
+
+            <div className="space-y-1.5 md:col-span-2">
+              <Label className="text-sm font-medium text-primary">Location on map</Label>
+              <ListingPinInput
+                latitude={form.latitude}
+                longitude={form.longitude}
+                onChange={(coords) => {
+                  set("latitude", coords?.latitude ?? null);
+                  set("longitude", coords?.longitude ?? null);
+                }}
+              />
+            </div>
+
             <SelectField label="Furnishing" value={form.furnishing} options={ENUM_OPTIONS.furnishing} onChange={(v) => set("furnishing", v)} />
 
             <div className="space-y-1.5">

@@ -35,4 +35,6 @@ export type Listing = {
   maintenance_fees: number;
   maintenance_status: string;
   floor: number;
+  latitude: number | null;
+  longitude: number | null;
 };
