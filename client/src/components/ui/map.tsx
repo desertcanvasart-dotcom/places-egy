@@ -135,6 +135,11 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
     map.on("load", loadHandler);
     map.on("styledata", styleDataHandler);
     map.on("move", moveHandler);
+    // Race guard: if the map already fired 'load' / had style data before we
+    // attached listeners (fast networks or cached styles), flip the flags
+    // manually so the loader doesn't stay stuck forever.
+    if (map.loaded()) setIsLoaded(true);
+    if (map.isStyleLoaded()) setIsStyleLoaded(true);
     setMapInstance(map);
 
     return () => {
