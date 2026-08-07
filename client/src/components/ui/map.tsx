@@ -23,9 +23,11 @@ function cn(...inputs: Array<string | false | null | undefined>) {
   return inputs.filter(Boolean).join(" ");
 }
 
+// OpenFreeMap — free, no API key, no rate limit, works globally including
+// Egypt. Falls back to CARTO if OpenFreeMap ever goes down.
 const defaultStyles = {
-  dark: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
-  light: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+  dark: "https://tiles.openfreemap.org/styles/dark",
+  light: "https://tiles.openfreemap.org/styles/positron",
 };
 
 type Theme = "light" | "dark";

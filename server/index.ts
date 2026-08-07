@@ -33,6 +33,8 @@ if (process.env.NODE_ENV === "production") {
             "https://*.supabase.co",
             "https://basemaps.cartocdn.com",
             "https://*.basemaps.cartocdn.com",
+            "https://tiles.openfreemap.org",
+            "https://nominatim.openstreetmap.org",
           ],
           "worker-src": ["'self'", "blob:"],
           "img-src": ["'self'", "data:", "blob:", "https:"],
