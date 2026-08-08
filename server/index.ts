@@ -26,6 +26,8 @@ if (process.env.NODE_ENV === "production") {
             "'unsafe-inline'",
             "https://www.googletagmanager.com",
             "https://www.google-analytics.com",
+            "https://maps.googleapis.com",
+            "https://maps.gstatic.com",
           ],
           "connect-src": [
             "'self'",
@@ -35,6 +37,8 @@ if (process.env.NODE_ENV === "production") {
             "https://*.basemaps.cartocdn.com",
             "https://tiles.openfreemap.org",
             "https://nominatim.openstreetmap.org",
+            "https://maps.googleapis.com",
+            "https://places.googleapis.com",
           ],
           "worker-src": ["'self'", "blob:"],
           "img-src": ["'self'", "data:", "blob:", "https:"],
