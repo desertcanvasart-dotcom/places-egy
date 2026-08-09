@@ -47,9 +47,9 @@ import {
 
 export default function Home() {
   useDocumentMeta({
-    title: "Admin Offices for Rent & Sale in Egypt | PLACES",
+    title: "Buy & Rent Admin Offices Across Egypt | PLACES",
     description:
-      "PLACES connects businesses and investors with administrative offices across Egypt's top business districts — New Cairo, Sheikh Zayed, 6th October, Downtown, Sheraton, and Maadi.",
+      "Buy, lease, or resell administrative offices across Cairo's top districts — New Cairo, Sheikh Zayed, 6th October, Downtown, Sheraton, and Maadi. Verified listings from trusted developers.",
     url: "https://places-egy.com/",
   });
 

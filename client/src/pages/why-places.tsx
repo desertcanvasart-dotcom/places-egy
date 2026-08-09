@@ -229,7 +229,7 @@ export default function WhyPlaces() {
               // Senior consultants
               { name: "Abdelrhman Younis", title: "Senior Corporate Consultant", image: "/images/optimized/why-places/Abdelrahman Younes.JPG" },
               { name: "Ahmed Ali", title: "Senior Corporate Consultant", image: "/images/optimized/why-places/Ahmed Ali.JPG" },
-              { name: "Ibrahim Samir", title: "Senior Commercial Consultant", image: "/images/optimized/why-places/Ebrahim Samir .jpeg" },
+              { name: "Ibrahim Samir", title: "Senior Corporate Consultant", image: "/images/optimized/why-places/Ebrahim Samir .jpeg" },
               { name: "Mohamed Mohsen", title: "Senior Corporate Consultant", image: "/images/optimized/why-places/Mohamed Mohsen .JPG" },
               { name: "Mostafa Ezzat", title: "Senior Corporate Consultant", image: "/images/optimized/why-places/Mostafa Ezzat.JPG" },
               { name: "Abdallah Sleem", title: "Senior Corporate Consultant", image: "/images/optimized/why-places/Abdallah Sleem - senior corporate consultant _ 4  transactions - Celebrating exceptional performance and commitment throughout 2025..JPG" },

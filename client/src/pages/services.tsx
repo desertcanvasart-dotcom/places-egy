@@ -19,7 +19,7 @@ const SERVICES: { icon: LucideIcon; name: string; desc: string; slug: string }[]
   {
     icon: Handshake,
     name: "Leasing",
-    desc: "Find the right office or commercial space on the right terms — admin offices and commercial units across Cairo's top business districts.",
+    desc: "Find the right office on the right terms — administrative office spaces across Cairo's top business districts.",
     slug: "leasing",
   },
   {
@@ -37,7 +37,7 @@ const SERVICES: { icon: LucideIcon; name: string; desc: string; slug: string }[]
   {
     icon: TrendingUp,
     name: "Investment Consultation",
-    desc: "Data-driven advisory for investors evaluating commercial and administrative assets in Egypt.",
+    desc: "Data-driven advisory for investors evaluating administrative office assets in Egypt.",
     slug: "investment-consultation",
   },
   {
@@ -106,7 +106,7 @@ export default function Services() {
             Services
           </h1>
           <p className="text-lg text-muted-foreground max-w-3xl">
-            Five specialized service areas covering the full lifecycle of commercial and administrative real estate in Egypt — from leasing and acquisition to resale and investment advisory.
+            Five specialized service areas covering the full lifecycle of administrative office real estate in Egypt — from leasing and acquisition to resale and investment advisory.
           </p>
         </div>
       </section>
@@ -169,7 +169,7 @@ export default function Services() {
                 Have questions before choosing a service?
               </h2>
               <p className="text-sm md:text-base text-muted-foreground mt-1">
-                Browse FAQs on Egypt's commercial real estate market — organized into ten topic areas.
+                Browse FAQs on Egypt's administrative office real estate market — organized into ten topic areas.
               </p>
             </div>
             <span className="inline-flex items-center text-accent text-sm font-medium whitespace-nowrap shrink-0">

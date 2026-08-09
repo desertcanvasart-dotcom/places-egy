@@ -6,7 +6,7 @@ const services = [
   {
     icon: Handshake,
     title: "Leasing",
-    desc: "Find the right space on the right terms. We match your operational needs with available units across Cairo's top commercial and administrative developments.",
+    desc: "Find the right space on the right terms. We match your operational needs with available units across Cairo's top administrative developments.",
     link: "/services/leasing",
   },
   {
@@ -24,7 +24,7 @@ const services = [
   {
     icon: TrendingUp,
     title: "Investment Consultation",
-    desc: "Not sure where to put your money? We analyze yield potential, vacancy risk, and capital appreciation across commercial and administrative assets in Egypt.",
+    desc: "Not sure where to put your money? We analyze yield potential, vacancy risk, and capital appreciation across administrative office assets in Egypt.",
     link: "/services/investment-consultation",
   },
   {
