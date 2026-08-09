@@ -18,7 +18,6 @@ import { useDocumentMeta } from "@/lib/use-document-meta";
 import { BlogLangSwitcher } from "@/components/blog/BlogLangSwitcher";
 import {
   fetchPosts,
-  fetchCategories,
   formatPostDate,
   stripHtml,
   type BlogLang,
@@ -114,24 +113,39 @@ export default function BlogIndexPage({ lang = "en" }: { lang?: BlogLang }) {
     queryFn: () => fetchPosts({ page, perPage: POSTS_PER_PAGE, category, lang }),
   });
 
-  const { data: categoriesRaw } = useQuery({
-    queryKey: ["blog-categories"],
-    queryFn: fetchCategories,
+  // Derive category chips from all posts in the CURRENT language so English
+  // pages show only English categories and Arabic pages show only Arabic ones.
+  // WordPress's /categories endpoint would return every category across all
+  // languages — we can't rely on it here.
+  const { data: allLangPosts } = useQuery({
+    queryKey: ["blog-all-posts-for-cats", lang],
+    queryFn: () => fetchPosts({ page: 1, perPage: 100, lang }),
+    staleTime: 5 * 60 * 1000,
   });
-  // Filter out the WordPress "Uncategorized" default in every Polylang variant
-  // (uncategorized, uncategorized-en, uncategorized-ar, uncategorised, or the
-  // literal Arabic غير-مصنف). Every post should have a real category; the
-  // fallback bucket in the filter UI is noise.
-  const categories = categoriesRaw?.filter((c) => {
-    const s = c.slug.toLowerCase();
-    return (
-      s !== "uncategorized" &&
-      s !== "uncategorised" &&
-      !s.startsWith("uncategorized-") &&
-      !s.startsWith("uncategorised-") &&
-      s !== "غير-مصنف"
-    );
-  });
+  const categories = useMemo(() => {
+    const seen = new Set<string>();
+    const out: { name: string; slug: string }[] = [];
+    for (const post of allLangPosts?.posts ?? []) {
+      for (const cat of post.categories) {
+        // Filter out the WordPress "Uncategorized" default in every Polylang
+        // variant (uncategorized, uncategorized-en, uncategorized-ar,
+        // uncategorised, or the literal Arabic غير-مصنف). Real posts should
+        // have real categories; the fallback bucket in the UI is noise.
+        const s = cat.slug.toLowerCase();
+        const isUncat =
+          s === "uncategorized" ||
+          s === "uncategorised" ||
+          s.startsWith("uncategorized-") ||
+          s.startsWith("uncategorised-") ||
+          s === "غير-مصنف";
+        if (isUncat) continue;
+        if (seen.has(cat.slug)) continue;
+        seen.add(cat.slug);
+        out.push({ name: cat.name, slug: cat.slug });
+      }
+    }
+    return out;
+  }, [allLangPosts]);
 
   const posts = postsData?.posts ?? [];
   const totalPages = postsData?.totalPages ?? 1;

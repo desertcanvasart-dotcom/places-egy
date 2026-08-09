@@ -101,9 +101,16 @@ export async function registerRoutes(
     return proxyToWp(`/posts?slug=${slug}&_embed=true${langParam}`, res);
   });
 
-  // GET /api/blog/categories — list of all categories
-  app.get("/api/blog/categories", async (_req: Request, res: Response) => {
-    return proxyToWp(`/categories?per_page=100&hide_empty=true`, res);
+  // GET /api/blog/categories?lang=en|ar — list of categories, optionally
+  // filtered by Polylang language via the same custom snippet that exposes
+  // ?lang= on /posts. Blank/missing lang returns everything (legacy behavior).
+  app.get("/api/blog/categories", async (req: Request, res: Response) => {
+    const lang = String(req.query.lang ?? "");
+    const langParam = lang === "en" || lang === "ar" ? `&lang=${lang}` : "";
+    return proxyToWp(
+      `/categories?per_page=100&hide_empty=true${langParam}`,
+      res,
+    );
   });
 
   // GET /api/deals — public. The homepage deal carousel reads the active deals
