@@ -108,9 +108,23 @@ export default function BlogIndexPage({ lang = "en" }: { lang?: BlogLang }) {
     queryFn: () => fetchPosts({ page, perPage: POSTS_PER_PAGE, category, lang }),
   });
 
-  const { data: categories } = useQuery({
+  const { data: categoriesRaw } = useQuery({
     queryKey: ["blog-categories"],
     queryFn: fetchCategories,
+  });
+  // Filter out the WordPress "Uncategorized" default in every Polylang variant
+  // (uncategorized, uncategorized-en, uncategorized-ar, uncategorised, or the
+  // literal Arabic غير-مصنف). Every post should have a real category; the
+  // fallback bucket in the filter UI is noise.
+  const categories = categoriesRaw?.filter((c) => {
+    const s = c.slug.toLowerCase();
+    return (
+      s !== "uncategorized" &&
+      s !== "uncategorised" &&
+      !s.startsWith("uncategorized-") &&
+      !s.startsWith("uncategorised-") &&
+      s !== "غير-مصنف"
+    );
   });
 
   const posts = postsData?.posts ?? [];

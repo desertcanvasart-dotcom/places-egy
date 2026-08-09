@@ -48,6 +48,23 @@ export function registerRedirects(app: Express) {
           return;
         }
       }
+      // Drop the "uncategorized" category filter — it's the WordPress default
+      // that shouldn't be user-facing. Polylang adds a suffix per language
+      // (uncategorized, uncategorized-en, uncategorized-ar, uncategorised) so
+      // we normalize to the base word. Any /blog or /ar/blog URL with such a
+      // category param 301s to the clean base URL.
+      const isBlog = req.path === "/blog" || req.path === "/ar/blog";
+      const cat = String(req.query.category ?? "").toLowerCase();
+      const isUncategorized =
+        cat === "uncategorized" ||
+        cat === "uncategorised" ||
+        cat.startsWith("uncategorized-") ||
+        cat.startsWith("uncategorised-") ||
+        cat === "غير-مصنف";
+      if (isBlog && isUncategorized) {
+        res.redirect(301, req.path);
+        return;
+      }
     }
     next();
   });
