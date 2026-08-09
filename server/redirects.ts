@@ -48,22 +48,57 @@ export function registerRedirects(app: Express) {
           return;
         }
       }
-      // Drop the "uncategorized" category filter — it's the WordPress default
-      // that shouldn't be user-facing. Polylang adds a suffix per language
-      // (uncategorized, uncategorized-en, uncategorized-ar, uncategorised) so
-      // we normalize to the base word. Any /blog or /ar/blog URL with such a
-      // category param 301s to the clean base URL.
-      const isBlog = req.path === "/blog" || req.path === "/ar/blog";
-      const cat = String(req.query.category ?? "").toLowerCase();
-      const isUncategorized =
-        cat === "uncategorized" ||
-        cat === "uncategorised" ||
-        cat.startsWith("uncategorized-") ||
-        cat.startsWith("uncategorised-") ||
-        cat === "غير-مصنف";
-      if (isBlog && isUncategorized) {
-        res.redirect(301, req.path);
-        return;
+      // Blog category URL cleanup + legacy → clean conversion.
+      //  - Legacy /blog?category=foo → /blog/category/foo (301, clean URLs)
+      //  - Legacy /blog?category=uncategorized-* → real replacement category
+      //    (English → admin-offices, Arabic → المكاتب-الإدارية)
+      // Also handles the path-form /blog/category/uncategorized* by redirecting
+      // to the same replacement.
+      const isBlogEn = req.path === "/blog";
+      const isBlogAr = req.path === "/ar/blog";
+      const isBlogEnCat = req.path.startsWith("/blog/category/");
+      const isBlogArCat = req.path.startsWith("/ar/blog/category/");
+
+      // Resolve the category slug from either query or path.
+      let catRaw: string | null = null;
+      let base = "";
+      if ((isBlogEn || isBlogAr) && typeof req.query.category === "string") {
+        catRaw = req.query.category;
+        base = isBlogAr ? "/ar/blog" : "/blog";
+      } else if (isBlogEnCat) {
+        catRaw = decodeURIComponent(req.path.slice("/blog/category/".length));
+        base = "/blog";
+      } else if (isBlogArCat) {
+        catRaw = decodeURIComponent(req.path.slice("/ar/blog/category/".length));
+        base = "/ar/blog";
+      }
+
+      if (catRaw != null && base) {
+        const catLower = catRaw.toLowerCase();
+        const isUncategorized =
+          catLower === "uncategorized" ||
+          catLower === "uncategorised" ||
+          catLower.startsWith("uncategorized-") ||
+          catLower.startsWith("uncategorised-") ||
+          catRaw === "غير-مصنف";
+
+        // Uncategorized → the real replacement category per language.
+        if (isUncategorized) {
+          const replacement =
+            base === "/ar/blog" ? "المكاتب-الإدارية" : "admin-offices";
+          res.redirect(301, `${base}/category/${encodeURIComponent(replacement)}`);
+          return;
+        }
+
+        // Legacy query-string form → clean path form (only when the request
+        // came in via ?category=; already-clean path URLs are left alone).
+        if (isBlogEn || isBlogAr) {
+          res.redirect(
+            301,
+            `${base}/category/${encodeURIComponent(catRaw)}`,
+          );
+          return;
+        }
       }
     }
     next();

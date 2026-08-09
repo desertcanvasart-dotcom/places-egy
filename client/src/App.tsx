@@ -221,8 +221,12 @@ function Router() {
       <Route path="/faqs" component={FAQIndexPage} />
       <Route path="/faqs/:slug" component={FAQSectionPage} />
       <Route path="/blog">{() => <BlogIndexPage />}</Route>
+      {/* Category filter — must come BEFORE /blog/:slug so wouter doesn't
+          match "category" as a post slug. */}
+      <Route path="/blog/category/:category">{() => <BlogIndexPage />}</Route>
       <Route path="/blog/:slug">{() => <BlogPostPage />}</Route>
       <Route path="/ar/blog">{() => <BlogIndexPage lang="ar" />}</Route>
+      <Route path="/ar/blog/category/:category">{() => <BlogIndexPage lang="ar" />}</Route>
       <Route path="/ar/blog/:slug">{() => <BlogPostPage lang="ar" />}</Route>
 
       {/* Developer detail pages — must come before the generic /developers/:name fallback */}

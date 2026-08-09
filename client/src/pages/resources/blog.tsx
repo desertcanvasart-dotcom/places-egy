@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -99,9 +99,15 @@ export default function BlogIndexPage({ lang = "en" }: { lang?: BlogLang }) {
   });
 
   const [, setLocation] = useLocation();
+  const params = useParams<{ category?: string }>();
   const search = typeof window !== "undefined" ? window.location.search : "";
   const page = readPageFromQuery(search);
-  const category = readCategoryFromQuery(search);
+  // Prefer path-based clean URL (/blog/category/foo) over legacy query string.
+  // Path slugs are URL-encoded (Arabic slugs are %D8%A7%D9%84...) so decode
+  // before passing to WordPress.
+  const category = params.category
+    ? decodeURIComponent(params.category)
+    : readCategoryFromQuery(search);
 
   const { data: postsData, isLoading } = useQuery({
     queryKey: ["blog-posts", lang, page, category],
@@ -134,16 +140,14 @@ export default function BlogIndexPage({ lang = "en" }: { lang?: BlogLang }) {
   const rest = posts.slice(1);
 
   const buildPageUrl = (p: number) => {
-    const params = new URLSearchParams();
-    if (p > 1) params.set("page", String(p));
-    if (category) params.set("category", category);
-    const q = params.toString();
-    return `${basePath}${q ? `?${q}` : ""}`;
+    const catPath = category ? `/category/${encodeURIComponent(category)}` : "";
+    const query = p > 1 ? `?page=${p}` : "";
+    return `${basePath}${catPath}${query}`;
   };
 
   const buildCategoryUrl = (slug?: string) => {
     if (!slug) return basePath;
-    return `${basePath}?category=${slug}`;
+    return `${basePath}/category/${encodeURIComponent(slug)}`;
   };
 
   const schemaPosts = useMemo(
