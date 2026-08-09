@@ -10,7 +10,7 @@ import { useDocumentMeta } from "@/lib/use-document-meta";
 const LOCATIONS = [
   {
     name: "New Cairo",
-    desc: "Cairo's fastest-growing business district — premium office parks, retail destinations, and Egypt's most active commercial developments.",
+    desc: "Cairo's fastest-growing business district — premium office parks, business hubs, and Egypt's most active administrative developments.",
     image: "/images/new-cairo.jpg",
     slug: "new-cairo",
   },
@@ -49,9 +49,9 @@ const LOCATIONS = [
 export default function Locations() {
   useDocumentMeta({
     title:
-      "Office Real Estate Locations — New Cairo, Sheikh Zayed, 6th October, Downtown, Sheraton, Maadi | PLACES",
+      "Office Locations Across Cairo | PLACES",
     description:
-      "PLACES operates across Cairo's six most active commercial and administrative districts — each with its own demand profile, tenant mix, and investment dynamics.",
+      "Admin offices for buy or rent across Cairo's six most active districts — New Cairo, Sheikh Zayed, 6th October, Downtown, Sheraton, and Maadi.",
     url: "https://places-egy.com/locations",
   });
 
