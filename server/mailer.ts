@@ -79,18 +79,178 @@ export function escapeHtml(s: string | null | undefined): string {
     .replaceAll("'", "&#039;");
 }
 
-// ── Lead-magnet auto-reply ──────────────────────────────────────────────────
-// Sent to the LEAD (the person who filled the form), not to admin. Delivers
-// the market report PDF link + a "Book A Meeting" CTA. Fire-and-forget from
-// the /api/leads route right after the admin notification.
-//
-// firstNameOf("John Doe")  = "John"
-// firstNameOf("john")       = "John"
 function firstNameOf(name: string): string {
   const first = name.trim().split(/\s+/)[0] ?? "";
   return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
 }
 
+// ── Shared branded email shell ──────────────────────────────────────────────
+// All PLACES emails share this frame: black header with PLACES wordmark,
+// white body, muted footer. Body is a raw HTML string the caller composes.
+// Kept small and inline-styled because email clients strip <style> tags.
+function brandedShell(opts: { preheader: string; body: string }): string {
+  return `
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+  <body style="margin:0; padding:0; background:#F5F1EA; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <!-- Preheader: shown in inbox previews but hidden in the email body -->
+    <div style="display:none; max-height:0; overflow:hidden; color:transparent;">
+      ${escapeHtml(opts.preheader)}
+    </div>
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#F5F1EA;">
+      <tr>
+        <td align="center" style="padding:32px 16px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" width="600" style="max-width:600px; width:100%; background:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 4px 16px rgba(15,23,42,0.06);">
+            <tr>
+              <td style="background:#171717; padding:24px 32px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                  <tr>
+                    <td>
+                      <span style="color:#E11D48; font-size:12px; font-weight:700; letter-spacing:3px;">PLACES</span>
+                    </td>
+                    <td align="right">
+                      <span style="color:rgba(255,255,255,0.5); font-size:11px;">Cairo · Egypt</span>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:32px;">
+                ${opts.body}
+              </td>
+            </tr>
+            <tr>
+              <td style="background:#F8F5F1; padding:20px 32px; border-top:1px solid #EAE4DA;">
+                <p style="margin:0 0 4px 0; font-size:12px; color:#64748B; line-height:1.5;">
+                  PLACES · Egypt's specialized partner for administrative office real estate
+                </p>
+                <p style="margin:0; font-size:12px; color:#94A3B8;">
+                  <a href="https://places-egy.com" style="color:#94A3B8; text-decoration:none;">places-egy.com</a>
+                  · <a href="mailto:admin@places-egy.com" style="color:#94A3B8; text-decoration:none;">admin@places-egy.com</a>
+                  · <a href="tel:+201063618217" style="color:#94A3B8; text-decoration:none;">+20 106 361 8217</a>
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+}
+
+// ── Admin: new lead notification ────────────────────────────────────────────
+// Clean scannable summary the PLACES team can act on in 5 seconds.
+export type AdminLeadEmailOptions = {
+  name: string;
+  email: string;
+  phone: string | null | undefined;
+  message?: string | null;
+  lead_source: string;
+  magnet?: string | null;
+  listing_id?: number | null;
+  page_url?: string | null;
+  locations?: string[] | null;
+  utm_source?: string | null;
+  utm_medium?: string | null;
+  utm_campaign?: string | null;
+};
+
+function renderAdminLeadHtml(lead: AdminLeadEmailOptions): string {
+  const row = (label: string, value: string) => `
+    <tr>
+      <td style="padding:8px 0; width:120px; vertical-align:top;">
+        <span style="font-size:11px; font-weight:700; color:#64748B; text-transform:uppercase; letter-spacing:1px;">${escapeHtml(label)}</span>
+      </td>
+      <td style="padding:8px 0; vertical-align:top; font-size:14px; color:#171717;">
+        ${value}
+      </td>
+    </tr>
+  `;
+
+  const locationsRow = lead.locations && lead.locations.length > 0
+    ? row("Interested in", escapeHtml(lead.locations.join(", ")))
+    : "";
+  const magnetRow = lead.magnet
+    ? row("Lead magnet", escapeHtml(lead.magnet))
+    : "";
+  const listingRow = lead.listing_id
+    ? row("Listing #", String(lead.listing_id))
+    : "";
+  const utmParts = [
+    lead.utm_source && `source: ${lead.utm_source}`,
+    lead.utm_medium && `medium: ${lead.utm_medium}`,
+    lead.utm_campaign && `campaign: ${lead.utm_campaign}`,
+  ].filter(Boolean);
+  const utmRow = utmParts.length > 0
+    ? row("Campaign", escapeHtml(utmParts.join(" · ")))
+    : "";
+  const pageRow = lead.page_url ? row("From page", escapeHtml(lead.page_url)) : "";
+
+  const messageBlock = lead.message
+    ? `
+      <div style="margin-top:24px; padding:16px 20px; background:#F8F5F1; border-left:3px solid #E11D48; border-radius:8px;">
+        <p style="margin:0 0 6px 0; font-size:11px; font-weight:700; color:#64748B; text-transform:uppercase; letter-spacing:1px;">
+          What they said
+        </p>
+        <p style="margin:0; font-size:14px; line-height:1.6; color:#171717; white-space:pre-wrap;">${escapeHtml(lead.message)}</p>
+      </div>`
+    : "";
+
+  return `
+    <p style="margin:0 0 6px 0; font-size:11px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:2px;">
+      NEW LEAD
+    </p>
+    <h1 style="margin:0 0 8px 0; font-size:24px; color:#171717; font-weight:700; line-height:1.2;">
+      ${escapeHtml(lead.name)}
+    </h1>
+    <p style="margin:0 0 24px 0; font-size:13px; color:#64748B;">
+      Source: ${escapeHtml(lead.lead_source)}
+    </p>
+
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+      ${row("Email", `<a href="mailto:${escapeHtml(lead.email)}" style="color:#E11D48; text-decoration:none;">${escapeHtml(lead.email)}</a>`)}
+      ${lead.phone ? row("Phone", `<a href="tel:${escapeHtml(lead.phone)}" style="color:#E11D48; text-decoration:none;">${escapeHtml(lead.phone)}</a>`) : ""}
+      ${locationsRow}
+      ${magnetRow}
+      ${listingRow}
+      ${utmRow}
+      ${pageRow}
+    </table>
+
+    ${messageBlock}
+
+    <div style="margin-top:32px; padding-top:20px; border-top:1px solid #EAE4DA;">
+      <a href="https://places-egy.com/dashboard"
+         style="display:inline-block; background:#171717; color:#ffffff; padding:12px 24px; border-radius:999px; text-decoration:none; font-weight:600; font-size:14px;">
+        View in dashboard →
+      </a>
+    </div>
+  `;
+}
+
+export async function sendAdminLeadNotification(
+  lead: AdminLeadEmailOptions,
+): Promise<void> {
+  const body = renderAdminLeadHtml(lead);
+  const html = brandedShell({
+    preheader: `${lead.name} · ${lead.email}${lead.phone ? " · " + lead.phone : ""}`,
+    body,
+  });
+  return sendMail({
+    to: "admin@places-egy.com",
+    subject: `New lead: ${lead.name}${lead.magnet ? ` (${lead.magnet})` : ""}`,
+    html,
+    replyTo: lead.email,
+  });
+}
+
+// ── User: market report auto-reply with PDF ─────────────────────────────────
 export async function sendMarketReportReply(opts: {
   toEmail: string;
   toName: string;
@@ -98,62 +258,68 @@ export async function sendMarketReportReply(opts: {
   const first = firstNameOf(opts.toName);
   const downloadBlock = MARKET_REPORT_URL
     ? `
-        <p style="margin:0 0 12px 0; font-size:15px; line-height:1.5;">
-          Your free copy of the <strong>Cairo Office Market Report 2026</strong>
-          is ready to download:
+      <div style="margin:24px 0 32px 0; padding:24px; background:#F8F5F1; border-radius:12px; text-align:center;">
+        <p style="margin:0 0 8px 0; font-size:11px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:2px;">
+          Your report is ready
         </p>
-        <p style="margin:0 0 28px 0;">
-          <a href="${MARKET_REPORT_URL}"
-             style="display:inline-block; background:#e11d48; color:#fff; padding:12px 24px; border-radius:8px; text-decoration:none; font-weight:600; font-size:15px;">
-            Download the PDF →
-          </a>
-        </p>`
+        <p style="margin:0 0 20px 0; font-size:15px; color:#64748B;">
+          Free · PDF · 4 pages · Updated ${new Date().toLocaleDateString("en-GB", { month: "long", year: "numeric" })}
+        </p>
+        <a href="${MARKET_REPORT_URL}"
+           style="display:inline-block; background:#E11D48; color:#ffffff; padding:14px 28px; border-radius:999px; text-decoration:none; font-weight:600; font-size:15px;">
+          📄 Download the report →
+        </a>
+      </div>`
     : `
-        <p style="margin:0 0 20px 0; font-size:15px; line-height:1.5;">
+      <div style="margin:24px 0 32px 0; padding:20px 24px; background:#F8F5F1; border-radius:8px;">
+        <p style="margin:0; font-size:15px; line-height:1.6; color:#171717;">
           Thanks for requesting the <strong>Cairo Office Market Report 2026</strong>.
-          We're putting the final polish on the 2026 edition — a PLACES advisor
-          will personally send you the report within the next 24 hours, plus
-          answer any questions you have about the market.
-        </p>`;
-
-  const html = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1a1a1a; max-width: 560px; margin: 0 auto; padding: 32px 24px;">
-      <p style="margin:0 0 24px 0; font-size:15px;">Hi ${escapeHtml(first)},</p>
-
-      ${downloadBlock}
-
-      <div style="margin: 32px 0; padding: 20px 24px; background:#f8fafc; border-left: 3px solid #e11d48; border-radius: 6px;">
-        <p style="margin:0 0 12px 0; font-size:14px; font-weight:600; color:#0f172a;">
-          Prefer to talk it through?
+          A PLACES advisor will personally send you the report within the next
+          24 hours, plus answer any questions you have.
         </p>
-        <p style="margin:0 0 14px 0; font-size:14px; line-height:1.5; color:#475569;">
-          Book a free 15-minute call with a PLACES advisor — we'll walk you
-          through what's happening in the districts you're interested in.
-        </p>
-        <p style="margin:0;">
-          <a href="${CALENDLY_URL}"
-             style="display:inline-block; background:#0f172a; color:#fff; padding:10px 20px; border-radius:8px; text-decoration:none; font-weight:600; font-size:14px;">
-            Book a Meeting →
-          </a>
-        </p>
-      </div>
+      </div>`;
 
-      <p style="margin:24px 0 8px 0; font-size:14px; line-height:1.6; color:#334155;">
-        If any of this raises questions, just reply to this email — it goes
-        straight to our advisory team.
-      </p>
-      <p style="margin:16px 0 0 0; font-size:14px; color:#334155;">
-        — The PLACES Team
-      </p>
+  const body = `
+    <p style="margin:0 0 20px 0; font-size:16px; color:#171717;">Hi ${escapeHtml(first)},</p>
 
-      <hr style="border:0; border-top:1px solid #e5e7eb; margin: 32px 0 16px 0;">
-      <p style="margin:0; font-size:12px; color:#94a3b8; line-height:1.5;">
-        PLACES · Egypt's specialized partner for administrative office real estate<br>
-        <a href="https://places-egy.com" style="color:#94a3b8;">places-egy.com</a>
-        · <a href="mailto:admin@places-egy.com" style="color:#94a3b8;">admin@places-egy.com</a>
+    <p style="margin:0 0 16px 0; font-size:15px; line-height:1.6; color:#171717;">
+      Thanks for downloading the <strong>Cairo Office Market Report 2026</strong> from PLACES.
+    </p>
+
+    <p style="margin:0 0 16px 0; font-size:15px; line-height:1.6; color:#64748B;">
+      Inside you'll find pricing benchmarks per square metre across the six
+      most active administrative office districts in Greater Cairo, plus a
+      snapshot of which developers are most active right now.
+    </p>
+
+    ${downloadBlock}
+
+    <div style="margin-top:8px; padding:20px 24px; background:#171717; border-radius:12px;">
+      <p style="margin:0 0 6px 0; font-size:11px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:2px;">
+        Want a personalized read?
       </p>
+      <p style="margin:0 0 16px 0; font-size:15px; line-height:1.5; color:#ffffff;">
+        Book a free 15-minute call and a PLACES advisor will walk you through
+        the districts and price bands you care about most.
+      </p>
+      <a href="${CALENDLY_URL}"
+         style="display:inline-block; background:#E11D48; color:#ffffff; padding:12px 24px; border-radius:999px; text-decoration:none; font-weight:600; font-size:14px;">
+        Book a Meeting →
+      </a>
     </div>
+
+    <p style="margin:24px 0 8px 0; font-size:14px; line-height:1.6; color:#64748B;">
+      Questions? Just reply to this email — it goes straight to our advisory team.
+    </p>
+    <p style="margin:16px 0 0 0; font-size:14px; color:#171717;">
+      — The PLACES Team
+    </p>
   `;
+
+  const html = brandedShell({
+    preheader: `Your Cairo Office Market Report 2026 is inside — pricing, supply, and yields across every district.`,
+    body,
+  });
 
   return sendMail({
     to: opts.toEmail,

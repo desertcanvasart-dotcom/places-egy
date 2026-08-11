@@ -20,7 +20,12 @@ import {
   getSessionAccount,
   requireAccount,
 } from "./account-auth";
-import { sendMail, sendMarketReportReply, escapeHtml } from "./mailer";
+import {
+  sendMail,
+  sendAdminLeadNotification,
+  sendMarketReportReply,
+  escapeHtml,
+} from "./mailer";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -179,53 +184,19 @@ export async function registerRoutes(
       // Fire the admin notification email. Doesn't block the response —
       // even if mail fails, the lead is already persisted so PLACES sees it
       // in the dashboard.
-      const magnetLine = lead.magnet
-        ? `<p style="margin:0 0 12px 0"><strong>Magnet:</strong> ${escapeHtml(lead.magnet)}</p>`
-        : "";
-      const listingLine = lead.listing_id
-        ? `<p style="margin:0 0 12px 0"><strong>Listing #:</strong> ${lead.listing_id}</p>`
-        : "";
-      const locationsLine =
-        lead.locations && lead.locations.length > 0
-          ? `<p style="margin:0 0 12px 0"><strong>Locations of interest:</strong> ${escapeHtml(lead.locations.join(", "))}</p>`
-          : "";
-      const utmParts = [
-        lead.utm_source && `source=${lead.utm_source}`,
-        lead.utm_medium && `medium=${lead.utm_medium}`,
-        lead.utm_campaign && `campaign=${lead.utm_campaign}`,
-      ].filter(Boolean);
-      const utmLine =
-        utmParts.length > 0
-          ? `<p style="margin:0 0 12px 0"><strong>Campaign:</strong> ${escapeHtml(utmParts.join(" · "))}</p>`
-          : "";
-      const html = `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif; color: #1a1a1a; max-width: 560px;">
-          <h2 style="margin:0 0 16px 0; color:#0f172a;">New lead — ${escapeHtml(lead.name)}</h2>
-          <p style="margin:0 0 8px 0"><strong>Email:</strong> <a href="mailto:${escapeHtml(lead.email)}" style="color:#e11d48">${escapeHtml(lead.email)}</a></p>
-          ${lead.phone ? `<p style="margin:0 0 8px 0"><strong>Phone:</strong> <a href="tel:${escapeHtml(lead.phone)}" style="color:#e11d48">${escapeHtml(lead.phone)}</a></p>` : ""}
-          <p style="margin:0 0 16px 0"><strong>Source:</strong> ${escapeHtml(lead.lead_source)}</p>
-          ${magnetLine}
-          ${locationsLine}
-          ${listingLine}
-          ${utmLine}
-          ${
-            lead.message
-              ? `<div style="margin-top:16px; padding:12px 16px; background:#f8fafc; border-left:3px solid #e11d48; border-radius:6px;">
-                  <p style="margin:0; white-space:pre-wrap; line-height:1.5;">${escapeHtml(lead.message)}</p>
-                </div>`
-              : ""
-          }
-          <p style="margin-top:24px; padding-top:16px; border-top:1px solid #e5e7eb; font-size:12px; color:#64748b;">
-            Landing page: ${escapeHtml(lead.page_url ?? "(unknown)")}<br>
-            View + manage all leads: <a href="https://places-egy.com/dashboard" style="color:#e11d48">/dashboard</a> → Leads
-          </p>
-        </div>
-      `;
-      void sendMail({
-        to: "admin@places-egy.com",
-        subject: `New lead: ${lead.name}${lead.magnet ? ` (${lead.magnet})` : ""}`,
-        html,
-        replyTo: lead.email,
+      void sendAdminLeadNotification({
+        name: lead.name,
+        email: lead.email,
+        phone: lead.phone ?? null,
+        message: lead.message ?? null,
+        lead_source: lead.lead_source,
+        magnet: lead.magnet ?? null,
+        listing_id: lead.listing_id ?? null,
+        page_url: lead.page_url ?? null,
+        locations: lead.locations ?? null,
+        utm_source: lead.utm_source ?? null,
+        utm_medium: lead.utm_medium ?? null,
+        utm_campaign: lead.utm_campaign ?? null,
       });
 
       // Auto-reply to the LEAD themselves when they signed up for the market
