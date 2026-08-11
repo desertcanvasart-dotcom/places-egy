@@ -251,59 +251,128 @@ export async function sendAdminLeadNotification(
 }
 
 // ── User: market report auto-reply with PDF ─────────────────────────────────
+// Structure (top → bottom):
+//   1. Greeting
+//   2. Hero download card — big prominent CTA above the fold
+//   3. "What's inside" — 4 concrete bullets so they know why to open it
+//   4. Divider
+//   5. Talk to Us CTA (secondary, softer)
+//   6. Sign-off
+function bulletRow(icon: string, title: string, desc: string): string {
+  return `
+    <tr>
+      <td valign="top" style="padding:10px 0;">
+        <table role="presentation" cellpadding="0" cellspacing="0">
+          <tr>
+            <td valign="top" style="width:36px; padding-right:12px;">
+              <div style="width:32px; height:32px; background:#FEE2E7; border-radius:999px; text-align:center; line-height:32px; font-size:16px;">
+                ${icon}
+              </div>
+            </td>
+            <td valign="top">
+              <p style="margin:0 0 3px 0; font-size:14px; font-weight:700; color:#171717;">
+                ${title}
+              </p>
+              <p style="margin:0; font-size:13px; line-height:1.5; color:#64748B;">
+                ${desc}
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  `;
+}
+
 export async function sendMarketReportReply(opts: {
   toEmail: string;
   toName: string;
 }): Promise<void> {
   const first = firstNameOf(opts.toName);
-  const downloadBlock = MARKET_REPORT_URL
+  const monthYear = new Date().toLocaleDateString("en-GB", {
+    month: "long",
+    year: "numeric",
+  });
+
+  const downloadHero = MARKET_REPORT_URL
     ? `
-      <div style="margin:24px 0 32px 0; padding:24px; background:#F8F5F1; border-radius:12px; text-align:center;">
-        <p style="margin:0 0 8px 0; font-size:11px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:2px;">
-          Your report is ready
+      <div style="margin:0 0 28px 0; padding:28px 24px; background:linear-gradient(135deg,#171717 0%,#2A2A2A 100%); border-radius:14px; text-align:center;">
+        <p style="margin:0 0 10px 0; font-size:11px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:3px;">
+          📄 Your report is ready
         </p>
-        <p style="margin:0 0 20px 0; font-size:15px; color:#64748B;">
-          Free · PDF · 4 pages · Updated ${new Date().toLocaleDateString("en-GB", { month: "long", year: "numeric" })}
+        <h2 style="margin:0 0 6px 0; font-size:22px; font-weight:700; color:#ffffff; line-height:1.3;">
+          Cairo Office Market Report 2026
+        </h2>
+        <p style="margin:0 0 22px 0; font-size:13px; color:rgba(255,255,255,0.6);">
+          Free · PDF · Updated ${monthYear}
         </p>
         <a href="${MARKET_REPORT_URL}"
-           style="display:inline-block; background:#E11D48; color:#ffffff; padding:14px 28px; border-radius:999px; text-decoration:none; font-weight:600; font-size:15px;">
-          📄 Download the report →
+           style="display:inline-block; background:#E11D48; color:#ffffff; padding:14px 32px; border-radius:999px; text-decoration:none; font-weight:700; font-size:15px; box-shadow:0 4px 12px rgba(225,29,72,0.4);">
+          Download the PDF →
         </a>
       </div>`
     : `
-      <div style="margin:24px 0 32px 0; padding:20px 24px; background:#F8F5F1; border-radius:8px;">
+      <div style="margin:0 0 28px 0; padding:24px; background:#F8F5F1; border-radius:12px;">
+        <p style="margin:0 0 8px 0; font-size:11px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:2px;">
+          Coming to your inbox soon
+        </p>
         <p style="margin:0; font-size:15px; line-height:1.6; color:#171717;">
           Thanks for requesting the <strong>Cairo Office Market Report 2026</strong>.
           A PLACES advisor will personally send you the report within the next
-          24 hours, plus answer any questions you have.
+          24 hours.
         </p>
       </div>`;
 
   const body = `
-    <p style="margin:0 0 20px 0; font-size:16px; color:#171717;">Hi ${escapeHtml(first)},</p>
+    <p style="margin:0 0 20px 0; font-size:16px; color:#171717;">Hi ${escapeHtml(first)}, 👋</p>
 
-    <p style="margin:0 0 16px 0; font-size:15px; line-height:1.6; color:#171717;">
-      Thanks for downloading the <strong>Cairo Office Market Report 2026</strong> from PLACES.
+    <p style="margin:0 0 24px 0; font-size:15px; line-height:1.6; color:#171717;">
+      Thanks for downloading the <strong>Cairo Office Market Report 2026</strong>.
+      Here's your copy — plus a preview of what you'll find inside.
     </p>
 
-    <p style="margin:0 0 16px 0; font-size:15px; line-height:1.6; color:#64748B;">
-      Inside you'll find pricing benchmarks per square metre across the six
-      most active administrative office districts in Greater Cairo, plus a
-      snapshot of which developers are most active right now.
+    ${downloadHero}
+
+    <p style="margin:0 0 12px 0; font-size:12px; font-weight:700; color:#64748B; text-transform:uppercase; letter-spacing:2px;">
+      What's inside
     </p>
 
-    ${downloadBlock}
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:24px;">
+      ${bulletRow(
+        "📊",
+        "Pricing benchmarks by district",
+        "Live buy and lease rates per square metre across New Cairo, Sheikh Zayed, 6th October, Downtown, Sheraton, and Maadi.",
+      )}
+      ${bulletRow(
+        "🏢",
+        "Supply pipeline",
+        "Which developments are delivering in 2026–2027 and how that shifts availability in your target area.",
+      )}
+      ${bulletRow(
+        "📈",
+        "Where the smart money is going",
+        "Yield analysis, absorption rates, and the shortlist of districts our advisors are watching this year.",
+      )}
+      ${bulletRow(
+        "🏗️",
+        "Top developers by activity",
+        "The developers most represented in Cairo's active office pipeline — a proxy for where the deals are actually happening.",
+      )}
+    </table>
 
-    <div style="margin-top:8px; padding:20px 24px; background:#171717; border-radius:12px;">
+    <hr style="border:0; border-top:1px solid #EAE4DA; margin:32px 0 24px 0;">
+
+    <div style="margin:0 0 8px 0; padding:24px; background:#F8F5F1; border-radius:12px;">
       <p style="margin:0 0 6px 0; font-size:11px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:2px;">
-        Want a personalized read?
+        Want a personalised read?
       </p>
-      <p style="margin:0 0 16px 0; font-size:15px; line-height:1.5; color:#ffffff;">
+      <p style="margin:0 0 14px 0; font-size:14px; line-height:1.5; color:#171717;">
         Book a free 15-minute call and a PLACES advisor will walk you through
-        the districts and price bands you care about most.
+        the districts and price bands you care about most — no pressure, no
+        pitch.
       </p>
       <a href="${CALENDLY_URL}"
-         style="display:inline-block; background:#E11D48; color:#ffffff; padding:12px 24px; border-radius:999px; text-decoration:none; font-weight:600; font-size:14px;">
+         style="display:inline-block; background:#171717; color:#ffffff; padding:11px 22px; border-radius:999px; text-decoration:none; font-weight:600; font-size:14px;">
         Talk to Us →
       </a>
     </div>
