@@ -8,7 +8,7 @@ import { listingInsertSchema, listingUpdateSchema } from "./listing-schema";
 import { dealInsertSchema, dealUpdateSchema } from "./deal-schema";
 import { clientLogoInsertSchema, clientLogoUpdateSchema } from "./client-logo-schema";
 import { leadInsertSchema, leadUpdateSchema } from "./lead-schema";
-import { sendMail, escapeHtml } from "./mailer";
+import { sendMail, sendMarketReportReply, escapeHtml } from "./mailer";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -215,6 +215,17 @@ export async function registerRoutes(
         html,
         replyTo: lead.email,
       });
+
+      // Auto-reply to the LEAD themselves when they signed up for the market
+      // report magnet. Fire-and-forget — a mailer failure never blocks the
+      // response since the lead is already persisted and admin@ already
+      // got the notification above.
+      if (lead.magnet === "cairo_office_market_report_2026") {
+        void sendMarketReportReply({
+          toEmail: lead.email,
+          toName: lead.name,
+        });
+      }
 
       res.json({ ok: true, id: inserted.id });
     },
