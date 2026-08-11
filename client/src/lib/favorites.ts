@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { trackEvent } from "@/lib/analytics";
+import {
+  useAccount,
+  addServerFavorite,
+  removeServerFavorite,
+} from "@/lib/account";
 
 // Anonymous favoriting via localStorage. Phase 2 will merge these into a
 // signed-in user's Supabase account on first sign-in; Phase 1 is purely
@@ -10,13 +16,42 @@ import { trackEvent } from "@/lib/analytics";
 // write cost stays constant even at 100+ favorites.
 
 const STORAGE_KEY = "places_favorites_v1";
-const SIGNUP_NUDGE_KEY = "places_signup_nudge_shown_at";
-const NUDGE_THRESHOLD = 2; // Show signup nudge when they hit the 2nd favorite
+
+// Hard gate: anonymous users can favorite up to 2 listings. Attempting a
+// 3rd triggers the signup modal instead of adding. Once signed in, the
+// server takes over favorite storage (with no cap).
+export const ANON_FAVORITES_CAP = 2;
 
 // Custom event so multiple <FavoriteButton /> instances re-render in sync
 // when any one of them mutates localStorage. Same-tab storage events don't
 // fire, so we dispatch our own.
 const CHANGE_EVENT = "places:favorites-changed";
+
+// Signup modal state — a global bus so any FavoriteButton can trigger the
+// modal without prop-drilling. The <SignupGateModal /> mounted at App root
+// listens to this event.
+const SIGNUP_MODAL_EVENT = "places:signup-modal-open";
+
+export function openSignupModal(reason: {
+  pendingListingId?: number;
+  trigger: "favorite_cap" | "navbar_heart_signed_out";
+}) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent(SIGNUP_MODAL_EVENT, { detail: reason }),
+  );
+}
+
+export function onSignupModalRequested(
+  handler: (detail: {
+    pendingListingId?: number;
+    trigger: "favorite_cap" | "navbar_heart_signed_out";
+  }) => void,
+): () => void {
+  const listener = (e: Event) => handler((e as CustomEvent).detail);
+  window.addEventListener(SIGNUP_MODAL_EVENT, listener);
+  return () => window.removeEventListener(SIGNUP_MODAL_EVENT, listener);
+}
 
 export type FavoriteMap = Record<number, { added_at: string }>;
 
@@ -44,18 +79,24 @@ function writeAll(next: FavoriteMap) {
   }
 }
 
-// Returns [isFavorited, toggle, count]. The `count` is convenient for the
-// navbar heart badge so it can subscribe to changes without a separate hook.
+// Account-aware favorite toggler.
+//   - Signed in: source of truth is server. Optimistic client update, then
+//     API call, then invalidate account-me cache. Falls back to server state
+//     on failure so nothing gets "stuck" favorited.
+//   - Anonymous, below cap: source of truth is localStorage. Instant.
+//   - Anonymous, at cap and trying to add: opens the signup modal instead of
+//     adding, remembers the pending listing so it can be added post-signup.
 export function useFavorite(listingId: number | null | undefined): {
   isFavorited: boolean;
   toggle: () => boolean; // returns the new state (true = now favorited)
 } {
   const [snapshot, setSnapshot] = useState<FavoriteMap>(() => readAll());
+  const { account, serverFavorites } = useAccount();
+  const qc = useQueryClient();
 
   useEffect(() => {
     const sync = () => setSnapshot(readAll());
     window.addEventListener(CHANGE_EVENT, sync);
-    // Also listen for cross-tab changes.
     window.addEventListener("storage", (e) => {
       if (e.key === STORAGE_KEY) sync();
     });
@@ -64,56 +105,104 @@ export function useFavorite(listingId: number | null | undefined): {
     };
   }, []);
 
-  const isFavorited = listingId != null && Boolean(snapshot[listingId]);
+  const isFavorited =
+    listingId != null &&
+    (account
+      ? serverFavorites.some((f) => f.listing_id === listingId)
+      : Boolean(snapshot[listingId]));
 
   const toggle = useCallback((): boolean => {
     if (listingId == null) return false;
+
+    if (account) {
+      // Signed-in: hit the server.
+      const wasFavorited = serverFavorites.some((f) => f.listing_id === listingId);
+      const promise = wasFavorited
+        ? removeServerFavorite(listingId)
+        : addServerFavorite(listingId);
+      // Fire-and-forget with cache invalidation on completion.
+      void promise.finally(() => {
+        void qc.invalidateQueries({ queryKey: ["account-me"] });
+      });
+      trackEvent(wasFavorited ? "listing_unfavorited" : "listing_favorited", {
+        listing_id: listingId,
+        account: true,
+      });
+      return !wasFavorited;
+    }
+
+    // Anonymous path.
     const current = readAll();
     const wasFavorited = Boolean(current[listingId]);
     if (wasFavorited) {
       delete current[listingId];
-    } else {
-      current[listingId] = { added_at: new Date().toISOString() };
+      writeAll(current);
+      trackEvent("listing_unfavorited", { listing_id: listingId, account: false });
+      return false;
     }
+    // Cap check — trying to ADD past the cap. Open the signup modal instead
+    // of persisting, and remember which listing they were trying to save.
+    if (Object.keys(current).length >= ANON_FAVORITES_CAP) {
+      openSignupModal({ pendingListingId: listingId, trigger: "favorite_cap" });
+      trackEvent("signup_gate_shown", {
+        pending_listing_id: listingId,
+        trigger: "favorite_cap",
+      });
+      return false; // stayed unfavorited
+    }
+    current[listingId] = { added_at: new Date().toISOString() };
     writeAll(current);
-    trackEvent(wasFavorited ? "listing_unfavorited" : "listing_favorited", {
+    trackEvent("listing_favorited", {
       listing_id: listingId,
       total_favorites: Object.keys(current).length,
+      account: false,
     });
-    return !wasFavorited;
-  }, [listingId]);
+    return true;
+  }, [listingId, account, serverFavorites, qc]);
 
   return { isFavorited, toggle };
 }
 
 // Reactive count of all favorites — used by the navbar heart badge.
+// Uses server list when signed in, localStorage when anonymous.
 export function useFavoriteCount(): number {
-  const [count, setCount] = useState<number>(() => Object.keys(readAll()).length);
+  const { account, serverFavorites } = useAccount();
+  const [anonCount, setAnonCount] = useState<number>(() => Object.keys(readAll()).length);
 
   useEffect(() => {
-    const sync = () => setCount(Object.keys(readAll()).length);
+    const sync = () => setAnonCount(Object.keys(readAll()).length);
     window.addEventListener(CHANGE_EVENT, sync);
     return () => {
       window.removeEventListener(CHANGE_EVENT, sync);
     };
   }, []);
 
-  return count;
+  return account ? serverFavorites.length : anonCount;
 }
 
-// Reactive list of favorited listing IDs, newest first. Used by /my-favorites.
+// Reactive list of favorited listing IDs, newest first. Used by /saved.
 export function useFavoriteIds(): number[] {
-  const [ids, setIds] = useState<number[]>(() => sortNewestFirst(readAll()));
+  const { account, serverFavorites } = useAccount();
+  const [anonIds, setAnonIds] = useState<number[]>(() => sortNewestFirst(readAll()));
 
   useEffect(() => {
-    const sync = () => setIds(sortNewestFirst(readAll()));
+    const sync = () => setAnonIds(sortNewestFirst(readAll()));
     window.addEventListener(CHANGE_EVENT, sync);
     return () => {
       window.removeEventListener(CHANGE_EVENT, sync);
     };
   }, []);
 
-  return ids;
+  if (account) {
+    return serverFavorites.map((f) => f.listing_id);
+  }
+  return anonIds;
+}
+
+// Snapshot of anonymous localStorage favorites — used by the signup modal
+// right after signup to bulk-merge into the new account.
+export function readAnonymousFavoriteIds(): number[] {
+  return sortNewestFirst(readAll());
 }
 
 function sortNewestFirst(map: FavoriteMap): number[] {
@@ -129,32 +218,9 @@ export function clearAllFavorites(): void {
   writeAll({});
 }
 
-// ── Signup nudge (Phase 4 will build the modal, Phase 1 just tracks state) ─
-// After the user hits NUDGE_THRESHOLD favorites, we show a soft dismissible
-// signup prompt. We store when it was last shown so re-prompts space out.
-export function shouldShowSignupNudge(): boolean {
-  if (typeof window === "undefined") return false;
-  const count = Object.keys(readAll()).length;
-  if (count < NUDGE_THRESHOLD) return false;
-  try {
-    const last = localStorage.getItem(SIGNUP_NUDGE_KEY);
-    if (!last) return true;
-    // Re-prompt at 5 and 10 favorites — checked lazily as `count > lastShownAt`.
-    const shownCount = Number(last);
-    if (!Number.isFinite(shownCount)) return true;
-    if (count >= 10 && shownCount < 10) return true;
-    if (count >= 5 && shownCount < 5) return true;
-    return false;
-  } catch {
-    return false;
-  }
-}
-
-export function markSignupNudgeShown(): void {
-  const count = Object.keys(readAll()).length;
-  try {
-    localStorage.setItem(SIGNUP_NUDGE_KEY, String(count));
-  } catch {
-    // Ignore.
-  }
+// Called by the signup modal after successful signup + bulk-merge — wipes
+// the anonymous localStorage list so we don't double-count. The server list
+// is now the source of truth.
+export function clearAnonymousFavorites(): void {
+  writeAll({});
 }

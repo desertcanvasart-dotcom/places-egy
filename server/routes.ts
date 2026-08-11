@@ -8,6 +8,18 @@ import { listingInsertSchema, listingUpdateSchema } from "./listing-schema";
 import { dealInsertSchema, dealUpdateSchema } from "./deal-schema";
 import { clientLogoInsertSchema, clientLogoUpdateSchema } from "./client-logo-schema";
 import { leadInsertSchema, leadUpdateSchema } from "./lead-schema";
+import {
+  accountSignupSchema,
+  addFavoriteSchema,
+  bulkFavoritesSchema,
+} from "./account-schema";
+import {
+  generateSessionToken,
+  setSessionCookie,
+  clearSessionCookie,
+  getSessionAccount,
+  requireAccount,
+} from "./account-auth";
 import { sendMail, sendMarketReportReply, escapeHtml } from "./mailer";
 
 const upload = multer({
@@ -228,6 +240,211 @@ export async function registerRoutes(
       }
 
       res.json({ ok: true, id: inserted.id });
+    },
+  );
+
+  // ── Accounts (quick-signup + favorites) ──────────────────────────────────
+  // Public, cookie-session accounts backing the favorites system. Signup =
+  // 3 fields (name, email, phone); no password. On success we mint a session
+  // token, store on the account row, set an httpOnly cookie. See
+  // server/account-auth.ts for the session model.
+
+  app.post(
+    "/api/accounts",
+    strictLimiter,
+    async (req: Request, res: Response) => {
+      if (!supabaseAdmin) {
+        return res.status(503).json({ message: "Backend not configured" });
+      }
+      const parsed = accountSignupSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid signup" });
+      }
+      const { website, ...body } = parsed.data;
+      if (website && website.trim().length > 0) {
+        // Silently accept bot submissions so scanners get 200 and stop.
+        return res.json({ ok: true });
+      }
+
+      // If this email already has an account, log them back in instead of
+      // erroring (this is a lead-capture form; the person wanting to save
+      // favorites shouldn't be blocked by a "you already exist" wall).
+      const existing = await supabaseAdmin
+        .from("accounts")
+        .select("id,name,email,phone,session_token")
+        .eq("email", body.email.toLowerCase())
+        .maybeSingle();
+
+      const token = generateSessionToken();
+      const now = new Date().toISOString();
+
+      if (existing.data) {
+        // Rotate session token + refresh any updated contact info the visitor
+        // typed. We prefer their latest name/phone in case they changed number.
+        await supabaseAdmin
+          .from("accounts")
+          .update({
+            name: body.name,
+            phone: body.phone,
+            session_token: token,
+            last_active_at: now,
+          })
+          .eq("id", existing.data.id);
+        setSessionCookie(res, token);
+        return res.json({
+          ok: true,
+          id: existing.data.id,
+          existed: true,
+        });
+      }
+
+      const { data: inserted, error } = await supabaseAdmin
+        .from("accounts")
+        .insert({
+          name: body.name,
+          email: body.email.toLowerCase(),
+          phone: body.phone,
+          session_token: token,
+          last_active_at: now,
+        })
+        .select("id")
+        .single();
+      if (error || !inserted) {
+        console.error("[accounts] insert failed:", error?.message);
+        return res.status(500).json({ message: "Could not create account" });
+      }
+
+      setSessionCookie(res, token);
+
+      // Fire notification to admin@ so the team knows a new account signed
+      // up — same pattern as lead notifications.
+      const html = `
+        <div style="font-family:-apple-system,BlinkMacSystemFont,sans-serif; color:#1a1a1a; max-width:560px;">
+          <h2 style="margin:0 0 16px 0;">New account signup — ${escapeHtml(body.name)}</h2>
+          <p style="margin:0 0 8px 0;"><strong>Email:</strong> <a href="mailto:${escapeHtml(body.email)}">${escapeHtml(body.email)}</a></p>
+          <p style="margin:0 0 8px 0;"><strong>Phone:</strong> <a href="tel:${escapeHtml(body.phone)}">${escapeHtml(body.phone)}</a></p>
+          <p style="margin:24px 0 0 0; font-size:12px; color:#64748b;">
+            View + WhatsApp them from <a href="https://places-egy.com/dashboard">/dashboard</a> → Accounts.
+          </p>
+        </div>
+      `;
+      void sendMail({
+        to: "admin@places-egy.com",
+        subject: `New account: ${body.name}`,
+        html,
+        replyTo: body.email,
+      });
+
+      res.json({ ok: true, id: inserted.id, existed: false });
+    },
+  );
+
+  // Log out — clears cookie. Doesn't invalidate the token server-side (the
+  // next signup rotates it anyway); Phase 6 can rotate here too if needed.
+  app.post(
+    "/api/accounts/logout",
+    (_req: Request, res: Response) => {
+      clearSessionCookie(res);
+      res.json({ ok: true });
+    },
+  );
+
+  // Who am I? Returns current account + their favorites. If no session
+  // cookie or invalid, returns 200 with `account: null` — the client's
+  // useAccount() hook uses this to decide whether to show anon or signed-in
+  // state. Never 401 here; the /favorites routes will 401 as needed.
+  app.get(
+    "/api/accounts/me",
+    async (req: Request, res: Response) => {
+      const account = await getSessionAccount(req);
+      if (!account) return res.json({ account: null, favorites: [] });
+      if (!supabaseAdmin) return res.json({ account, favorites: [] });
+      const { data } = await supabaseAdmin
+        .from("account_favorites")
+        .select("listing_id,added_at")
+        .eq("account_id", account.id)
+        .order("added_at", { ascending: false });
+      res.json({
+        account,
+        favorites: (data ?? []).map((r) => ({
+          listing_id: r.listing_id,
+          added_at: r.added_at,
+        })),
+      });
+    },
+  );
+
+  app.post(
+    "/api/accounts/favorites",
+    strictLimiter,
+    requireAccount,
+    async (req: Request, res: Response) => {
+      if (!supabaseAdmin) return res.status(503).json({ message: "Backend not configured" });
+      const account = (req as Request & { account: { id: number } }).account;
+      const parsed = addFavoriteSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: "Invalid" });
+      // Upsert — silently no-op if already favorited.
+      const { error } = await supabaseAdmin
+        .from("account_favorites")
+        .upsert(
+          {
+            account_id: account.id,
+            listing_id: parsed.data.listing_id,
+            added_at: new Date().toISOString(),
+          },
+          { onConflict: "account_id,listing_id", ignoreDuplicates: true },
+        );
+      if (error) return res.status(400).json({ message: error.message });
+      res.json({ ok: true });
+    },
+  );
+
+  app.delete(
+    "/api/accounts/favorites/:listingId",
+    strictLimiter,
+    requireAccount,
+    async (req: Request, res: Response) => {
+      if (!supabaseAdmin) return res.status(503).json({ message: "Backend not configured" });
+      const account = (req as Request & { account: { id: number } }).account;
+      const listingId = Number(req.params.listingId);
+      if (!Number.isFinite(listingId)) return res.status(400).json({ message: "Invalid id" });
+      const { error } = await supabaseAdmin
+        .from("account_favorites")
+        .delete()
+        .eq("account_id", account.id)
+        .eq("listing_id", listingId);
+      if (error) return res.status(400).json({ message: error.message });
+      res.json({ ok: true });
+    },
+  );
+
+  // Bulk-merge: called right after signup with the anonymous localStorage
+  // favorites the visitor built before creating the account. Idempotent —
+  // duplicates are silently ignored.
+  app.post(
+    "/api/accounts/favorites/bulk",
+    strictLimiter,
+    requireAccount,
+    async (req: Request, res: Response) => {
+      if (!supabaseAdmin) return res.status(503).json({ message: "Backend not configured" });
+      const account = (req as Request & { account: { id: number } }).account;
+      const parsed = bulkFavoritesSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: "Invalid" });
+      if (parsed.data.listing_ids.length === 0) return res.json({ ok: true, merged: 0 });
+      const now = new Date().toISOString();
+      const rows = parsed.data.listing_ids.map((id) => ({
+        account_id: account.id,
+        listing_id: id,
+        added_at: now,
+      }));
+      const { error } = await supabaseAdmin
+        .from("account_favorites")
+        .upsert(rows, {
+          onConflict: "account_id,listing_id",
+          ignoreDuplicates: true,
+        });
+      if (error) return res.status(400).json({ message: error.message });
+      res.json({ ok: true, merged: rows.length });
     },
   );
 
@@ -571,6 +788,93 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Invalid id" });
       }
       const { error } = await supabaseAdmin.from("leads").delete().eq("id", id);
+      if (error) return res.status(400).json({ message: error.message });
+      res.json({ ok: true });
+    },
+  );
+
+  // ── Accounts admin (view all signed-up users + their favorites) ──────────
+  // Read-only from admin — accounts self-mutate via the public /api/accounts
+  // routes above. Bounded to 500 rows same as leads.
+  app.get(
+    "/api/admin/accounts",
+    strictLimiter,
+    requireAdmin,
+    async (_req: Request, res: Response) => {
+      if (!supabaseAdmin) return res.status(503).json({ message: "Supabase not configured" });
+      // Get accounts + favorite counts in two queries (small tables — this
+      // is fine and simpler than a view/RPC).
+      const { data: accounts, error } = await supabaseAdmin
+        .from("accounts")
+        .select("id,name,email,phone,created_at,last_active_at")
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) return res.status(400).json({ message: error.message });
+      const { data: favs } = await supabaseAdmin
+        .from("account_favorites")
+        .select("account_id");
+      const countMap = new Map<number, number>();
+      for (const f of favs ?? []) {
+        countMap.set(f.account_id, (countMap.get(f.account_id) ?? 0) + 1);
+      }
+      const enriched = (accounts ?? []).map((a) => ({
+        ...a,
+        favorite_count: countMap.get(a.id) ?? 0,
+      }));
+      res.json(enriched);
+    },
+  );
+
+  // Fetch one account + its full favorites list (with joined listing details).
+  app.get(
+    "/api/admin/accounts/:id",
+    strictLimiter,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      if (!supabaseAdmin) return res.status(503).json({ message: "Supabase not configured" });
+      const id = Number(req.params.id);
+      if (!Number.isFinite(id)) return res.status(400).json({ message: "Invalid id" });
+      const { data: account, error: accountErr } = await supabaseAdmin
+        .from("accounts")
+        .select("id,name,email,phone,created_at,last_active_at")
+        .eq("id", id)
+        .maybeSingle();
+      if (accountErr) return res.status(400).json({ message: accountErr.message });
+      if (!account) return res.status(404).json({ message: "Not found" });
+
+      const { data: favRows } = await supabaseAdmin
+        .from("account_favorites")
+        .select("listing_id,added_at")
+        .eq("account_id", id)
+        .order("added_at", { ascending: false });
+
+      const listingIds = (favRows ?? []).map((r) => r.listing_id);
+      let listings: unknown[] = [];
+      if (listingIds.length > 0) {
+        const { data: ls } = await supabaseAdmin
+          .from("listings")
+          .select("*")
+          .in("id", listingIds);
+        // Preserve added_at ordering.
+        const map = new Map((ls ?? []).map((l: { id: number }) => [l.id, l]));
+        listings = listingIds
+          .map((lid) => map.get(lid))
+          .filter((l) => l != null);
+      }
+      res.json({ account, favorites: listings });
+    },
+  );
+
+  app.delete(
+    "/api/admin/accounts/:id",
+    strictLimiter,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      if (!supabaseAdmin) return res.status(503).json({ message: "Supabase not configured" });
+      const id = Number(req.params.id);
+      if (!Number.isFinite(id)) return res.status(400).json({ message: "Invalid id" });
+      // account_favorites has ON DELETE CASCADE (see SQL), so favorites go too.
+      const { error } = await supabaseAdmin.from("accounts").delete().eq("id", id);
       if (error) return res.status(400).json({ message: error.message });
       res.json({ ok: true });
     },

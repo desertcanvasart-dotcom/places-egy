@@ -1,17 +1,40 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Heart } from "lucide-react";
-import { useFavoriteCount } from "@/lib/favorites";
+import { useFavoriteCount, openSignupModal } from "@/lib/favorites";
+import { useAccount } from "@/lib/account";
 
-// Heart icon in the Navbar with a small red count badge. Clicking navigates
-// to /my-favorites. In Phase 2 we'll add a signup prompt if the user has
-// favorites but isn't signed in — for Phase 1 it's a straight link.
+// Heart icon in the Navbar with a small red count badge.
+// Behavior:
+//   - Signed in: link to /saved (their server-synced favorites).
+//   - Signed out with 0 favorites: link to /saved anyway (empty state
+//     encourages them to start favoriting).
+//   - Signed out with 1+ favorites: shows the signup gate on click so they
+//     can create an account and sync their list.
 
 export function NavbarFavoriteButton() {
   const count = useFavoriteCount();
+  const { account } = useAccount();
+  const [, setLocation] = useLocation();
+
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    // Anonymous + has favorites → open signup gate (Phase 4 spec).
+    if (!account && count > 0) {
+      e.preventDefault();
+      openSignupModal({ trigger: "navbar_heart_signed_out" });
+      return;
+    }
+    // Otherwise let the <Link> navigate to /saved normally.
+    if (!account && count === 0) {
+      // Also route to /saved so they see the empty state + CTA to browse.
+      e.preventDefault();
+      setLocation("/saved");
+    }
+  };
 
   return (
     <Link
-      href="/my-favorites"
+      href="/saved"
+      onClick={handleClick}
       className="relative inline-flex items-center justify-center w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
       aria-label={
         count > 0

@@ -4,6 +4,7 @@ import { supabase, type Listing } from "@/lib/supabase";
 import { DealsManager } from "@/components/admin/DealsManager";
 import { ClientLogosManager } from "@/components/admin/ClientLogosManager";
 import { LeadsManager } from "@/components/admin/LeadsManager";
+import { AccountsManager } from "@/components/admin/AccountsManager";
 import { ListingPinInput } from "@/components/admin/ListingPinInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -487,7 +488,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
   const queryClient = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
   const [editListing, setEditListing] = useState<ListingForm | null>(null);
-  const [tab, setTab] = useState<"listings" | "deals" | "logos" | "leads">("listings");
+  const [tab, setTab] = useState<"listings" | "deals" | "logos" | "leads" | "accounts">("listings");
   const { data: listings = [], isLoading } = useQuery<Listing[]>({
     queryKey: ["admin-listings"],
     queryFn: async () => {
@@ -566,6 +567,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
             { key: "deals", label: "Deals" },
             { key: "logos", label: "Client Logos" },
             { key: "leads", label: "Leads" },
+            { key: "accounts", label: "Accounts" },
           ] as const).map(({ key, label }) => (
             <button
               key={key}
@@ -587,6 +589,8 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
           <ClientLogosManager />
         ) : tab === "leads" ? (
           <LeadsManager />
+        ) : tab === "accounts" ? (
+          <AccountsManager />
         ) : isLoading ? (
           <p className="text-muted-foreground text-center py-8 md:py-12">Loading listings...</p>
         ) : listings.length === 0 ? (

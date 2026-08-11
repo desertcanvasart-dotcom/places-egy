@@ -8,6 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { CookieBanner } from "@/components/CookieBanner";
 import { MobileBottomBar } from "@/components/layout/MobileBottomBar";
 import { BookMeetingFloat } from "@/components/BookMeetingFloat";
+import { SignupGateModal } from "@/components/SignupGateModal";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { organizationSchema, websiteSchema } from "@/lib/schema";
 
@@ -306,6 +307,7 @@ function App() {
         <Router />
         <MobileBottomBar />
         <BookMeetingFloat />
+        <SignupGateModal />
         <CookieBanner />
       </TooltipProvider>
     </QueryClientProvider>
