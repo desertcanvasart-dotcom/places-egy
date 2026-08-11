@@ -16,7 +16,7 @@ import { trackEvent } from "@/lib/analytics";
 const DISMISS_KEY = "corner_magnet_dismissed_at";
 const SUBMITTED_KEY = "market_report_submitted_at";
 const DISMISS_TTL_DAYS = 14;
-const SHOW_AFTER_MS = 10000; // 10s — long enough to not annoy, short enough to catch
+const SHOW_AFTER_MS = 3000; // 3s — appear early, grab attention while intent is fresh
 
 function isSuppressed(): boolean {
   try {

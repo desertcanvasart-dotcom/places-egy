@@ -14,14 +14,20 @@ import { trackEvent } from "@/lib/analytics";
 //   - blog_magnet_open     (user clicked CTA — form expands)
 //   - blog_magnet_dismiss  (user clicked X)
 
+// Suppression is scoped to the blog placement only. A dismiss on the
+// homepage corner popup does NOT suppress the blog popup — different
+// audiences and moods. If the user actually SUBMITTED the report anywhere,
+// then we suppress here too since delivering it twice is spammy.
 const DISMISS_KEY = "blog_magnet_dismissed_at";
 const SUBMITTED_KEY = "market_report_submitted_at";
-const DISMISS_TTL_DAYS = 14;
-const SHOW_AFTER_MS = 12000; // 12s — let readers engage with the post first
+const DISMISS_TTL_DAYS = 7; // Shorter than corner (14d) — blog readers deserve a re-prompt sooner
+const SHOW_AFTER_MS = 3000; // 3s — appear early, matching corner popup cadence
 
 function isSuppressed(): boolean {
   try {
+    // Hard suppress if they already got the report — no need to re-ask.
     if (localStorage.getItem(SUBMITTED_KEY)) return true;
+    // Otherwise honor only OUR own dismiss key (not the corner popup's).
     const raw = localStorage.getItem(DISMISS_KEY);
     if (!raw) return false;
     const ts = Number(raw);

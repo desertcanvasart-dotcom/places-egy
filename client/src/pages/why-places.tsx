@@ -1,5 +1,6 @@
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { CornerSlideMagnet } from "@/components/magnets/CornerSlideMagnet";
 import { ClientsStrip } from "@/components/ClientsStrip";
 import { ShieldCheck, TrendingUp, Users, Award, Building2, HeartHandshake, Download } from "lucide-react";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
@@ -296,6 +297,7 @@ export default function WhyPlaces() {
       </section>
 
       <Footer />
+      <CornerSlideMagnet />
     </div>
   );
 }

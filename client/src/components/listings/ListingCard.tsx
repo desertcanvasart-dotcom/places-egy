@@ -309,16 +309,16 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
               <button
                 onClick={prev}
                 aria-label="Previous image"
-                className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/85 shadow-md backdrop-blur-sm flex items-center justify-center text-primary opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-white"
+                className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/85 shadow-md backdrop-blur-sm flex items-center justify-center text-primary opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-white"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={next}
                 aria-label="Next image"
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/85 shadow-md backdrop-blur-sm flex items-center justify-center text-primary opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-white"
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/85 shadow-md backdrop-blur-sm flex items-center justify-center text-primary opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-white"
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </>
           )}

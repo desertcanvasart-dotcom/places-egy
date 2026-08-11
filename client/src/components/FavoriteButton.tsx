@@ -31,22 +31,29 @@ export function FavoriteButton({
   const iconSize = size === "lg" ? "w-5 h-5" : "w-4 h-4";
 
   const positioning = overlay
-    ? "absolute top-3 right-3 z-10"
+    ? "absolute top-3 right-3 z-30"
     : "";
+
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    // Stop propagation so a heart click on a listing card doesn't also
+    // navigate to the detail page or trigger the outer wrapper's onClick.
+    e.preventDefault();
+    e.stopPropagation();
+    toggle();
+  };
 
   return (
     <button
       type="button"
-      onClick={(e) => {
-        // Stop propagation so a heart click on a listing card doesn't also
-        // navigate to the detail page.
-        e.preventDefault();
+      onClick={handleClick}
+      onPointerDown={(e) => {
+        // Some parent wrappers use pointerDown to navigate — swallow it
+        // early so the heart always wins.
         e.stopPropagation();
-        toggle();
       }}
       aria-label={isFavorited ? "Remove from favorites" : "Save to favorites"}
       aria-pressed={isFavorited}
-      className={`${positioning} ${dimensions} flex items-center justify-center rounded-full bg-white/95 backdrop-blur-sm shadow-md hover:shadow-lg hover:scale-110 transition-all duration-200 ${className ?? ""}`}
+      className={`${positioning} ${dimensions} flex items-center justify-center rounded-full bg-white/95 backdrop-blur-sm shadow-md hover:shadow-lg hover:scale-110 transition-all duration-200 cursor-pointer ${className ?? ""}`}
     >
       <Heart
         className={`${iconSize} transition-colors ${

@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { CornerSlideMagnet } from "@/components/magnets/CornerSlideMagnet";
 import { Button } from "@/components/ui/button";
 import { Phone, MessageCircle, CalendarDays } from "lucide-react";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
@@ -77,7 +78,7 @@ export default function Contact() {
                   onClick={() => openCalendly("contact_page")}
                   className="w-full h-12 bg-accent hover:bg-accent/90 text-accent-foreground"
                 >
-                  <CalendarDays className="w-4 h-4 mr-2" /> Book a Meeting
+                  <CalendarDays className="w-4 h-4 mr-2" /> Talk to Us
                 </Button>
               </div>
             </div>
@@ -109,6 +110,7 @@ export default function Contact() {
       </main>
 
       <Footer />
+      <CornerSlideMagnet />
     </div>
   );
 }

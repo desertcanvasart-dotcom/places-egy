@@ -304,7 +304,7 @@ export async function sendMarketReportReply(opts: {
       </p>
       <a href="${CALENDLY_URL}"
          style="display:inline-block; background:#E11D48; color:#ffffff; padding:12px 24px; border-radius:999px; text-decoration:none; font-weight:600; font-size:14px;">
-        Book a Meeting →
+        Talk to Us →
       </a>
     </div>
 

@@ -183,7 +183,7 @@ export function LeadsManager() {
                           {lead.message && (
                             <div>
                               <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
-                                Message
+                                Projects they are interested in
                               </p>
                               <p className="text-sm text-primary whitespace-pre-wrap bg-white p-3 rounded-md border border-border/40">
                                 {lead.message}

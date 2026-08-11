@@ -1,12 +1,12 @@
 import { Link } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { CornerSlideMagnet } from "@/components/magnets/CornerSlideMagnet";
 import { Button } from "@/components/ui/button";
 import { FadeInSection } from "@/components/ui/fade-in-section";
 import { CountUp } from "@/components/ui/count-up";
 import { ServicesExplorer } from "@/components/ServicesExplorer";
 import { DeveloperStrip } from "@/components/DeveloperStrip";
-import { CornerSlideMagnet } from "@/components/magnets/CornerSlideMagnet";
 import { DealAnnouncementCarousel } from "@/components/DealAnnouncementCarousel";
 import { ListingCard } from "@/components/listings/ListingCard";
 import { ArrowRight, Building2, ClipboardList, BarChart3, ShieldCheck, CheckCircle2, Coins } from "lucide-react";

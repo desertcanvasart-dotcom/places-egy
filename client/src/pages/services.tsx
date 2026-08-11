@@ -1,5 +1,6 @@
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { CornerSlideMagnet } from "@/components/magnets/CornerSlideMagnet";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
@@ -202,6 +203,7 @@ export default function Services() {
 
         <Footer />
       </div>
+      <CornerSlideMagnet />
     </div>
   );
 }

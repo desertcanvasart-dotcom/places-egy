@@ -132,8 +132,15 @@ export function Footer() {
               <li><Link href="/blog" className="hover:text-white transition-colors">Blog</Link></li>
               <li><Link href="/faqs" className="hover:text-white transition-colors">FAQs</Link></li>
               <li><Link href="/glossary" className="hover:text-white transition-colors">Glossary</Link></li>
-              <li><Link href="/resources/market-report" className="text-accent hover:text-white transition-colors">Free Market Report</Link></li>
             </ul>
+            <div className="mt-4">
+              <Link
+                href="/resources/market-report"
+                className="inline-flex items-center gap-2 bg-accent hover:bg-accent/90 text-white text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-full shadow-lg shadow-accent/20 transition-all hover:scale-105"
+              >
+                📄 Free Market Report
+              </Link>
+            </div>
           </div>
         </div>
 
