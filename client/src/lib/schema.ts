@@ -27,7 +27,7 @@ export const organizationSchema = {
     width: 1280,
     height: 720,
   },
-  email: "info@places-egy.com",
+  email: "admin@places-egy.com",
   telephone: "+201063618217",
   address: {
     "@type": "PostalAddress",

@@ -18,7 +18,7 @@ const SERVICES = [
 const PHONE_DISPLAY = "01063618217";
 const PHONE_TEL = "tel:+201063618217";
 const WHATSAPP_HREF = "https://wa.me/201063618217";
-const EMAIL = "info@places-egy.com";
+const EMAIL = "admin@places-egy.com";
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (

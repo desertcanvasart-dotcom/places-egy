@@ -168,7 +168,7 @@ export default function TermsOfService() {
               <p className="mb-3">For questions about these Terms of Service, contact us at:</p>
               <address className="not-italic text-muted-foreground">
                 <p className="font-semibold text-primary">PLACES Real Estate</p>
-                <p>info@places-egy.com</p>
+                <p>admin@places-egy.com</p>
                 <p>01063618217</p>
               </address>
             </section>
