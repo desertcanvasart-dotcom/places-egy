@@ -190,6 +190,24 @@ export function LeadsManager() {
                               </p>
                             </div>
                           )}
+                          {lead.locations && lead.locations.length > 0 && (
+                            <div>
+                              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                                Locations of interest
+                              </p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {lead.locations.map((loc) => (
+                                  <span
+                                    key={loc}
+                                    className="text-xs font-medium px-2.5 py-1 rounded-full bg-primary/10 text-primary"
+                                  >
+                                    {loc}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                             {lead.page_url && (
                               <div>

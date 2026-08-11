@@ -11,6 +11,7 @@ export interface Lead {
   email: string;
   phone: string | null;
   message: string | null;
+  locations: string[] | null;
   lead_source: string;
   magnet: string | null;
   listing_id: number | null;
@@ -23,13 +24,27 @@ export interface Lead {
   notes: string | null;
 }
 
+// The 6 canonical Cairo districts PLACES serves. Slugs match the location
+// route slugs so a lead's "New Cairo" interest links back to /locations/new-cairo.
+export const LOCATION_CHOICES = [
+  { slug: "new-cairo", label: "New Cairo" },
+  { slug: "sheikh-zayed", label: "Sheikh Zayed" },
+  { slug: "6th-october", label: "6th October" },
+  { slug: "downtown-cairo", label: "Downtown Cairo" },
+  { slug: "sheraton", label: "Sheraton" },
+  { slug: "maadi", label: "Maadi" },
+] as const;
+
+export type LocationSlug = (typeof LOCATION_CHOICES)[number]["slug"];
+
 // Payload that the public POST /api/leads accepts. Everything except name +
 // email is optional. Wrapper components fill in `lead_source` (and `magnet`
 // / `listing_id` when applicable) — visitors only fill the visible fields.
 export type LeadSubmitInput = {
   name: string;
   email: string;
-  phone?: string;
+  phone: string;
+  locations: LocationSlug[];
   message?: string;
   lead_source: string;
   magnet?: string;

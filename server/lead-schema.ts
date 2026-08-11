@@ -14,9 +14,29 @@ export const leadInsertSchema = z
     name: z.string().trim().min(1).max(120),
     email: z.string().trim().email().max(200),
 
-    // Optional contact
-    phone: z.string().trim().max(40).nullable().optional(),
+    // Phone is required for the market-report magnet (real-estate leads must
+    // be reachable). Server enforces min length so a blank isn't accepted.
+    phone: z.string().trim().min(4).max(40),
+
+    // Free-text field where the visitor can name a project or ask a specific
+    // question. Optional — never gate the form on this.
     message: z.string().trim().max(2000).nullable().optional(),
+
+    // Locations the visitor is interested in. Multi-select from the 6
+    // canonical Cairo districts we serve. At least one is required.
+    locations: z
+      .array(
+        z.enum([
+          "new-cairo",
+          "sheikh-zayed",
+          "6th-october",
+          "downtown-cairo",
+          "sheraton",
+          "maadi",
+        ]),
+      )
+      .min(1, "Pick at least one location")
+      .max(6),
 
     // Where the lead came from. Slug-y string set by the wrapper component
     // (e.g. "contact_page", "market_report", "listing_inquiry", "footer",

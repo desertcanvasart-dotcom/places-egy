@@ -173,6 +173,10 @@ export async function registerRoutes(
       const listingLine = lead.listing_id
         ? `<p style="margin:0 0 12px 0"><strong>Listing #:</strong> ${lead.listing_id}</p>`
         : "";
+      const locationsLine =
+        lead.locations && lead.locations.length > 0
+          ? `<p style="margin:0 0 12px 0"><strong>Locations of interest:</strong> ${escapeHtml(lead.locations.join(", "))}</p>`
+          : "";
       const utmParts = [
         lead.utm_source && `source=${lead.utm_source}`,
         lead.utm_medium && `medium=${lead.utm_medium}`,
@@ -189,6 +193,7 @@ export async function registerRoutes(
           ${lead.phone ? `<p style="margin:0 0 8px 0"><strong>Phone:</strong> <a href="tel:${escapeHtml(lead.phone)}" style="color:#e11d48">${escapeHtml(lead.phone)}</a></p>` : ""}
           <p style="margin:0 0 16px 0"><strong>Source:</strong> ${escapeHtml(lead.lead_source)}</p>
           ${magnetLine}
+          ${locationsLine}
           ${listingLine}
           ${utmLine}
           ${

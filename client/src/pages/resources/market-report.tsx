@@ -112,7 +112,6 @@ export default function MarketReportPage() {
                 leadSource="market_report_landing"
                 magnet="cairo_office_market_report_2026"
                 submitLabel="Send me the report"
-                showMessage={false}
                 successTitle="You're on the list."
                 successBody="Watch your inbox — the report will land within a few minutes. If it doesn't show up, check your spam folder and mark PLACES as safe."
               />

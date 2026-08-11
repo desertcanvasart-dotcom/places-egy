@@ -112,7 +112,6 @@ export function BlogSlideUpMagnet() {
                   leadSource="blog_slide_up"
                   magnet="cairo_office_market_report_2026"
                   submitLabel="Send me the report"
-                  showMessage={false}
                   successTitle="You're on the list."
                   successBody="The report will land in your inbox within a few minutes. Check spam if you don't see it."
                 />
