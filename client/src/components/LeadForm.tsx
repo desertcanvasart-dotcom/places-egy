@@ -42,6 +42,10 @@ type Props = {
   className?: string;
   messageLabel?: string;
   messagePlaceholder?: string;
+  /** Fires once after a successful submit, before the success view renders.
+   *  Wrapper components can use this to persist state (e.g. suppress a
+   *  popup from re-showing to a user who already converted). */
+  onSubmitSuccess?: () => void;
 };
 
 export function LeadForm({
@@ -54,6 +58,7 @@ export function LeadForm({
   className,
   messageLabel = "Anything specific you're looking for?",
   messagePlaceholder = "e.g. a project you're eyeing, size, budget, timing…",
+  onSubmitSuccess,
 }: Props) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -118,6 +123,7 @@ export function LeadForm({
         listing_id: listingId ?? null,
         locations: Array.from(locations).join(","),
       });
+      onSubmitSuccess?.();
       setSuccess(true);
     } catch (err) {
       setError((err as Error).message);

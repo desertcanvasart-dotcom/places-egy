@@ -6,7 +6,7 @@ import { FadeInSection } from "@/components/ui/fade-in-section";
 import { CountUp } from "@/components/ui/count-up";
 import { ServicesExplorer } from "@/components/ServicesExplorer";
 import { DeveloperStrip } from "@/components/DeveloperStrip";
-import { MagnetCTA } from "@/components/magnets/MagnetCTA";
+import { CornerSlideMagnet } from "@/components/magnets/CornerSlideMagnet";
 import { DealAnnouncementCarousel } from "@/components/DealAnnouncementCarousel";
 import { ListingCard } from "@/components/listings/ListingCard";
 import { ArrowRight, Building2, ClipboardList, BarChart3, ShieldCheck, CheckCircle2, Coins } from "lucide-react";
@@ -255,15 +255,6 @@ export default function Home() {
         </section>
       </FadeInSection>
 
-      {/* Free market report — lead magnet CTA */}
-      <FadeInSection>
-        <section className="py-8 md:py-12">
-          <div className="container mx-auto px-6 md:px-10 max-w-4xl">
-            <MagnetCTA placement="homepage_lower" />
-          </div>
-        </section>
-      </FadeInSection>
-
       {/* How It Works */}
       <FadeInSection>
         <section className="py-8 md:py-12">
@@ -415,6 +406,7 @@ export default function Home() {
       </FadeInSection>
 
       <Footer />
+      <CornerSlideMagnet />
     </div>
   );
 }

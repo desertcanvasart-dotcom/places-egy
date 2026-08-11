@@ -1,25 +1,27 @@
 import { useEffect, useState } from "react";
-import { X, FileText } from "lucide-react";
+import { X, FileText, ArrowRight } from "lucide-react";
 import { LeadForm } from "@/components/LeadForm";
 import { trackEvent } from "@/lib/analytics";
 
-// Variant B — "Inline reveal" as a slide-up bar at the bottom of blog pages.
-// Sits fixed at the bottom of the viewport, out of the way, doesn't block
-// content. On click, expands into a full form modal that captures the lead
-// without navigating away. Dismissible with a 14-day cookie so we don't
-// nag people who already said no.
+// Corner slide-in for blog pages. Bottom-right, dark primary card with accent
+// red button = high-contrast against the light background. Same UX pattern
+// used by CornerSlideMagnet on homepage/listings — kept as a separate file
+// because blog pages use a longer delay (readers should engage with the post
+// first) and a different event slug for GA4 attribution.
 //
 // Fires:
-//   - blog_magnet_bar_shown (once per page load, after visible + not dismissed)
-//   - blog_magnet_bar_open  (when user clicks to expand)
-//   - blog_magnet_bar_dismiss (when user clicks X)
+//   - blog_magnet_shown    (once per mount, after visible + not dismissed)
+//   - blog_magnet_open     (user clicked CTA — form expands)
+//   - blog_magnet_dismiss  (user clicked X)
 
-const DISMISS_KEY = "magnet_bar_dismissed_at";
+const DISMISS_KEY = "blog_magnet_dismissed_at";
+const SUBMITTED_KEY = "market_report_submitted_at";
 const DISMISS_TTL_DAYS = 14;
-const SHOW_AFTER_MS = 5000; // don't be annoying — wait 5s after page load
+const SHOW_AFTER_MS = 12000; // 12s — let readers engage with the post first
 
-function isDismissed(): boolean {
+function isSuppressed(): boolean {
   try {
+    if (localStorage.getItem(SUBMITTED_KEY)) return true;
     const raw = localStorage.getItem(DISMISS_KEY);
     if (!raw) return false;
     const ts = Number(raw);
@@ -34,12 +36,15 @@ function isDismissed(): boolean {
 export function BlogSlideUpMagnet() {
   const [visible, setVisible] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (isDismissed()) return;
+    if (isSuppressed()) return;
     const t = setTimeout(() => {
-      setVisible(true);
-      trackEvent("blog_magnet_bar_shown", {
+      setMounted(true);
+      // Small delay before setting visible so the CSS transition fires.
+      requestAnimationFrame(() => setVisible(true));
+      trackEvent("blog_magnet_shown", {
         magnet: "cairo_office_market_report_2026",
       });
     }, SHOW_AFTER_MS);
@@ -50,106 +55,102 @@ export function BlogSlideUpMagnet() {
     try {
       localStorage.setItem(DISMISS_KEY, String(Date.now()));
     } catch {
-      // Ignore storage errors — user just gets nagged next visit.
+      // Ignore — user just sees it again next visit.
     }
-    trackEvent("blog_magnet_bar_dismiss", {
+    trackEvent("blog_magnet_dismiss", {
       magnet: "cairo_office_market_report_2026",
     });
     setVisible(false);
-    setExpanded(false);
+    setTimeout(() => {
+      setMounted(false);
+      setExpanded(false);
+    }, 500);
   };
 
   const open = () => {
     setExpanded(true);
-    trackEvent("blog_magnet_bar_open", {
+    trackEvent("blog_magnet_open", {
       magnet: "cairo_office_market_report_2026",
     });
   };
 
-  if (!visible) return null;
+  const handleFormSuccess = () => {
+    try {
+      localStorage.setItem(SUBMITTED_KEY, String(Date.now()));
+    } catch {
+      // Ignore — worst case they see the popup again next visit.
+    }
+  };
+
+  if (!mounted) return null;
 
   return (
-    <>
-      {/* Backdrop when expanded — click outside to close (not dismiss). */}
-      {expanded && (
-        <div
-          className="fixed inset-0 z-40 bg-primary/40 backdrop-blur-sm"
-          onClick={() => setExpanded(false)}
-          aria-hidden="true"
-        />
-      )}
-
-      <div
-        className={`fixed bottom-0 left-0 right-0 z-50 transition-transform duration-500 ease-out ${
-          visible ? "translate-y-0" : "translate-y-full"
-        }`}
-      >
-        <div className="max-w-3xl mx-auto p-4 md:p-6">
-          <div className="bg-white rounded-2xl shadow-2xl border border-border/40 overflow-hidden">
-            {expanded ? (
-              // Full form
-              <div className="p-6 md:p-8 relative">
-                <button
-                  onClick={() => setExpanded(false)}
-                  aria-label="Close"
-                  className="absolute top-4 right-4 text-muted-foreground hover:text-primary"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-                <div className="mb-5 pr-8">
-                  <span className="inline-block text-[11px] font-bold uppercase tracking-widest text-accent bg-accent/10 px-3 py-1 rounded-full mb-3">
-                    Free · PDF · 2026
-                  </span>
-                  <h3 className="text-xl md:text-2xl font-serif font-bold text-primary mb-1">
-                    Cairo Office Market Report 2026
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Pricing, supply, and yields across Cairo's six most active
-                    districts. We'll email it to you within a few minutes.
-                  </p>
-                </div>
-                <LeadForm
-                  leadSource="blog_slide_up"
-                  magnet="cairo_office_market_report_2026"
-                  submitLabel="Send me the report"
-                  successTitle="You're on the list."
-                  successBody="The report will land in your inbox within a few minutes. Check spam if you don't see it."
-                />
-              </div>
-            ) : (
-              // Compact CTA bar
-              <div className="flex items-center gap-4 p-4 md:p-5">
-                <div className="hidden md:flex h-12 w-12 items-center justify-center rounded-full bg-accent/10 text-accent shrink-0">
-                  <FileText className="w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm md:text-base font-semibold text-primary leading-tight">
-                    Free: Cairo Office Market Report 2026
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5 hidden md:block">
-                    Pricing benchmarks + yields across every district.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={open}
-                  className="inline-flex items-center bg-accent hover:bg-accent/90 text-white text-sm font-medium px-4 py-2 rounded-full shrink-0 shadow-md shadow-accent/20"
-                >
-                  Get it free
-                </button>
-                <button
-                  type="button"
-                  onClick={dismiss}
-                  aria-label="Dismiss for 14 days"
-                  className="text-muted-foreground hover:text-primary shrink-0"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            )}
+    <div
+      className={`fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50 max-w-[calc(100vw-2rem)] transition-all duration-500 ease-out ${
+        visible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0 pointer-events-none"
+      }`}
+    >
+      {expanded ? (
+        <div className="w-[min(24rem,calc(100vw-2rem))] bg-white rounded-2xl shadow-2xl border border-primary/10 overflow-hidden">
+          <div className="bg-primary text-white px-6 py-5 relative">
+            <button
+              onClick={() => setExpanded(false)}
+              aria-label="Close"
+              className="absolute top-3 right-3 text-white/60 hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <span className="inline-block text-[10px] font-bold uppercase tracking-widest text-accent bg-accent/15 px-2.5 py-1 rounded-full mb-2">
+              Free · PDF · 2026
+            </span>
+            <h3 className="text-lg font-serif font-bold leading-tight">
+              Cairo Office Market Report
+            </h3>
+            <p className="text-xs text-white/70 mt-1">
+              Pricing, supply, yields — sent to your inbox.
+            </p>
+          </div>
+          <div className="p-6">
+            <LeadForm
+              leadSource="blog_slide_up"
+              magnet="cairo_office_market_report_2026"
+              submitLabel="Send me the report"
+              successTitle="You're on the list."
+              successBody="The report will land in your inbox within a few minutes. Check spam if you don't see it."
+              onSubmitSuccess={handleFormSuccess}
+            />
           </div>
         </div>
-      </div>
-    </>
+      ) : (
+        <div className="flex items-stretch bg-primary text-white rounded-2xl shadow-2xl shadow-primary/30 overflow-hidden max-w-sm ring-1 ring-white/10">
+          <button
+            onClick={open}
+            className="flex items-center gap-3 pl-4 pr-3 py-3.5 md:pl-5 md:pr-4 md:py-4 text-left hover:bg-primary/85 transition-colors"
+          >
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-accent text-white shrink-0 shadow-md">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-accent leading-none mb-1">
+                Free · 2026
+              </p>
+              <p className="text-sm font-semibold leading-tight">
+                Cairo Office Market Report
+              </p>
+              <p className="text-xs text-white/60 mt-0.5 inline-flex items-center gap-1">
+                Get it free <ArrowRight className="w-3 h-3" />
+              </p>
+            </div>
+          </button>
+          <button
+            onClick={dismiss}
+            aria-label="Dismiss for 14 days"
+            className="px-2.5 flex items-center text-white/40 hover:text-white/90 border-l border-white/10 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

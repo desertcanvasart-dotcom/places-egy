@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { CornerSlideMagnet } from "@/components/magnets/CornerSlideMagnet";
 import { FilterSidebar, DEFAULT_FILTERS, PRICE_MIN, PRICE_MAX, type Filters } from "@/components/listings/FilterSidebar";
 import { ListingCard } from "@/components/listings/ListingCard";
 import { supabase, type Listing } from "@/lib/supabase";
@@ -447,6 +448,7 @@ export default function ListingsPage() {
       </main>
 
       <Footer />
+      <CornerSlideMagnet />
     </div>
   );
 }

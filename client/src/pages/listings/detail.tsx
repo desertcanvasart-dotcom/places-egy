@@ -3,6 +3,7 @@ import { Link, useLocation, useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { CornerSlideMagnet } from "@/components/magnets/CornerSlideMagnet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
@@ -565,6 +566,7 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
       )}
 
       <Footer />
+      <CornerSlideMagnet />
     </div>
   );
 }
