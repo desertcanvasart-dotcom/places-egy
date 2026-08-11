@@ -7,6 +7,8 @@ import { strictLimiter, uploadLimiter } from "./rate-limit";
 import { listingInsertSchema, listingUpdateSchema } from "./listing-schema";
 import { dealInsertSchema, dealUpdateSchema } from "./deal-schema";
 import { clientLogoInsertSchema, clientLogoUpdateSchema } from "./client-logo-schema";
+import { leadInsertSchema, leadUpdateSchema } from "./lead-schema";
+import { sendMail, escapeHtml } from "./mailer";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -128,6 +130,90 @@ export async function registerRoutes(
     if (error) return res.status(500).json({ message: error.message });
     res.json(data ?? []);
   });
+
+  // ── Leads (public capture + admin management) ────────────────────────────
+  // POST /api/leads — public form submission from any capture point (contact
+  // page, lead magnet CTAs, listing inquiries, footer, exit popup). Rate
+  // limited via strictLimiter (5/min per IP) to blunt bot floods. Honeypot
+  // field silently discards obvious bot submissions.
+  app.post(
+    "/api/leads",
+    strictLimiter,
+    async (req: Request, res: Response) => {
+      if (!supabaseAdmin) {
+        return res.status(503).json({ message: "Backend not configured" });
+      }
+      const parsed = leadInsertSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid submission" });
+      }
+      const { website: honeypot, ...lead } = parsed.data;
+      // Silently accept + discard bot submissions so scanners get 200 and
+      // stop retrying, but the row never lands in the DB.
+      if (honeypot && honeypot.trim().length > 0) {
+        return res.json({ ok: true });
+      }
+
+      const { data: inserted, error } = await supabaseAdmin
+        .from("leads")
+        .insert({ ...lead, status: "new" })
+        .select()
+        .single();
+      if (error) {
+        console.error("[leads] insert failed:", error.message);
+        return res.status(500).json({ message: "Could not save submission" });
+      }
+
+      // Fire the admin notification email. Doesn't block the response —
+      // even if mail fails, the lead is already persisted so PLACES sees it
+      // in the dashboard.
+      const magnetLine = lead.magnet
+        ? `<p style="margin:0 0 12px 0"><strong>Magnet:</strong> ${escapeHtml(lead.magnet)}</p>`
+        : "";
+      const listingLine = lead.listing_id
+        ? `<p style="margin:0 0 12px 0"><strong>Listing #:</strong> ${lead.listing_id}</p>`
+        : "";
+      const utmParts = [
+        lead.utm_source && `source=${lead.utm_source}`,
+        lead.utm_medium && `medium=${lead.utm_medium}`,
+        lead.utm_campaign && `campaign=${lead.utm_campaign}`,
+      ].filter(Boolean);
+      const utmLine =
+        utmParts.length > 0
+          ? `<p style="margin:0 0 12px 0"><strong>Campaign:</strong> ${escapeHtml(utmParts.join(" · "))}</p>`
+          : "";
+      const html = `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif; color: #1a1a1a; max-width: 560px;">
+          <h2 style="margin:0 0 16px 0; color:#0f172a;">New lead — ${escapeHtml(lead.name)}</h2>
+          <p style="margin:0 0 8px 0"><strong>Email:</strong> <a href="mailto:${escapeHtml(lead.email)}" style="color:#e11d48">${escapeHtml(lead.email)}</a></p>
+          ${lead.phone ? `<p style="margin:0 0 8px 0"><strong>Phone:</strong> <a href="tel:${escapeHtml(lead.phone)}" style="color:#e11d48">${escapeHtml(lead.phone)}</a></p>` : ""}
+          <p style="margin:0 0 16px 0"><strong>Source:</strong> ${escapeHtml(lead.lead_source)}</p>
+          ${magnetLine}
+          ${listingLine}
+          ${utmLine}
+          ${
+            lead.message
+              ? `<div style="margin-top:16px; padding:12px 16px; background:#f8fafc; border-left:3px solid #e11d48; border-radius:6px;">
+                  <p style="margin:0; white-space:pre-wrap; line-height:1.5;">${escapeHtml(lead.message)}</p>
+                </div>`
+              : ""
+          }
+          <p style="margin-top:24px; padding-top:16px; border-top:1px solid #e5e7eb; font-size:12px; color:#64748b;">
+            Landing page: ${escapeHtml(lead.page_url ?? "(unknown)")}<br>
+            View + manage all leads: <a href="https://places-egy.com/dashboard" style="color:#e11d48">/dashboard</a> → Leads
+          </p>
+        </div>
+      `;
+      void sendMail({
+        to: "admin@places-egy.com",
+        subject: `New lead: ${lead.name}${lead.magnet ? ` (${lead.magnet})` : ""}`,
+        html,
+        replyTo: lead.email,
+      });
+
+      res.json({ ok: true, id: inserted.id });
+    },
+  );
 
   // ──────────────────────────────────────────────────────────────────────────
   // Admin endpoints. All gated by requireAdmin + strictLimiter. Use the
@@ -400,6 +486,75 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Invalid id" });
       }
       const { error } = await supabaseAdmin.from("client_logos").delete().eq("id", id);
+      if (error) return res.status(400).json({ message: error.message });
+      res.json({ ok: true });
+    },
+  );
+
+  // ── Leads admin CRUD ─────────────────────────────────────────────────────
+  // List every submission. Newest first — that's the working view for the
+  // team ("who did we get in the last hour?"). Bounded to 500 rows so a
+  // runaway list doesn't hang the dashboard; add pagination if we ever hit
+  // that ceiling in practice.
+  app.get(
+    "/api/admin/leads",
+    strictLimiter,
+    requireAdmin,
+    async (_req: Request, res: Response) => {
+      if (!supabaseAdmin) {
+        return res.status(503).json({ message: "Supabase not configured" });
+      }
+      const { data, error } = await supabaseAdmin
+        .from("leads")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) return res.status(400).json({ message: error.message });
+      res.json(data ?? []);
+    },
+  );
+
+  // Update lead status or notes (e.g. mark contacted, add follow-up notes).
+  app.patch(
+    "/api/admin/leads/:id",
+    strictLimiter,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      if (!supabaseAdmin) {
+        return res.status(503).json({ message: "Supabase not configured" });
+      }
+      const id = Number(req.params.id);
+      if (!Number.isFinite(id)) {
+        return res.status(400).json({ message: "Invalid id" });
+      }
+      const parsed = leadUpdateSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid lead update" });
+      }
+      const { error, data } = await supabaseAdmin
+        .from("leads")
+        .update(parsed.data)
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) return res.status(400).json({ message: error.message });
+      res.json(data);
+    },
+  );
+
+  app.delete(
+    "/api/admin/leads/:id",
+    strictLimiter,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      if (!supabaseAdmin) {
+        return res.status(503).json({ message: "Supabase not configured" });
+      }
+      const id = Number(req.params.id);
+      if (!Number.isFinite(id)) {
+        return res.status(400).json({ message: "Invalid id" });
+      }
+      const { error } = await supabaseAdmin.from("leads").delete().eq("id", id);
       if (error) return res.status(400).json({ message: error.message });
       res.json({ ok: true });
     },

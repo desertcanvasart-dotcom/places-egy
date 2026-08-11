@@ -25,6 +25,7 @@ const FAQIndexPage = lazy(() => import("@/pages/resources/faqs"));
 const FAQSectionPage = lazy(() => import("@/pages/resources/faqs-section"));
 const BlogIndexPage = lazy(() => import("@/pages/resources/blog"));
 const BlogPostPage = lazy(() => import("@/pages/resources/blog-post"));
+const MarketReportPage = lazy(() => import("@/pages/resources/market-report"));
 const LeasingPage = lazy(() => import("@/pages/services/leasing"));
 const PrimaryProperty = lazy(() => import("@/pages/services/primary-property"));
 const PropertyResale = lazy(() => import("@/pages/services/property-resale"));
@@ -220,6 +221,7 @@ function Router() {
       <Route path="/glossary" component={GlossaryPage} />
       <Route path="/faqs" component={FAQIndexPage} />
       <Route path="/faqs/:slug" component={FAQSectionPage} />
+      <Route path="/resources/market-report" component={MarketReportPage} />
       <Route path="/blog">{() => <BlogIndexPage />}</Route>
       {/* Category filter — must come BEFORE /blog/:slug so wouter doesn't
           match "category" as a post slug. */}
