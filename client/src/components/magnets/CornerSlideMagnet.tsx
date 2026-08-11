@@ -3,9 +3,10 @@ import { X, FileText, ArrowRight } from "lucide-react";
 import { LeadForm } from "@/components/LeadForm";
 import { trackEvent } from "@/lib/analytics";
 
-// Bottom-right corner slide-in for homepage + listing pages. Dark primary
-// card with accent red button = high-contrast, catchy, on-brand.
-// Chat-widget style (like Intercom / Drift) — small, unobtrusive, dismissible.
+// Bottom-right corner slide-in for homepage + listing pages.
+// Dark primary card, accent-red icon + button, larger typography, one-shot
+// pulse animation on first appearance to grab attention without being annoying.
+// Chat-widget style (like Intercom / Drift) — small, dismissible, brand-punchy.
 //
 // Fires:
 //   - corner_magnet_shown    (once per mount, after visible + not dismissed)
@@ -88,8 +89,8 @@ export function CornerSlideMagnet() {
       }`}
     >
       {expanded ? (
-        <div className="w-[min(24rem,calc(100vw-2rem))] bg-white rounded-2xl shadow-2xl border border-primary/10 overflow-hidden">
-          <div className="bg-primary text-white px-6 py-5 relative">
+        <div className="w-[min(26rem,calc(100vw-2rem))] bg-white rounded-2xl shadow-2xl border border-primary/10 overflow-hidden">
+          <div className="bg-primary px-6 py-5 relative">
             <button
               onClick={() => setExpanded(false)}
               aria-label="Close"
@@ -97,10 +98,10 @@ export function CornerSlideMagnet() {
             >
               <X className="w-5 h-5" />
             </button>
-            <span className="inline-block text-[10px] font-bold uppercase tracking-widest text-accent bg-accent/15 px-2.5 py-1 rounded-full mb-2">
+            <span className="inline-block text-[10px] font-bold uppercase tracking-widest text-accent bg-accent/20 px-2.5 py-1 rounded-full mb-2">
               Free · PDF · 2026
             </span>
-            <h3 className="text-lg font-serif font-bold leading-tight">
+            <h3 className="text-lg font-serif font-bold text-white leading-tight">
               Cairo Office Market Report
             </h3>
             <p className="text-xs text-white/70 mt-1">
@@ -119,34 +120,55 @@ export function CornerSlideMagnet() {
           </div>
         </div>
       ) : (
-        <div className="flex items-stretch bg-primary text-white rounded-2xl shadow-2xl shadow-primary/30 overflow-hidden max-w-sm ring-1 ring-white/10">
-          <button
-            onClick={open}
-            className="flex items-center gap-3 pl-4 pr-3 py-3.5 md:pl-5 md:pr-4 md:py-4 text-left hover:bg-primary/85 transition-colors"
-          >
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-accent text-white shrink-0 shadow-md">
+        <button
+          onClick={open}
+          className="group relative flex items-center gap-4 bg-primary text-white rounded-2xl shadow-2xl shadow-primary/40 ring-1 ring-accent/30 px-5 py-4 md:px-6 md:py-5 max-w-md hover:shadow-accent/40 hover:ring-accent/60 transition-all duration-300 hover:-translate-y-0.5"
+        >
+          {/* Pulse ring on the icon — draws the eye */}
+          <span className="relative flex h-12 w-12 items-center justify-center shrink-0">
+            <span
+              className="absolute inline-flex h-full w-full rounded-full bg-accent/40 animate-ping"
+              aria-hidden="true"
+            />
+            <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-full bg-accent text-white shadow-lg">
               <FileText className="w-5 h-5" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-accent leading-none mb-1">
-                Free · 2026
-              </p>
-              <p className="text-sm font-semibold leading-tight">
-                Cairo Office Market Report
-              </p>
-              <p className="text-xs text-white/60 mt-0.5 inline-flex items-center gap-1">
-                Get it free <ArrowRight className="w-3 h-3" />
-              </p>
-            </div>
-          </button>
-          <button
-            onClick={dismiss}
+            </span>
+          </span>
+
+          <div className="text-left min-w-0 pr-6">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-accent leading-none mb-1.5">
+              Free · 2026 Report
+            </p>
+            <p className="text-base md:text-lg font-serif font-bold leading-tight">
+              Cairo Office Market Report
+            </p>
+            <p className="text-xs text-white/70 mt-1 inline-flex items-center gap-1 font-medium">
+              Get it free
+              <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+            </p>
+          </div>
+
+          {/* X positioned absolute so it doesn't stretch the button, and doesn't
+              inherit the button click. Use span+onClick with stopPropagation. */}
+          <span
+            role="button"
+            tabIndex={0}
             aria-label="Dismiss for 14 days"
-            className="px-2.5 flex items-center text-white/40 hover:text-white/90 border-l border-white/10 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              dismiss();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.stopPropagation();
+                dismiss();
+              }
+            }}
+            className="absolute top-2 right-2 flex items-center justify-center w-6 h-6 rounded-full text-white/40 hover:text-white hover:bg-white/10 cursor-pointer transition-colors"
           >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+            <X className="w-3.5 h-3.5" />
+          </span>
+        </button>
       )}
     </div>
   );
