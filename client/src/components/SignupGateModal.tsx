@@ -148,7 +148,7 @@ export function SignupGateModal() {
               Quick signup · 15 seconds
             </span>
           </div>
-          <h2 className="text-xl font-serif font-bold leading-tight">
+          <h2 className="text-xl font-serif font-bold text-white leading-tight">
             Save more listings to your account
           </h2>
           <p className="text-xs text-white/70 mt-1.5">
