@@ -16,6 +16,7 @@ import DOMPurify from "dompurify";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema, blogPostingSchema } from "@/lib/schema";
 import { BlogLangSwitcher } from "@/components/blog/BlogLangSwitcher";
+import { BlogSlideUpMagnet } from "@/components/magnets/BlogSlideUpMagnet";
 import {
   fetchPost,
   fetchRelatedPosts,
@@ -396,6 +397,7 @@ export default function BlogPostPage({ lang = "en" }: { lang?: BlogLang }) {
       </section>
 
       <Footer />
+      <BlogSlideUpMagnet />
     </div>
   );
 }

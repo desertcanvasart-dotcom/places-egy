@@ -132,6 +132,7 @@ export function Footer() {
               <li><Link href="/blog" className="hover:text-white transition-colors">Blog</Link></li>
               <li><Link href="/faqs" className="hover:text-white transition-colors">FAQs</Link></li>
               <li><Link href="/glossary" className="hover:text-white transition-colors">Glossary</Link></li>
+              <li><Link href="/resources/market-report" className="text-accent hover:text-white transition-colors">Free Market Report</Link></li>
             </ul>
           </div>
         </div>

@@ -16,6 +16,7 @@ import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema, blogIndexSchema } from "@/lib/schema";
 import { useDocumentMeta } from "@/lib/use-document-meta";
 import { BlogLangSwitcher } from "@/components/blog/BlogLangSwitcher";
+import { BlogSlideUpMagnet } from "@/components/magnets/BlogSlideUpMagnet";
 import {
   fetchPosts,
   formatPostDate,
@@ -332,6 +333,7 @@ export default function BlogIndexPage({ lang = "en" }: { lang?: BlogLang }) {
       </div>
 
       <Footer />
+      <BlogSlideUpMagnet />
     </div>
   );
 }
