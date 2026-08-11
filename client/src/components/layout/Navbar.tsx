@@ -11,6 +11,7 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
+import { NavbarFavoriteButton } from "@/components/NavbarFavoriteButton";
 
 const RESOURCES = [
   { title: "Blog", href: "/blog", icon: Newspaper },
@@ -146,6 +147,7 @@ export function Navbar() {
               Browse Listings
             </Button>
           </Link>
+          <NavbarFavoriteButton />
         </div>
 
         {/* Mobile Menu Toggle */}

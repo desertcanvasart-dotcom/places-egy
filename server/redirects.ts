@@ -10,6 +10,13 @@ const PERMANENT_REDIRECTS: Record<string, string> = {
   "/admin-offices/mixed-use": "/admin/mixed-use",
   "/admin-offices/mixed-use-mall": "/admin/mixed-use",
   "/office-spaces": "/",
+  // Favorites/saved-listings page was briefly built as /my-favorites and
+  // /favorites in early drafts. Canonical URL is now /saved (matches Redfin
+  // convention). Preserve any accidentally-shared bookmarks by 301'ing both
+  // legacy variants forward.
+  "/my-favorites": "/saved",
+  "/favorites": "/saved",
+  "/wishlist": "/saved",
   // PLACES retired its commercial offering — all /commercial* paths now
   // route to the homepage so external links + indexed URLs land on a
   // useful page that reflects the new admin-only positioning.

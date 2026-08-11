@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { CornerSlideMagnet } from "@/components/magnets/CornerSlideMagnet";
+import { FavoriteButton } from "@/components/FavoriteButton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
@@ -287,9 +288,12 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
               >
                 {formatLabel(listing.transaction_type)}
               </Badge>
-              <h1 className="text-3xl md:text-5xl font-serif font-bold text-primary leading-tight">
-                {listing.title}
-              </h1>
+              <div className="flex items-start justify-between gap-4">
+                <h1 className="text-3xl md:text-5xl font-serif font-bold text-primary leading-tight flex-1">
+                  {listing.title}
+                </h1>
+                <FavoriteButton listingId={listing.id} size="lg" className="shrink-0 mt-1" />
+              </div>
               <div className="flex items-center gap-3 mt-3 text-muted-foreground">
                 <MapPin className="w-4 h-4" />
                 <span>

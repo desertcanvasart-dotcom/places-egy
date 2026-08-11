@@ -13,6 +13,7 @@ import { MapPin, Building2, Maximize, ArrowUpRight, ChevronLeft, ChevronRight, P
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { listingSchema } from "@/lib/schema";
 import { listingUrl } from "@/lib/listings";
+import { FavoriteButton } from "@/components/FavoriteButton";
 import { listingCurrency } from "@/lib/currency";
 import { supabaseImage, supabaseImageOnError } from "@/lib/image-url";
 import { trackEvent } from "@/lib/analytics";
@@ -151,6 +152,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
                 {formatLabel(listing.transaction_type)}
               </Badge>
             </div>
+            <FavoriteButton listingId={listing.id} overlay />
           </div>
           <div className="flex-1 p-5 flex flex-col gap-3">
             <div>
@@ -299,6 +301,8 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
             decoding="async"
             className="object-cover w-full h-full transition-all duration-500 group-hover:scale-105"
           />
+
+          <FavoriteButton listingId={listing.id} overlay />
 
           {hasMultiple && (
             <>
