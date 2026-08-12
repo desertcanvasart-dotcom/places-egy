@@ -13,10 +13,28 @@ import { Resend } from "resend";
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const FROM = process.env.EMAIL_FROM ?? "PLACES <admin@places-egy.com>";
 
-// PLACES advisory Calendly link (same as openCalendly() in the client).
+// PLACES advisory Calendly link (mirrors openCalendly() in the client).
 // Overridable via env in case the URL ever changes without a deploy.
 const CALENDLY_URL =
-  process.env.CALENDLY_URL ?? "https://calendly.com/places-egy/consultation";
+  process.env.CALENDLY_URL ?? "https://calendly.com/places-egy-info/30min";
+
+// Tag any Calendly URL sent from the server with UTMs so the client's
+// Calendly dashboard shows exactly which email + button drove each booking.
+// Same shape as client/src/lib/calendly.ts's calendlyUrl() — keep them in
+// sync when either changes.
+export function taggedCalendlyUrl(opts: {
+  campaign: string;
+  content?: string;
+}): string {
+  const params = new URLSearchParams({
+    utm_source: "places-egy.com",
+    utm_medium: "email",
+    utm_campaign: opts.campaign,
+  });
+  if (opts.content) params.set("utm_content", opts.content);
+  const sep = CALENDLY_URL.includes("?") ? "&" : "?";
+  return `${CALENDLY_URL}${sep}${params.toString()}`;
+}
 
 // Public URL of the market report PDF. Placeholder until PLACES finalizes the
 // actual PDF and uploads it to Supabase Storage or elsewhere. When set, the
@@ -294,6 +312,12 @@ export async function sendMarketReportReply(opts: {
     year: "numeric",
   });
 
+  // Tag the download URL so we can count actual PDF downloads in Supabase
+  // Storage logs / GA4. Same UTM shape as the Talk to Us link below.
+  const downloadPdfUrl = MARKET_REPORT_URL
+    ? `${MARKET_REPORT_URL}${MARKET_REPORT_URL.includes("?") ? "&" : "?"}utm_source=places-egy.com&utm_medium=email&utm_campaign=email_market_report&utm_content=download_pdf`
+    : "";
+
   const downloadHero = MARKET_REPORT_URL
     ? `
       <div style="margin:0 0 28px 0; padding:28px 24px; background:linear-gradient(135deg,#171717 0%,#2A2A2A 100%); border-radius:14px; text-align:center;">
@@ -306,7 +330,7 @@ export async function sendMarketReportReply(opts: {
         <p style="margin:0 0 22px 0; font-size:13px; color:rgba(255,255,255,0.6);">
           Free · PDF · Updated ${monthYear}
         </p>
-        <a href="${MARKET_REPORT_URL}"
+        <a href="${downloadPdfUrl}"
            style="display:inline-block; background:#E11D48; color:#ffffff; padding:14px 32px; border-radius:999px; text-decoration:none; font-weight:700; font-size:15px; box-shadow:0 4px 12px rgba(225,29,72,0.4);">
           Download the PDF →
         </a>
@@ -371,7 +395,7 @@ export async function sendMarketReportReply(opts: {
         the districts and price bands you care about most — no pressure, no
         pitch.
       </p>
-      <a href="${CALENDLY_URL}"
+      <a href="${taggedCalendlyUrl({ campaign: "email_market_report", content: "talk_to_us" })}"
          style="display:inline-block; background:#171717; color:#ffffff; padding:11px 22px; border-radius:999px; text-decoration:none; font-weight:600; font-size:14px;">
         Talk to Us →
       </a>

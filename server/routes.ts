@@ -26,6 +26,7 @@ import {
   sendMarketReportReply,
   escapeHtml,
 } from "./mailer";
+import { handleCalendlyWebhook } from "./calendly-webhook";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -146,6 +147,15 @@ export async function registerRoutes(
       .limit(20);
     if (error) return res.status(500).json({ message: error.message });
     res.json(data ?? []);
+  });
+
+  // ── Calendly webhook ─────────────────────────────────────────────────────
+  // Public endpoint hit by Calendly on invitee.created + invitee.canceled.
+  // Auth is via HMAC signature (see server/calendly-webhook.ts). Every booking
+  // ends up in the calendly_bookings table with full UTM attribution + fires
+  // an admin@ notification on new bookings.
+  app.post("/api/webhooks/calendly", async (req, res) => {
+    await handleCalendlyWebhook(req, res);
   });
 
   // ── Leads (public capture + admin management) ────────────────────────────
@@ -846,6 +856,37 @@ export async function registerRoutes(
       if (!Number.isFinite(id)) return res.status(400).json({ message: "Invalid id" });
       // account_favorites has ON DELETE CASCADE (see SQL), so favorites go too.
       const { error } = await supabaseAdmin.from("accounts").delete().eq("id", id);
+      if (error) return res.status(400).json({ message: error.message });
+      res.json({ ok: true });
+    },
+  );
+
+  // ── Bookings admin (Calendly meetings synced via webhook) ────────────────
+  app.get(
+    "/api/admin/bookings",
+    strictLimiter,
+    requireAdmin,
+    async (_req: Request, res: Response) => {
+      if (!supabaseAdmin) return res.status(503).json({ message: "Supabase not configured" });
+      const { data, error } = await supabaseAdmin
+        .from("calendly_bookings")
+        .select("*")
+        .order("start_time", { ascending: false })
+        .limit(500);
+      if (error) return res.status(400).json({ message: error.message });
+      res.json(data ?? []);
+    },
+  );
+
+  app.delete(
+    "/api/admin/bookings/:id",
+    strictLimiter,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      if (!supabaseAdmin) return res.status(503).json({ message: "Supabase not configured" });
+      const id = Number(req.params.id);
+      if (!Number.isFinite(id)) return res.status(400).json({ message: "Invalid id" });
+      const { error } = await supabaseAdmin.from("calendly_bookings").delete().eq("id", id);
       if (error) return res.status(400).json({ message: error.message });
       res.json({ ok: true });
     },

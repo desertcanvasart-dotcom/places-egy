@@ -35,7 +35,7 @@ export function MobileBottomBar() {
           WhatsApp
         </a>
         <button
-          onClick={() => openCalendly("mobile_bottom_bar")}
+          onClick={() => openCalendly("mobile_bottom_bar", "talk_to_us")}
           className="flex flex-col items-center justify-center gap-1 py-2 rounded-lg bg-white text-primary font-semibold text-xs hover:bg-white/90 transition-colors"
         >
           <CalendarDays className="w-4 h-4" />
