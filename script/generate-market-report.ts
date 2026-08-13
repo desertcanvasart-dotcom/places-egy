@@ -336,7 +336,10 @@ function drawPageFooter(doc: Doc, pageIndex: number, monthYear: string) {
 }
 
 // ── PDF build ──────────────────────────────────────────────────────────────
-async function buildPdf(): Promise<Buffer> {
+// Exported so both the CLI (below) AND the Railway cron endpoint
+// (server/regenerate-report.ts) can call it. Fetches live Supabase listings
+// each call so the numbers stay fresh.
+export async function buildPdf(): Promise<Buffer> {
   const listings = (await fetchListings()).filter((l) => l.price != null);
 
   // Enrich each researched district with live PLACES data.
@@ -851,7 +854,16 @@ async function main() {
   console.log(`  ${pub.publicUrl}\n`);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+// Only run main() when this file is invoked directly (via npm script /
+// tsx CLI). When the server imports us to call buildPdf() from the cron
+// handler, we don't want main() to fire.
+import { pathToFileURL } from "url";
+const invokedDirectly =
+  typeof process.argv[1] === "string" &&
+  import.meta.url === pathToFileURL(process.argv[1]).href;
+if (invokedDirectly) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}

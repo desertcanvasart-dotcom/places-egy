@@ -27,6 +27,7 @@ import {
   escapeHtml,
 } from "./mailer";
 import { handleCalendlyWebhook } from "./calendly-webhook";
+import { regenerateMarketReportHandler } from "./regenerate-report";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -148,6 +149,11 @@ export async function registerRoutes(
     if (error) return res.status(500).json({ message: error.message });
     res.json(data ?? []);
   });
+
+  // ── Cron: monthly market report regeneration ────────────────────────────
+  // Called externally by a cron scheduler on the 1st of every month.
+  // Auth via x-cron-token header. See server/regenerate-report.ts.
+  app.post("/api/admin/regenerate-market-report", regenerateMarketReportHandler);
 
   // ── Calendly webhook ─────────────────────────────────────────────────────
   // Public endpoint hit by Calendly on invitee.created + invitee.canceled.
