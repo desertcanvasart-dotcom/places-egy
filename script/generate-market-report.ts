@@ -1,4 +1,5 @@
 import PDFDocument from "pdfkit";
+import { PDFDocument as PdfLibDocument } from "pdf-lib";
 import { createClient } from "@supabase/supabase-js";
 import { writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
@@ -323,15 +324,20 @@ function drawBarChart(
 function drawPageFooter(doc: Doc, pageIndex: number, monthYear: string) {
   if (pageIndex === 0) return;
   doc.fillColor(BRAND.muted).fontSize(8).font("Helvetica");
+  // `lineBreak: false` is critical here — without it, PDFKit sees the y
+  // coordinate is near the page bottom and helpfully auto-adds a NEW page
+  // to "make room" for the text, which produced ~24 phantom blank pages in
+  // an earlier build. Same for the page-number text below.
   doc.text(
     `Cairo Office Market Report · ${monthYear} · PLACES · places-egy.com`,
     48,
     doc.page.height - 30,
-    { width: pageWidth(doc), align: "center" },
+    { width: pageWidth(doc), align: "center", lineBreak: false },
   );
   doc.text(String(pageIndex + 1), doc.page.width - 60, doc.page.height - 30, {
     width: 40,
     align: "right",
+    lineBreak: false,
   });
 }
 
@@ -806,15 +812,54 @@ export async function buildPdf(): Promise<Buffer> {
     { width: pageWidth(doc), lineGap: 3 },
   );
 
-  // Add footer to every page
-  const range = doc.bufferedPageRange();
-  for (let i = 0; i < range.count; i++) {
-    doc.switchToPage(range.start + i);
+  // ── Add footers to every intentional page ─────────────────────────────
+  //   1 cover (initial page from constructor)
+  //   1 Executive Summary
+  //   1 Market Overview
+  //   6 District Deep-Dives
+  //   1 Comparative Pricing
+  //   1 PLACES Active Pipeline
+  //   1 Outlook
+  //   1 About + CTA + Sources
+  //   = 13 total intentional pages
+  const INTENTIONAL_PAGES = 13;
+  for (let i = 0; i < INTENTIONAL_PAGES; i++) {
+    doc.switchToPage(i);
     drawPageFooter(doc, i, monthYear);
   }
 
   doc.end();
-  return done;
+  const raw = await done;
+
+  // Post-process with pdf-lib to strip phantom trailing pages that PDFKit
+  // auto-added when internal text() calls would have overflowed page bounds.
+  // Attempts to trim inside PDFKit itself (splicing _root.data.Pages.Kids +
+  // _pageBuffer) don't fully work because the phantom pages get flushed to
+  // the content stream before doc.end() completes. Load the finished PDF
+  // with pdf-lib, delete pages past INTENTIONAL_PAGES, re-serialize.
+  try {
+    const pdf = await PdfLibDocument.load(raw);
+    const count = pdf.getPageCount();
+    if (count > INTENTIONAL_PAGES) {
+      // pdf-lib removes pages by index. Delete from the END so earlier
+      // indices remain stable across successive splices.
+      for (let i = count - 1; i >= INTENTIONAL_PAGES; i--) {
+        pdf.removePage(i);
+      }
+      const trimmed = await pdf.save();
+      console.log(
+        `[market-report] trimmed ${count - INTENTIONAL_PAGES} phantom pages → ${INTENTIONAL_PAGES}`,
+      );
+      return Buffer.from(trimmed);
+    }
+    return raw;
+  } catch (err) {
+    console.warn(
+      "[market-report] pdf-lib trim failed, returning raw pdfkit output:",
+      err,
+    );
+    return raw;
+  }
 }
 
 async function main() {

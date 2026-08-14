@@ -27,6 +27,7 @@ const allowlist = [
   "passport",
   "passport-local",
   "pdfkit",
+  "pdf-lib",
   "pg",
   "resend",
   "stripe",
