@@ -69,6 +69,11 @@ export const leadInsertSchema = z
     utm_term: z.string().max(80).nullable().optional(),
     utm_content: z.string().max(80).nullable().optional(),
 
+    // Language preference — captured from browser + URL path at submit time.
+    // Used to render the market-report auto-reply email in the visitor's
+    // language. Optional; server falls back to 'en'.
+    preferred_language: z.enum(["en", "ar"]).optional(),
+
     // Honeypot: real users leave this blank; bots fill every field. If it
     // arrives non-empty we accept the request with 200 (so bots don't retry)
     // but never persist. Handled in the route, not the schema.

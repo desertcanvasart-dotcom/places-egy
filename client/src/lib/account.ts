@@ -60,6 +60,7 @@ export async function signupAccount(input: {
   name: string;
   email: string;
   phone: string;
+  preferred_language?: "en" | "ar";
   website?: string; // honeypot
 }): Promise<{ id: number; existed: boolean }> {
   const res = await fetch("/api/accounts", {

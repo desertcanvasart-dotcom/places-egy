@@ -102,20 +102,145 @@ function firstNameOf(name: string): string {
   return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
 }
 
-// ── Shared branded email shell ──────────────────────────────────────────────
-// All PLACES emails share this frame: black header with PLACES wordmark,
-// white body, muted footer. Body is a raw HTML string the caller composes.
-// Kept small and inline-styled because email clients strip <style> tags.
-function brandedShell(opts: { preheader: string; body: string }): string {
+// ── i18n ────────────────────────────────────────────────────────────────────
+// Every user-facing email supports English + Arabic. Language is stored per
+// account (accounts.preferred_language) or captured at lead-submit time
+// (leads.preferred_language). Never say "listings" — always "offices" /
+// "units" per PLACES copy rule.
+export type Lang = "en" | "ar";
+
+// Copy dictionary — one canonical bilingual translation per key. Keep this
+// dictionary sorted by section so future editors can find things.
+export const T = {
+  common: {
+    footerTagline: {
+      en: "PLACES · Egypt's specialized partner for administrative office real estate",
+      ar: "PLACES · شريكك المتخصص للعقارات الإدارية في مصر",
+    },
+    cairoEgypt: { en: "Cairo · Egypt", ar: "القاهرة · مصر" },
+    talkToUs: { en: "Talk to Us", ar: "تحدث معنا" },
+    viewOffice: { en: "View office →", ar: "عرض المكتب →" },
+    hi: { en: "Hi", ar: "أهلاً" },
+    signOff: { en: "— The PLACES Team", ar: "— فريق PLACES" },
+    similarOffices: {
+      en: "Similar offices you might like",
+      ar: "مكاتب مشابهة قد تعجبك",
+    },
+    perSqm: { en: "sqm", ar: "م²" },
+    forRent: { en: "For rent", ar: "للإيجار" },
+    forSale: { en: "For sale", ar: "للبيع" },
+    reply: {
+      en: "Questions? Reply to this email — it goes straight to our advisors.",
+      ar: "أسئلة؟ رد على هذا البريد — يصل مباشرة لمستشارينا.",
+    },
+  },
+  digest2h: {
+    subject: {
+      en: "The offices you loved",
+      ar: "المكاتب التي أعجبتك",
+    },
+    heading: {
+      en: "Your saved offices are ready",
+      ar: "المكاتب التي حفظتها جاهزة",
+    },
+    intro: {
+      en: "You saved {count} offices on PLACES. Here's a quick recap — tap any card to see the full details.",
+      ar: "لقد حفظت {count} من المكاتب على PLACES. إليك ملخص سريع — اضغط على أي بطاقة لعرض التفاصيل الكاملة.",
+    },
+    ctaLabel: { en: "Ready to talk it through?", ar: "مستعد للتحدث؟" },
+    ctaBody: {
+      en: "Book a 15-minute call and a PLACES advisor will walk you through the ones you're leaning toward.",
+      ar: "احجز مكالمة 15 دقيقة وسيقوم مستشار PLACES بمساعدتك في المكاتب التي تفكر بها.",
+    },
+  },
+  digestWeekly: {
+    subject: {
+      en: "Your PLACES weekly recap",
+      ar: "ملخصك الأسبوعي من PLACES",
+    },
+    heading: {
+      en: "Here's what you saved this week",
+      ar: "إليك ما حفظته هذا الأسبوع",
+    },
+    intro: {
+      en: "Your saved list from the past week — {count} offices in total.",
+      ar: "قائمة مكاتبك المحفوظة من الأسبوع الماضي — {count} مكتب في المجموع.",
+    },
+  },
+  digestMilestone: {
+    subject: {
+      en: "You've been busy — let's help you narrow it down",
+      ar: "أنت جادّ في البحث — دعنا نساعدك في الاختيار",
+    },
+    heading: {
+      en: "10 offices saved — that's a real shortlist",
+      ar: "10 مكاتب محفوظة — قائمة اختيار حقيقية",
+    },
+    intro: {
+      en: "You've saved 10 offices with PLACES. That's a strong shortlist. A quick call with one of our advisors will save you hours of research — we know these buildings inside out.",
+      ar: "لقد حفظت 10 مكاتب على PLACES. هذه قائمة قوية. مكالمة سريعة مع أحد مستشارينا ستوفر عليك ساعات من البحث — نحن نعرف هذه المباني جيداً.",
+    },
+    ctaLabel: { en: "Book a 15-minute call", ar: "احجز مكالمة 15 دقيقة" },
+    ctaBody: {
+      en: "No pressure, no sales pitch — just an honest advisor conversation about the offices you shortlisted.",
+      ar: "بدون ضغط أو عروض بيع — فقط محادثة صادقة مع مستشار عن المكاتب التي اخترتها.",
+    },
+  },
+  marketReport: {
+    subject: {
+      en: "Your Cairo Office Market Report 2026 — from PLACES",
+      ar: "تقرير سوق المكاتب في القاهرة 2026 — من PLACES",
+    },
+    intro: {
+      en: "Thanks for downloading the Cairo Office Market Report 2026. Here's your copy — plus a preview of what you'll find inside.",
+      ar: "شكراً لطلبك تقرير سوق المكاتب في القاهرة 2026. إليك نسختك — بالإضافة إلى معاينة لما ستجده في الداخل.",
+    },
+    downloadCta: { en: "Download the PDF →", ar: "تحميل PDF →" },
+    reportReady: {
+      en: "Your report is ready",
+      ar: "تقريرك جاهز",
+    },
+    whatsInside: { en: "What's inside", ar: "ما بداخل التقرير" },
+  },
+} as const;
+
+// Helper: get a string in the requested language, falling back to English.
+export function t(
+  key: { en: string; ar: string },
+  lang: Lang = "en",
+): string {
+  return key[lang] ?? key.en;
+}
+
+// Format a number with per-locale grouping (English commas / Arabic-Indic).
+export function formatNumber(n: number, lang: Lang = "en"): string {
+  return new Intl.NumberFormat(lang === "ar" ? "ar-EG" : "en-US").format(n);
+}
+
+// ── Shared branded email shell (bilingual) ──────────────────────────────────
+// Body is a raw HTML string composed by the caller with the right language.
+// The shell handles direction (RTL for Arabic) + font-family + footer copy.
+function brandedShell(opts: {
+  preheader: string;
+  body: string;
+  lang?: Lang;
+}): string {
+  const lang: Lang = opts.lang ?? "en";
+  const dir = lang === "ar" ? "rtl" : "ltr";
+  const font =
+    lang === "ar"
+      ? "'Segoe UI', Tahoma, Arial, sans-serif" // Segoe UI + Tahoma have excellent Arabic glyphs; email clients don't reliably load Cairo/Tajawal web fonts.
+      : "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+  const cairoLabelAlign = lang === "ar" ? "left" : "right";
+  const wordmarkAlign = lang === "ar" ? "right" : "left";
   return `
 <!doctype html>
-<html>
+<html dir="${dir}" lang="${lang}">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
   </head>
-  <body style="margin:0; padding:0; background:#F5F1EA; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-    <!-- Preheader: shown in inbox previews but hidden in the email body -->
+  <body style="margin:0; padding:0; background:#F5F1EA; font-family:${font}; direction:${dir};">
     <div style="display:none; max-height:0; overflow:hidden; color:transparent;">
       ${escapeHtml(opts.preheader)}
     </div>
@@ -127,11 +252,11 @@ function brandedShell(opts: { preheader: string; body: string }): string {
               <td style="background:#171717; padding:24px 32px;">
                 <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
                   <tr>
-                    <td>
+                    <td align="${wordmarkAlign}">
                       <span style="color:#E11D48; font-size:12px; font-weight:700; letter-spacing:3px;">PLACES</span>
                     </td>
-                    <td align="right">
-                      <span style="color:rgba(255,255,255,0.5); font-size:11px;">Cairo · Egypt</span>
+                    <td align="${cairoLabelAlign}">
+                      <span style="color:rgba(255,255,255,0.5); font-size:11px;">${escapeHtml(t(T.common.cairoEgypt, lang))}</span>
                     </td>
                   </tr>
                 </table>
@@ -145,7 +270,7 @@ function brandedShell(opts: { preheader: string; body: string }): string {
             <tr>
               <td style="background:#F8F5F1; padding:20px 32px; border-top:1px solid #EAE4DA;">
                 <p style="margin:0 0 4px 0; font-size:12px; color:#64748B; line-height:1.5;">
-                  PLACES · Egypt's specialized partner for administrative office real estate
+                  ${escapeHtml(t(T.common.footerTagline, lang))}
                 </p>
                 <p style="margin:0; font-size:12px; color:#94A3B8;">
                   <a href="https://places-egy.com" style="color:#94A3B8; text-decoration:none;">places-egy.com</a>
@@ -305,15 +430,16 @@ function bulletRow(icon: string, title: string, desc: string): string {
 export async function sendMarketReportReply(opts: {
   toEmail: string;
   toName: string;
+  lang?: Lang;
 }): Promise<void> {
+  const lang: Lang = opts.lang ?? "en";
+  const isAr = lang === "ar";
   const first = firstNameOf(opts.toName);
-  const monthYear = new Date().toLocaleDateString("en-GB", {
-    month: "long",
-    year: "numeric",
-  });
+  const monthYear = new Date().toLocaleDateString(
+    isAr ? "ar-EG" : "en-GB",
+    { month: "long", year: "numeric" },
+  );
 
-  // Tag the download URL so we can count actual PDF downloads in Supabase
-  // Storage logs / GA4. Same UTM shape as the Talk to Us link below.
   const downloadPdfUrl = MARKET_REPORT_URL
     ? `${MARKET_REPORT_URL}${MARKET_REPORT_URL.includes("?") ? "&" : "?"}utm_source=places-egy.com&utm_medium=email&utm_campaign=email_market_report&utm_content=download_pdf`
     : "";
@@ -322,101 +448,320 @@ export async function sendMarketReportReply(opts: {
     ? `
       <div style="margin:0 0 28px 0; padding:28px 24px; background:linear-gradient(135deg,#171717 0%,#2A2A2A 100%); border-radius:14px; text-align:center;">
         <p style="margin:0 0 10px 0; font-size:11px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:3px;">
-          📄 Your report is ready
+          📄 ${escapeHtml(t(T.marketReport.reportReady, lang))}
         </p>
         <h2 style="margin:0 0 6px 0; font-size:22px; font-weight:700; color:#ffffff; line-height:1.3;">
-          Cairo Office Market Report 2026
+          ${isAr ? "تقرير سوق المكاتب في القاهرة 2026" : "Cairo Office Market Report 2026"}
         </h2>
         <p style="margin:0 0 22px 0; font-size:13px; color:rgba(255,255,255,0.6);">
-          Free · PDF · Updated ${monthYear}
+          ${isAr ? `مجاني · PDF · محدث ${monthYear}` : `Free · PDF · Updated ${monthYear}`}
         </p>
         <a href="${downloadPdfUrl}"
            style="display:inline-block; background:#E11D48; color:#ffffff; padding:14px 32px; border-radius:999px; text-decoration:none; font-weight:700; font-size:15px; box-shadow:0 4px 12px rgba(225,29,72,0.4);">
-          Download the PDF →
+          ${escapeHtml(t(T.marketReport.downloadCta, lang))}
         </a>
       </div>`
     : `
       <div style="margin:0 0 28px 0; padding:24px; background:#F8F5F1; border-radius:12px;">
-        <p style="margin:0 0 8px 0; font-size:11px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:2px;">
-          Coming to your inbox soon
-        </p>
         <p style="margin:0; font-size:15px; line-height:1.6; color:#171717;">
-          Thanks for requesting the <strong>Cairo Office Market Report 2026</strong>.
-          A PLACES advisor will personally send you the report within the next
-          24 hours.
+          ${isAr ? "شكراً لطلبك تقرير سوق المكاتب في القاهرة 2026. سيقوم مستشار PLACES بإرساله لك خلال 24 ساعة." : "Thanks for requesting the Cairo Office Market Report 2026. A PLACES advisor will personally send you the report within the next 24 hours."}
         </p>
       </div>`;
 
+  const bullets = isAr
+    ? [
+        ["📊", "معايير الأسعار حسب المنطقة", "أسعار الشراء والإيجار الحية لكل متر مربع في التجمع الخامس، الشيخ زايد، 6 أكتوبر، وسط البلد، شيراتون، والمعادي."],
+        ["🏢", "خط إمدادات المشاريع", "أي المشاريع سيتم تسليمها في 2026-2027 وكيف يؤثر ذلك على التوافر في منطقتك."],
+        ["📈", "أين يذهب المال الذكي", "تحليل العوائد ومعدلات الامتصاص والمناطق التي يراقبها مستشارونا هذا العام."],
+        ["🏗️", "أبرز المطورين نشاطاً", "المطورون الأكثر تمثيلاً في خط إمدادات المكاتب في القاهرة — مؤشر على أين تحدث الصفقات فعلاً."],
+      ]
+    : [
+        ["📊", "Pricing benchmarks by district", "Live buy and lease rates per square metre across New Cairo, Sheikh Zayed, 6th October, Downtown, Sheraton, and Maadi."],
+        ["🏢", "Supply pipeline", "Which developments are delivering in 2026–2027 and how that shifts availability in your target area."],
+        ["📈", "Where the smart money is going", "Yield analysis, absorption rates, and the shortlist of districts our advisors are watching this year."],
+        ["🏗️", "Top developers by activity", "The developers most represented in Cairo's active office pipeline — a proxy for where the deals are actually happening."],
+      ];
+
   const body = `
-    <p style="margin:0 0 20px 0; font-size:16px; color:#171717;">Hi ${escapeHtml(first)}, 👋</p>
+    <p style="margin:0 0 20px 0; font-size:16px; color:#171717;">${escapeHtml(t(T.common.hi, lang))} ${escapeHtml(first)}, 👋</p>
 
     <p style="margin:0 0 24px 0; font-size:15px; line-height:1.6; color:#171717;">
-      Thanks for downloading the <strong>Cairo Office Market Report 2026</strong>.
-      Here's your copy — plus a preview of what you'll find inside.
+      ${escapeHtml(t(T.marketReport.intro, lang))}
     </p>
 
     ${downloadHero}
 
     <p style="margin:0 0 12px 0; font-size:12px; font-weight:700; color:#64748B; text-transform:uppercase; letter-spacing:2px;">
-      What's inside
+      ${escapeHtml(t(T.marketReport.whatsInside, lang))}
     </p>
 
     <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:24px;">
-      ${bulletRow(
-        "📊",
-        "Pricing benchmarks by district",
-        "Live buy and lease rates per square metre across New Cairo, Sheikh Zayed, 6th October, Downtown, Sheraton, and Maadi.",
-      )}
-      ${bulletRow(
-        "🏢",
-        "Supply pipeline",
-        "Which developments are delivering in 2026–2027 and how that shifts availability in your target area.",
-      )}
-      ${bulletRow(
-        "📈",
-        "Where the smart money is going",
-        "Yield analysis, absorption rates, and the shortlist of districts our advisors are watching this year.",
-      )}
-      ${bulletRow(
-        "🏗️",
-        "Top developers by activity",
-        "The developers most represented in Cairo's active office pipeline — a proxy for where the deals are actually happening.",
-      )}
+      ${bullets.map(([i, ti, d]) => bulletRow(i, ti, d)).join("")}
     </table>
 
     <hr style="border:0; border-top:1px solid #EAE4DA; margin:32px 0 24px 0;">
 
     <div style="margin:0 0 8px 0; padding:24px; background:#F8F5F1; border-radius:12px;">
       <p style="margin:0 0 6px 0; font-size:11px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:2px;">
-        Want a personalised read?
+        ${isAr ? "تريد قراءة مخصصة؟" : "Want a personalised read?"}
       </p>
       <p style="margin:0 0 14px 0; font-size:14px; line-height:1.5; color:#171717;">
-        Book a free 15-minute call and a PLACES advisor will walk you through
-        the districts and price bands you care about most — no pressure, no
-        pitch.
+        ${isAr ? "احجز مكالمة مجانية مدتها 15 دقيقة وسيرشدك مستشار PLACES خلال المناطق والفئات السعرية التي تهمك." : "Book a free 15-minute call and a PLACES advisor will walk you through the districts and price bands you care about most — no pressure, no pitch."}
       </p>
       <a href="${taggedCalendlyUrl({ campaign: "email_market_report", content: "talk_to_us" })}"
          style="display:inline-block; background:#171717; color:#ffffff; padding:11px 22px; border-radius:999px; text-decoration:none; font-weight:600; font-size:14px;">
-        Talk to Us →
+        ${escapeHtml(t(T.common.talkToUs, lang))} →
       </a>
     </div>
 
     <p style="margin:24px 0 8px 0; font-size:14px; line-height:1.6; color:#64748B;">
-      Questions? Just reply to this email — it goes straight to our advisory team.
+      ${escapeHtml(t(T.common.reply, lang))}
     </p>
     <p style="margin:16px 0 0 0; font-size:14px; color:#171717;">
-      — The PLACES Team
+      ${escapeHtml(t(T.common.signOff, lang))}
     </p>
   `;
 
   const html = brandedShell({
-    preheader: `Your Cairo Office Market Report 2026 is inside — pricing, supply, and yields across every district.`,
+    preheader: isAr
+      ? "تقرير سوق المكاتب في القاهرة 2026 — الأسعار والعرض والعائدات في كل منطقة."
+      : "Your Cairo Office Market Report 2026 is inside — pricing, supply, and yields across every district.",
     body,
+    lang,
   });
 
   return sendMail({
     to: opts.toEmail,
-    subject: "Your Cairo Office Market Report 2026 — from PLACES",
+    subject: t(T.marketReport.subject, lang),
+    html,
+    replyTo: "admin@places-egy.com",
+  });
+}
+
+// ── Favorites digest emails ─────────────────────────────────────────────────
+// Sent to signed-in accounts based on their favorites activity:
+//   1. sendFavoritesDigest2h — 2h debounced digest after 3+ favorites
+//   2. sendFavoritesDigestWeekly — Monday 9 AM recap for accounts with any
+//      favorite added in the past 7 days
+//   3. sendFavoritesDigestMilestone — fires immediately at 10 favorites with
+//      a warm "let's talk" CTA
+// All three share renderFavoritesEmail() below — the only difference is the
+// subject line + intro block + CTA framing.
+
+export type FavoritedListing = {
+  id: number;
+  title: string;
+  price: number | null;
+  currency: string | null;
+  area_sqm: number | null;
+  developer: string | null;
+  location: string | null;
+  transaction_type: string | null;
+  first_image_url: string | null;
+  url_path: string; // /listings/[id]-[slug]
+};
+
+function priceLine(l: FavoritedListing, lang: Lang): string {
+  if (!l.price) return isAr(lang) ? "السعر عند الطلب" : "Price on request";
+  const n = formatNumber(l.price, lang);
+  const cur = l.currency === "USD" ? "USD" : "EGP";
+  return `${n} ${cur}`;
+}
+
+function isAr(lang: Lang): boolean {
+  return lang === "ar";
+}
+
+// Render one office card in the email — image left, details right.
+function officeCard(l: FavoritedListing, lang: Lang, utmCampaign: string): string {
+  const rtl = isAr(lang);
+  const url = `https://places-egy.com${l.url_path}?utm_source=places-egy.com&utm_medium=email&utm_campaign=${utmCampaign}&utm_content=office_card_${l.id}`;
+  const img = l.first_image_url
+    ? `<img src="${escapeHtml(l.first_image_url)}" alt="" style="width:100%; max-width:180px; height:130px; object-fit:cover; border-radius:8px; display:block;">`
+    : `<div style="width:180px; height:130px; background:#EAE4DA; border-radius:8px;"></div>`;
+  const areaLine =
+    l.area_sqm != null
+      ? `<span style="color:#64748B;"> · ${formatNumber(l.area_sqm, lang)} ${escapeHtml(t(T.common.perSqm, lang))}</span>`
+      : "";
+  const devLine = l.developer
+    ? `<p style="margin:4px 0 0 0; font-size:12px; color:#64748B;">${escapeHtml(l.developer)}</p>`
+    : "";
+  const locLine = l.location
+    ? `<p style="margin:2px 0 6px 0; font-size:13px; color:#334155;">${escapeHtml(l.location)}</p>`
+    : "";
+  const txn = l.transaction_type?.toLowerCase() === "sale"
+    ? t(T.common.forSale, lang)
+    : t(T.common.forRent, lang);
+
+  // In RTL we swap image/text order.
+  const imgCell = `<td valign="top" style="width:180px; padding:${rtl ? "0 0 0 16px" : "0 16px 0 0"};">${img}</td>`;
+  const textCell = `
+    <td valign="top" style="text-align:${rtl ? "right" : "left"};">
+      <p style="margin:0 0 4px 0; font-size:11px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:1.5px;">
+        ${escapeHtml(txn)}
+      </p>
+      <p style="margin:0 0 4px 0; font-size:15px; font-weight:700; color:#171717; line-height:1.3;">
+        <a href="${url}" style="color:#171717; text-decoration:none;">${escapeHtml(l.title)}</a>
+      </p>
+      ${locLine}
+      <p style="margin:0; font-size:14px; font-weight:600; color:#171717;">
+        ${escapeHtml(priceLine(l, lang))}${areaLine}
+      </p>
+      ${devLine}
+      <p style="margin:10px 0 0 0;">
+        <a href="${url}" style="display:inline-block; background:#171717; color:#ffffff; padding:6px 14px; border-radius:999px; text-decoration:none; font-weight:600; font-size:12px;">
+          ${escapeHtml(t(T.common.viewOffice, lang))}
+        </a>
+      </p>
+    </td>`;
+
+  return `
+    <tr>
+      <td style="padding:12px 0; border-bottom:1px solid #EAE4DA;">
+        <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+          <tr>
+            ${rtl ? textCell + imgCell : imgCell + textCell}
+          </tr>
+        </table>
+      </td>
+    </tr>`;
+}
+
+function similarSection(similar: FavoritedListing[], lang: Lang, utmCampaign: string): string {
+  if (similar.length === 0) return "";
+  return `
+    <hr style="border:0; border-top:1px solid #EAE4DA; margin:32px 0 20px 0;">
+    <p style="margin:0 0 14px 0; font-size:12px; font-weight:700; color:#64748B; text-transform:uppercase; letter-spacing:2px;">
+      ${escapeHtml(t(T.common.similarOffices, lang))}
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+      ${similar.map((l) => officeCard(l, lang, `${utmCampaign}_similar`)).join("")}
+    </table>`;
+}
+
+function ctaPanel(opts: {
+  labelKey: { en: string; ar: string };
+  bodyKey: { en: string; ar: string };
+  buttonKey: { en: string; ar: string };
+  campaign: string;
+  lang: Lang;
+  isPrimary?: boolean;
+}): string {
+  const bg = opts.isPrimary ? "#171717" : "#F8F5F1";
+  const labelColor = "#E11D48";
+  const bodyColor = opts.isPrimary ? "#ffffff" : "#171717";
+  const btnBg = opts.isPrimary ? "#E11D48" : "#171717";
+  return `
+    <div style="margin:24px 0 8px 0; padding:24px; background:${bg}; border-radius:12px;">
+      <p style="margin:0 0 6px 0; font-size:11px; font-weight:700; color:${labelColor}; text-transform:uppercase; letter-spacing:2px;">
+        ${escapeHtml(t(opts.labelKey, opts.lang))}
+      </p>
+      <p style="margin:0 0 14px 0; font-size:14px; line-height:1.5; color:${bodyColor};">
+        ${escapeHtml(t(opts.bodyKey, opts.lang))}
+      </p>
+      <a href="${taggedCalendlyUrl({ campaign: opts.campaign, content: "talk_to_us" })}"
+         style="display:inline-block; background:${btnBg}; color:#ffffff; padding:11px 22px; border-radius:999px; text-decoration:none; font-weight:600; font-size:14px;">
+        ${escapeHtml(t(opts.buttonKey, opts.lang))} →
+      </a>
+    </div>`;
+}
+
+type DigestVariant = "digest2h" | "weekly" | "milestone";
+
+export async function sendFavoritesDigest(opts: {
+  toEmail: string;
+  toName: string;
+  lang?: Lang;
+  variant: DigestVariant;
+  favorites: FavoritedListing[];
+  similar: FavoritedListing[];
+}): Promise<void> {
+  const lang: Lang = opts.lang ?? "en";
+  const first = firstNameOf(opts.toName);
+  const count = opts.favorites.length;
+
+  const config =
+    opts.variant === "digest2h"
+      ? {
+          subjectKey: T.digest2h.subject,
+          headingKey: T.digest2h.heading,
+          introKey: T.digest2h.intro,
+          ctaLabelKey: T.digest2h.ctaLabel,
+          ctaBodyKey: T.digest2h.ctaBody,
+          ctaButtonKey: T.common.talkToUs,
+          ctaPrimary: false,
+          campaign: "email_favorites_digest",
+        }
+      : opts.variant === "weekly"
+        ? {
+            subjectKey: T.digestWeekly.subject,
+            headingKey: T.digestWeekly.heading,
+            introKey: T.digestWeekly.intro,
+            ctaLabelKey: T.digest2h.ctaLabel,
+            ctaBodyKey: T.digest2h.ctaBody,
+            ctaButtonKey: T.common.talkToUs,
+            ctaPrimary: false,
+            campaign: "email_favorites_weekly",
+          }
+        : {
+            subjectKey: T.digestMilestone.subject,
+            headingKey: T.digestMilestone.heading,
+            introKey: T.digestMilestone.intro,
+            ctaLabelKey: T.digestMilestone.ctaLabel,
+            ctaBodyKey: T.digestMilestone.ctaBody,
+            ctaButtonKey: T.digestMilestone.ctaLabel,
+            ctaPrimary: true,
+            campaign: "email_favorites_milestone",
+          };
+
+  const intro = t(config.introKey, lang).replace(
+    "{count}",
+    formatNumber(count, lang),
+  );
+
+  const body = `
+    <p style="margin:0 0 20px 0; font-size:16px; color:#171717;">${escapeHtml(t(T.common.hi, lang))} ${escapeHtml(first)},</p>
+
+    <h2 style="margin:0 0 12px 0; font-size:22px; font-weight:700; color:#171717; line-height:1.3;">
+      ${escapeHtml(t(config.headingKey, lang))}
+    </h2>
+
+    <p style="margin:0 0 20px 0; font-size:15px; line-height:1.6; color:#64748B;">
+      ${escapeHtml(intro)}
+    </p>
+
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+      ${opts.favorites.map((l) => officeCard(l, lang, config.campaign)).join("")}
+    </table>
+
+    ${ctaPanel({
+      labelKey: config.ctaLabelKey,
+      bodyKey: config.ctaBodyKey,
+      buttonKey: config.ctaButtonKey,
+      campaign: config.campaign,
+      lang,
+      isPrimary: config.ctaPrimary,
+    })}
+
+    ${opts.variant !== "milestone" ? similarSection(opts.similar, lang, config.campaign) : ""}
+
+    <p style="margin:24px 0 8px 0; font-size:14px; line-height:1.6; color:#64748B;">
+      ${escapeHtml(t(T.common.reply, lang))}
+    </p>
+    <p style="margin:16px 0 0 0; font-size:14px; color:#171717;">
+      ${escapeHtml(t(T.common.signOff, lang))}
+    </p>
+  `;
+
+  const preheader = isAr(lang)
+    ? `${formatNumber(count, lang)} مكتب حفظتها على PLACES — الأسعار والتفاصيل والروابط بالداخل.`
+    : `${count} offices you saved on PLACES — prices, details, and links inside.`;
+
+  const html = brandedShell({ preheader, body, lang });
+
+  return sendMail({
+    to: opts.toEmail,
+    subject: t(config.subjectKey, lang),
     html,
     replyTo: "admin@places-egy.com",
   });

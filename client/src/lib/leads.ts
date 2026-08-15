@@ -50,6 +50,7 @@ export type LeadSubmitInput = {
   magnet?: string;
   listing_id?: number;
   page_url?: string;
+  preferred_language?: "en" | "ar";
   utm_source?: string;
   utm_medium?: string;
   utm_campaign?: string;

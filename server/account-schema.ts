@@ -10,6 +10,11 @@ export const accountSignupSchema = z
     name: z.string().trim().min(1).max(120),
     email: z.string().trim().email().max(200),
     phone: z.string().trim().min(4).max(40),
+    // Language preference — captured from the browser's Accept-Language +
+    // whether they were on /ar/* when they signed up. Stored on the account
+    // and used to render every future user-facing email in their language.
+    // Optional in the payload (server falls back to 'en' if not sent).
+    preferred_language: z.enum(["en", "ar"]).optional(),
     // Honeypot: real users leave blank, bots fill everything.
     website: z.string().max(200).optional(),
   })

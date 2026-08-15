@@ -1,13 +1,14 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Heart, MessageCircle, ArrowRight } from "lucide-react";
+import { Heart, MessageCircle, ArrowRight, Mail, Loader2, CheckCircle2 } from "lucide-react";
 import { supabase, type Listing } from "@/lib/supabase";
 import { ListingCard } from "@/components/listings/ListingCard";
 import { useFavoriteIds, clearAllFavorites } from "@/lib/favorites";
+import { useAccount } from "@/lib/account";
 import { useDocumentMeta } from "@/lib/use-document-meta";
 import { listingCurrency } from "@/lib/currency";
 import { listingUrl } from "@/lib/listings";
@@ -96,6 +97,29 @@ export default function SavedListingsPage() {
     });
   };
 
+  // Manual "Email me my list" flow — only available when signed in (we need
+  // an email address on file to send to). Fires POST /api/accounts/favorites/
+  // email-me-now which bypasses the 2h debounce for user-initiated sends.
+  const { account } = useAccount();
+  const [emailState, setEmailState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const handleEmailMeClick = async () => {
+    if (!account) return;
+    setEmailState("sending");
+    try {
+      const res = await fetch("/api/accounts/favorites/email-me-now", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      trackEvent("favorites_email_me_now", { count: listings.length });
+      setEmailState("sent");
+      setTimeout(() => setEmailState("idle"), 4000);
+    } catch {
+      setEmailState("error");
+      setTimeout(() => setEmailState("idle"), 4000);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col font-sans bg-background">
       <Navbar />
@@ -137,28 +161,63 @@ export default function SavedListingsPage() {
             </div>
           ) : (
             <>
-              {/* Sticky CTA — share to WhatsApp */}
+              {/* Sticky CTA — share the saved list via WhatsApp or email.
+                  The email option only appears for signed-in users because we
+                  need their email on file to send to; anonymous users can
+                  still share to WhatsApp without signing up. */}
               {whatsappUrl && (
-                <div className="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-primary text-white rounded-2xl p-5 md:p-6">
-                  <div>
+                <div className="mb-8 bg-primary text-white rounded-2xl p-5 md:p-6">
+                  <div className="mb-4 md:mb-5">
                     <p className="text-sm font-semibold mb-1">
-                      Ready to talk to an advisor?
+                      Share your list — get advice back
                     </p>
                     <p className="text-xs text-white/70">
-                      Send your saved list to PLACES on WhatsApp — we'll reply
-                      with details, availability, and next steps.
+                      Send your saved offices to PLACES and we'll reply with
+                      details, availability, and next steps.
                     </p>
                   </div>
-                  <a
-                    href={whatsappUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={handleWhatsappClick}
-                    className="inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#1fb855] text-white font-medium px-5 py-3 rounded-full text-sm shrink-0"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    Send my list on WhatsApp
-                  </a>
+                  <div className="flex flex-wrap gap-3">
+                    <a
+                      href={whatsappUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={handleWhatsappClick}
+                      className="inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#1fb855] text-white font-medium px-5 py-3 rounded-full text-sm shrink-0"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      Send on WhatsApp
+                    </a>
+                    {account && (
+                      <button
+                        type="button"
+                        onClick={handleEmailMeClick}
+                        disabled={emailState === "sending"}
+                        className="inline-flex items-center gap-2 bg-accent hover:bg-accent/90 text-white font-medium px-5 py-3 rounded-full text-sm shrink-0 disabled:opacity-60"
+                      >
+                        {emailState === "sending" ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Sending…
+                          </>
+                        ) : emailState === "sent" ? (
+                          <>
+                            <CheckCircle2 className="w-4 h-4" />
+                            Sent to your inbox
+                          </>
+                        ) : emailState === "error" ? (
+                          <>
+                            <Mail className="w-4 h-4" />
+                            Try again
+                          </>
+                        ) : (
+                          <>
+                            <Mail className="w-4 h-4" />
+                            Email me my list
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
 

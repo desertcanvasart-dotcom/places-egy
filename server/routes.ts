@@ -28,6 +28,11 @@ import {
 } from "./mailer";
 import { handleCalendlyWebhook } from "./calendly-webhook";
 import { regenerateMarketReportHandler } from "./regenerate-report";
+import {
+  handleMilestoneOnFavorite,
+  handleManualEmailRequest,
+  runDigestSweep,
+} from "./favorites-digest";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -155,6 +160,46 @@ export async function registerRoutes(
   // Auth via x-cron-token header. See server/regenerate-report.ts.
   app.post("/api/admin/regenerate-market-report", regenerateMarketReportHandler);
 
+  // ── Cron: favorites digest sweep (every 30 min) ─────────────────────────
+  // Finds accounts eligible for the 2h debounced digest (or weekly recap on
+  // Mondays) and fires the emails. Same x-cron-token auth as above.
+  app.post(
+    "/api/admin/send-favorites-digests",
+    async (req: Request, res: Response) => {
+      const cronToken = process.env.CRON_TOKEN;
+      if (!cronToken) {
+        return res.status(503).json({ message: "CRON_TOKEN not configured" });
+      }
+      const provided = req.header("x-cron-token");
+      if (!provided || provided !== cronToken) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      try {
+        const result = await runDigestSweep();
+        console.log("[digest-sweep] result:", result);
+        res.json({ ok: true, ...result });
+      } catch (err) {
+        console.error("[digest-sweep] failed:", err);
+        res.status(500).json({ message: (err as Error).message });
+      }
+    },
+  );
+
+  // ── Manual "Email me my list" from /saved page ──────────────────────────
+  // Signed-in user requests an on-demand digest of their current favorites.
+  // Ignores debounce + 24h cadence cap since it was user-initiated.
+  app.post(
+    "/api/accounts/favorites/email-me-now",
+    strictLimiter,
+    requireAccount,
+    async (req: Request, res: Response) => {
+      const account = (req as Request & { account: { id: number } }).account;
+      const ok = await handleManualEmailRequest(account.id).catch(() => false);
+      if (!ok) return res.status(400).json({ message: "No favorites to email" });
+      res.json({ ok: true });
+    },
+  );
+
   // ── Calendly webhook ─────────────────────────────────────────────────────
   // Public endpoint hit by Calendly on invitee.created + invitee.canceled.
   // Auth is via HMAC signature (see server/calendly-webhook.ts). Every booking
@@ -223,6 +268,7 @@ export async function registerRoutes(
         void sendMarketReportReply({
           toEmail: lead.email,
           toName: lead.name,
+          lang: lead.preferred_language ?? "en",
         });
       }
 
@@ -268,14 +314,20 @@ export async function registerRoutes(
       if (existing.data) {
         // Rotate session token + refresh any updated contact info the visitor
         // typed. We prefer their latest name/phone in case they changed number.
+        // Only overwrite preferred_language if we captured one this time —
+        // otherwise keep whatever we recorded on their original signup.
+        const update: Record<string, unknown> = {
+          name: body.name,
+          phone: body.phone,
+          session_token: token,
+          last_active_at: now,
+        };
+        if (body.preferred_language) {
+          update.preferred_language = body.preferred_language;
+        }
         await supabaseAdmin
           .from("accounts")
-          .update({
-            name: body.name,
-            phone: body.phone,
-            session_token: token,
-            last_active_at: now,
-          })
+          .update(update)
           .eq("id", existing.data.id);
         setSessionCookie(res, token);
         return res.json({
@@ -293,6 +345,7 @@ export async function registerRoutes(
           phone: body.phone,
           session_token: token,
           last_active_at: now,
+          preferred_language: body.preferred_language ?? "en",
         })
         .select("id")
         .single();
@@ -370,6 +423,7 @@ export async function registerRoutes(
       const account = (req as Request & { account: { id: number } }).account;
       const parsed = addFavoriteSchema.safeParse(req.body);
       if (!parsed.success) return res.status(400).json({ message: "Invalid" });
+      const now = new Date().toISOString();
       // Upsert — silently no-op if already favorited.
       const { error } = await supabaseAdmin
         .from("account_favorites")
@@ -377,11 +431,23 @@ export async function registerRoutes(
           {
             account_id: account.id,
             listing_id: parsed.data.listing_id,
-            added_at: new Date().toISOString(),
+            added_at: now,
           },
           { onConflict: "account_id,listing_id", ignoreDuplicates: true },
         );
       if (error) return res.status(400).json({ message: error.message });
+
+      // Stamp last_favorite_at so the 2h debounced digest cron knows this
+      // account has new activity + when it went quiet. Fire-and-forget.
+      void supabaseAdmin
+        .from("accounts")
+        .update({ last_favorite_at: now })
+        .eq("id", account.id);
+
+      // Check if this favorite is the 10th — if so fire the milestone email
+      // immediately (bottom-of-funnel signal). Fire-and-forget.
+      void handleMilestoneOnFavorite(account.id);
+
       res.json({ ok: true });
     },
   );
@@ -430,6 +496,12 @@ export async function registerRoutes(
           onConflict: "account_id,listing_id",
           ignoreDuplicates: true,
         });
+      // Stamp last_favorite_at so the digest cron treats these merged
+      // favorites as recent activity worth sending a digest about.
+      void supabaseAdmin
+        .from("accounts")
+        .update({ last_favorite_at: now })
+        .eq("id", account.id);
       if (error) return res.status(400).json({ message: error.message });
       res.json({ ok: true, merged: rows.length });
     },

@@ -11,6 +11,7 @@ import {
   type LeadSubmitInput,
   type LocationSlug,
 } from "@/lib/leads";
+import { detectPreferredLanguage } from "@/lib/detect-language";
 import { trackEvent } from "@/lib/analytics";
 
 // Reusable lead form. Used across every capture point — market-report page,
@@ -108,6 +109,7 @@ export function LeadForm({
         phone: phone.trim(),
         locations: Array.from(locations),
         lead_source: leadSource,
+        preferred_language: detectPreferredLanguage(),
         page_url:
           typeof window !== "undefined" ? window.location.pathname : undefined,
         ...(message.trim() ? { message: message.trim() } : {}),

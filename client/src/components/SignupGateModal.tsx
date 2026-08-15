@@ -9,6 +9,7 @@ import {
   readAnonymousFavoriteIds,
   clearAnonymousFavorites,
 } from "@/lib/favorites";
+import { detectPreferredLanguage } from "@/lib/detect-language";
 import {
   signupAccount,
   bulkMergeFavorites,
@@ -86,6 +87,7 @@ export function SignupGateModal() {
         name: name.trim(),
         email: email.trim(),
         phone: phone.trim(),
+        preferred_language: detectPreferredLanguage(),
         website: website || undefined,
       });
       // Merge anonymous favorites + the one they were trying to save.
