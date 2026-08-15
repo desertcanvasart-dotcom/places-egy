@@ -26,8 +26,11 @@ const allowlist = [
   "openai",
   "passport",
   "passport-local",
-  "pdfkit",
-  "pdf-lib",
+  // pdfkit + pdf-lib intentionally NOT bundled — pdfkit reads font metric
+  // files (Helvetica.afm etc.) from its own package via a runtime relative
+  // path. Bundling breaks that path and the process crashes with ENOENT on
+  // first PDF generation. Leaving them external means Railway installs the
+  // real node_modules folders where those .afm files live.
   "pg",
   "resend",
   "stripe",
