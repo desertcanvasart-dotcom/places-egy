@@ -62,8 +62,11 @@ export function ListingPinInput({ latitude, longitude, onChange }: Props) {
         url.searchParams.set("q", query);
         url.searchParams.set("format", "json");
         url.searchParams.set("limit", "6");
+        // viewbox biases toward Cairo, but we do NOT set bounded=1 —
+        // strict bounding drops results for compound names (e.g. "Mivida"
+        // alone returns nothing bounded, but "Mivida Business Park" hits
+        // outside the tight box). countrycodes=eg keeps us Egypt-only.
         url.searchParams.set("viewbox", CAIRO_VIEWBOX);
-        url.searchParams.set("bounded", "1");
         url.searchParams.set("countrycodes", "eg");
         const res = await fetch(url.toString(), {
           signal: controller.signal,

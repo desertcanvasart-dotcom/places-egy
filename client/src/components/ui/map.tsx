@@ -127,7 +127,17 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
 
     const styleDataHandler = () => {
       clearStyleTimeout();
-      styleTimeoutRef.current = setTimeout(() => setIsStyleLoaded(true), 100);
+      styleTimeoutRef.current = setTimeout(() => {
+        setIsStyleLoaded(true);
+        // Belt-and-braces resize after style load. If the container was
+        // 0-height at construction time, this catches the case where the
+        // ResizeObserver hasn't fired yet.
+        try {
+          map.resize();
+        } catch {
+          // Map removed — ignore.
+        }
+      }, 100);
     };
     const loadHandler = () => setIsLoaded(true);
     const moveHandler = () => {
