@@ -1,6 +1,14 @@
 import * as MapLibreGL from "maplibre-gl";
+import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
 import type { MarkerOptions, PopupOptions } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+
+// Point MapLibre at its own worker bundle via Vite's ?url import. This
+// resolves to a hashed asset URL like /assets/maplibre-gl-worker-abc123.mjs
+// that actually exists on disk — otherwise the request falls through the
+// SPA catch-all and returns index.html with a text/html MIME type, which
+// browsers refuse to execute as a module worker → blank map.
+MapLibreGL.setWorkerUrl(maplibreWorkerUrl);
 import {
   createContext,
   forwardRef,
