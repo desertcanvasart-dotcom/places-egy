@@ -18,22 +18,17 @@ import { trackEvent } from "@/lib/analytics";
 // homepage corner popup does NOT suppress the blog popup — different
 // audiences and moods. If the user actually SUBMITTED the report anywhere,
 // then we suppress here too since delivering it twice is spammy.
-const DISMISS_KEY = "blog_magnet_dismissed_at";
+// Session-only dismiss on blog (X only silences the popup for this tab).
+// See CornerSlideMagnet.tsx for the rationale.
+const DISMISS_KEY = "blog_magnet_dismissed_this_session";
 const SUBMITTED_KEY = "market_report_submitted_at";
-const DISMISS_TTL_DAYS = 7; // Shorter than corner (14d) — blog readers deserve a re-prompt sooner
 const SHOW_AFTER_MS = 3000; // 3s — appear early, matching corner popup cadence
 
 function isSuppressed(): boolean {
   try {
-    // Hard suppress if they already got the report — no need to re-ask.
     if (localStorage.getItem(SUBMITTED_KEY)) return true;
-    // Otherwise honor only OUR own dismiss key (not the corner popup's).
-    const raw = localStorage.getItem(DISMISS_KEY);
-    if (!raw) return false;
-    const ts = Number(raw);
-    if (!Number.isFinite(ts)) return false;
-    const ageDays = (Date.now() - ts) / (1000 * 60 * 60 * 24);
-    return ageDays < DISMISS_TTL_DAYS;
+    if (sessionStorage.getItem(DISMISS_KEY)) return true;
+    return false;
   } catch {
     return false;
   }
@@ -59,7 +54,7 @@ export function BlogSlideUpMagnet() {
 
   const dismiss = () => {
     try {
-      localStorage.setItem(DISMISS_KEY, String(Date.now()));
+      sessionStorage.setItem(DISMISS_KEY, "1");
     } catch {
       // Ignore — user just sees it again next visit.
     }

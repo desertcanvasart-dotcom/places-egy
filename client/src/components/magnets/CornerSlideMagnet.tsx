@@ -13,20 +13,21 @@ import { trackEvent } from "@/lib/analytics";
 //   - corner_magnet_open     (user clicked CTA — form expands)
 //   - corner_magnet_dismiss  (user clicked X)
 
-const DISMISS_KEY = "corner_magnet_dismissed_at";
+// Session-only dismiss: X button suppresses the popup for the current tab
+// only. Close the tab and come back tomorrow → magnet appears again. The
+// ONLY permanent suppression is a successful form submission (SUBMITTED_KEY
+// in localStorage) — that persists forever across visits.
+const DISMISS_KEY = "corner_magnet_dismissed_this_session";
 const SUBMITTED_KEY = "market_report_submitted_at";
-const DISMISS_TTL_DAYS = 14;
 const SHOW_AFTER_MS = 3000; // 3s — appear early, grab attention while intent is fresh
 
 function isSuppressed(): boolean {
   try {
+    // Permanent: they submitted the form. Never nag them again.
     if (localStorage.getItem(SUBMITTED_KEY)) return true;
-    const raw = localStorage.getItem(DISMISS_KEY);
-    if (!raw) return false;
-    const ts = Number(raw);
-    if (!Number.isFinite(ts)) return false;
-    const ageDays = (Date.now() - ts) / (1000 * 60 * 60 * 24);
-    return ageDays < DISMISS_TTL_DAYS;
+    // Session-only: they X'd the popup this visit. Clears when tab closes.
+    if (sessionStorage.getItem(DISMISS_KEY)) return true;
+    return false;
   } catch {
     return false;
   }
@@ -51,7 +52,7 @@ export function CornerSlideMagnet() {
 
   const dismiss = () => {
     try {
-      localStorage.setItem(DISMISS_KEY, String(Date.now()));
+      sessionStorage.setItem(DISMISS_KEY, "1");
     } catch {
       // Ignore — user just sees it again next visit.
     }
