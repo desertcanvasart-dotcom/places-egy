@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, Mail, Phone, ExternalLink } from "lucide-react";
+import { Trash2, Mail, Phone, ExternalLink, ChevronDown } from "lucide-react";
 import { adminFetch } from "@/lib/admin-fetch";
 import { type Lead, type LeadStatus } from "@/lib/leads";
 
@@ -57,6 +57,14 @@ export function LeadsManager() {
       adminFetch(`/api/admin/leads/${id}`, { method: "DELETE" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-leads"] });
+    },
+    // Surface the actual error to the admin instead of silently failing.
+    // Common causes: session expired (401), Supabase RLS blocking the
+    // delete, or the row was already gone.
+    onError: (err: Error) => {
+      window.alert(
+        `Delete failed: ${err.message}\n\nIf this keeps happening, log out + back in (session may have expired), or check the browser console for details.`,
+      );
     },
   });
 
@@ -146,23 +154,32 @@ export function LeadsManager() {
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        <select
-                          value={lead.status}
-                          onClick={(e) => e.stopPropagation()}
-                          onChange={(e) =>
-                            updateMutation.mutate({
-                              id: lead.id,
-                              patch: { status: e.target.value as LeadStatus },
-                            })
-                          }
-                          className={`text-xs font-medium px-2.5 py-1 rounded-full border-0 cursor-pointer ${STATUS_STYLES[lead.status]}`}
-                        >
-                          {STATUS_OPTIONS.map((s) => (
-                            <option key={s} value={s}>
-                              {s}
-                            </option>
-                          ))}
-                        </select>
+                        {/* Custom-styled select — native chevron hidden so
+                            the caret sits snugly next to the label instead
+                            of floating on the far right of the pill. */}
+                        <div className="relative inline-block">
+                          <select
+                            value={lead.status}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) =>
+                              updateMutation.mutate({
+                                id: lead.id,
+                                patch: { status: e.target.value as LeadStatus },
+                              })
+                            }
+                            className={`appearance-none text-xs font-medium pl-3 pr-7 py-1 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30 ${STATUS_STYLES[lead.status]}`}
+                          >
+                            {STATUS_OPTIONS.map((s) => (
+                              <option key={s} value={s}>
+                                {s}
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronDown
+                            className="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-70"
+                            aria-hidden="true"
+                          />
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <button

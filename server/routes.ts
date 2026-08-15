@@ -849,9 +849,23 @@ export async function registerRoutes(
       if (!Number.isFinite(id)) {
         return res.status(400).json({ message: "Invalid id" });
       }
-      const { error } = await supabaseAdmin.from("leads").delete().eq("id", id);
+      // `.select()` after delete returns the deleted rows so we can detect
+      // the "policy allowed the call but blocked all rows" case, which
+      // Supabase treats as success. If 0 rows come back but no error was
+      // raised, RLS is the culprit — surface that to the admin instead of
+      // pretending it worked.
+      const { data, error } = await supabaseAdmin
+        .from("leads")
+        .delete()
+        .eq("id", id)
+        .select();
       if (error) return res.status(400).json({ message: error.message });
-      res.json({ ok: true });
+      if (!data || data.length === 0) {
+        return res.status(404).json({
+          message: `Row not deleted (id=${id}). Either the row is gone already or Supabase RLS is blocking deletes for the service role. Check RLS policies on the 'leads' table.`,
+        });
+      }
+      res.json({ ok: true, deleted: data.length });
     },
   );
 
