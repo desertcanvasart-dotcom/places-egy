@@ -49,7 +49,9 @@ export function ProjectPinInput({ projectName }: Props) {
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   // Load whatever's saved for this project the first time projectName
-  // changes. If nothing saved → editing mode auto-enters.
+  // settles. 400ms debounce — typing "Solana East" letter-by-letter should
+  // fire ONE lookup after the last keystroke, not one per letter (which
+  // burns the admin rate limiter).
   useEffect(() => {
     if (!trimmedName) {
       setSaved(null);
@@ -58,14 +60,17 @@ export function ProjectPinInput({ projectName }: Props) {
     }
     let cancelled = false;
     setLoading(true);
-    fetchProjectCoord(trimmedName).then((coord) => {
-      if (cancelled) return;
-      setSaved(coord);
-      setEditing(!coord);
-      setLoading(false);
-    });
+    const timer = setTimeout(() => {
+      fetchProjectCoord(trimmedName).then((coord) => {
+        if (cancelled) return;
+        setSaved(coord);
+        setEditing(!coord);
+        setLoading(false);
+      });
+    }, 400);
     return () => {
       cancelled = true;
+      clearTimeout(timer);
     };
   }, [trimmedName]);
 

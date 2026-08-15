@@ -3,7 +3,7 @@ import { type Server } from "http";
 import multer from "multer";
 import { supabaseAdmin } from "./supabase";
 import { requireAdmin } from "./admin-auth";
-import { strictLimiter, uploadLimiter } from "./rate-limit";
+import { strictLimiter, adminLimiter, uploadLimiter } from "./rate-limit";
 import { listingInsertSchema, listingUpdateSchema } from "./listing-schema";
 import { dealInsertSchema, dealUpdateSchema } from "./deal-schema";
 import { clientLogoInsertSchema, clientLogoUpdateSchema } from "./client-logo-schema";
@@ -519,7 +519,7 @@ export async function registerRoutes(
   // a write path. Returns 200/401. Used by the dashboard login screen.
   app.post(
     "/api/admin/login",
-    strictLimiter,
+    adminLimiter,
     requireAdmin,
     (_req: Request, res: Response) => {
       res.json({ ok: true });
@@ -528,7 +528,7 @@ export async function registerRoutes(
 
   app.post(
     "/api/admin/listings",
-    strictLimiter,
+    adminLimiter,
     requireAdmin,
     async (req: Request, res: Response) => {
       if (!supabaseAdmin) {
@@ -550,7 +550,7 @@ export async function registerRoutes(
 
   app.patch(
     "/api/admin/listings/:id",
-    strictLimiter,
+    adminLimiter,
     requireAdmin,
     async (req: Request, res: Response) => {
       if (!supabaseAdmin) {
@@ -577,7 +577,7 @@ export async function registerRoutes(
 
   app.delete(
     "/api/admin/listings/:id",
-    strictLimiter,
+    adminLimiter,
     requireAdmin,
     async (req: Request, res: Response) => {
       if (!supabaseAdmin) {
@@ -599,7 +599,7 @@ export async function registerRoutes(
   // ── Deals admin CRUD (mirrors the listings routes) ────────────────────────
   app.get(
     "/api/admin/deals",
-    strictLimiter,
+    adminLimiter,
     requireAdmin,
     async (_req: Request, res: Response) => {
       if (!supabaseAdmin) {
@@ -618,7 +618,7 @@ export async function registerRoutes(
 
   app.post(
     "/api/admin/deals",
-    strictLimiter,
+    adminLimiter,
     requireAdmin,
     async (req: Request, res: Response) => {
       if (!supabaseAdmin) {
@@ -640,7 +640,7 @@ export async function registerRoutes(
 
   app.patch(
     "/api/admin/deals/:id",
-    strictLimiter,
+    adminLimiter,
     requireAdmin,
     async (req: Request, res: Response) => {
       if (!supabaseAdmin) {
@@ -667,7 +667,7 @@ export async function registerRoutes(
 
   app.delete(
     "/api/admin/deals/:id",
-    strictLimiter,
+    adminLimiter,
     requireAdmin,
     async (req: Request, res: Response) => {
       if (!supabaseAdmin) {
@@ -702,7 +702,7 @@ export async function registerRoutes(
 
   app.get(
     "/api/admin/client-logos",
-    strictLimiter,
+    adminLimiter,
     requireAdmin,
     async (_req: Request, res: Response) => {
       if (!supabaseAdmin) {
@@ -721,7 +721,7 @@ export async function registerRoutes(
 
   app.post(
     "/api/admin/client-logos",
-    strictLimiter,
+    adminLimiter,
     requireAdmin,
     async (req: Request, res: Response) => {
       if (!supabaseAdmin) {
@@ -743,7 +743,7 @@ export async function registerRoutes(
 
   app.patch(
     "/api/admin/client-logos/:id",
-    strictLimiter,
+    adminLimiter,
     requireAdmin,
     async (req: Request, res: Response) => {
       if (!supabaseAdmin) {
@@ -770,7 +770,7 @@ export async function registerRoutes(
 
   app.delete(
     "/api/admin/client-logos/:id",
-    strictLimiter,
+    adminLimiter,
     requireAdmin,
     async (req: Request, res: Response) => {
       if (!supabaseAdmin) {
@@ -793,7 +793,7 @@ export async function registerRoutes(
   // that ceiling in practice.
   app.get(
     "/api/admin/leads",
-    strictLimiter,
+    adminLimiter,
     requireAdmin,
     async (_req: Request, res: Response) => {
       if (!supabaseAdmin) {
@@ -812,7 +812,7 @@ export async function registerRoutes(
   // Update lead status or notes (e.g. mark contacted, add follow-up notes).
   app.patch(
     "/api/admin/leads/:id",
-    strictLimiter,
+    adminLimiter,
     requireAdmin,
     async (req: Request, res: Response) => {
       if (!supabaseAdmin) {
@@ -839,7 +839,7 @@ export async function registerRoutes(
 
   app.delete(
     "/api/admin/leads/:id",
-    strictLimiter,
+    adminLimiter,
     requireAdmin,
     async (req: Request, res: Response) => {
       if (!supabaseAdmin) {
@@ -874,7 +874,7 @@ export async function registerRoutes(
   // routes above. Bounded to 500 rows same as leads.
   app.get(
     "/api/admin/accounts",
-    strictLimiter,
+    adminLimiter,
     requireAdmin,
     async (_req: Request, res: Response) => {
       if (!supabaseAdmin) return res.status(503).json({ message: "Supabase not configured" });
@@ -904,7 +904,7 @@ export async function registerRoutes(
   // Fetch one account + its full favorites list (with joined listing details).
   app.get(
     "/api/admin/accounts/:id",
-    strictLimiter,
+    adminLimiter,
     requireAdmin,
     async (req: Request, res: Response) => {
       if (!supabaseAdmin) return res.status(503).json({ message: "Supabase not configured" });
@@ -943,7 +943,7 @@ export async function registerRoutes(
 
   app.delete(
     "/api/admin/accounts/:id",
-    strictLimiter,
+    adminLimiter,
     requireAdmin,
     async (req: Request, res: Response) => {
       if (!supabaseAdmin) return res.status(503).json({ message: "Supabase not configured" });
@@ -959,7 +959,7 @@ export async function registerRoutes(
   // ── Bookings admin (Calendly meetings synced via webhook) ────────────────
   app.get(
     "/api/admin/bookings",
-    strictLimiter,
+    adminLimiter,
     requireAdmin,
     async (_req: Request, res: Response) => {
       if (!supabaseAdmin) return res.status(503).json({ message: "Supabase not configured" });
@@ -975,7 +975,7 @@ export async function registerRoutes(
 
   app.delete(
     "/api/admin/bookings/:id",
-    strictLimiter,
+    adminLimiter,
     requireAdmin,
     async (req: Request, res: Response) => {
       if (!supabaseAdmin) return res.status(503).json({ message: "Supabase not configured" });

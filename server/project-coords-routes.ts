@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import { z } from "zod";
 import { supabaseAdmin } from "./supabase";
 import { requireAdmin } from "./admin-auth";
-import { strictLimiter } from "./rate-limit";
+import { adminLimiter } from "./rate-limit";
 
 // Project coordinates — one row per named project (Solana East, Zed West,
 // etc.) with the exact building location. Used by:
@@ -39,7 +39,7 @@ export function registerProjectCoordsRoutes(app: Express) {
   // indicator.
   app.get(
     "/api/admin/project-coordinates/:name",
-    strictLimiter,
+    adminLimiter,
     requireAdmin,
     async (req: Request, res: Response) => {
       if (!supabaseAdmin) {
@@ -61,7 +61,7 @@ export function registerProjectCoordsRoutes(app: Express) {
   // listing form. project_name is the natural key.
   app.put(
     "/api/admin/project-coordinates",
-    strictLimiter,
+    adminLimiter,
     requireAdmin,
     async (req: Request, res: Response) => {
       if (!supabaseAdmin) {

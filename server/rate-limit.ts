@@ -11,14 +11,28 @@ export const apiLimiter = rateLimit({
   message: { message: "Too many requests, please try again shortly." },
 });
 
-// Strict limiter reserved for future write endpoints (contact forms, lead
-// capture, chatbot). Mount per-route, not globally.
+// Strict limiter reserved for public write endpoints (contact forms, lead
+// capture, chatbot) where the caller could be anyone. Mount per-route.
 export const strictLimiter = rateLimit({
   windowMs: 60 * 1000,
   limit: 5,
   standardHeaders: "draft-7",
   legacyHeaders: false,
   message: { message: "Too many requests, please try again shortly." },
+});
+
+// Admin write limiter — used on /api/admin/* endpoints. Still bounded so a
+// compromised session can't scan/mass-mutate, but generous enough that a
+// human clicking through the dashboard (editing a listing, re-pinning a
+// project, updating lead statuses) doesn't hit the ceiling. The 5/min
+// strictLimiter previously mounted here was ergonomic hostility, not
+// security — the admin password already gates every call.
+export const adminLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 60,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { message: "Too many admin requests — pause 60 seconds." },
 });
 
 // Upload limiter for admin image uploads. A listing can legitimately have many
