@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import type * as MapLibreGL from "maplibre-gl";
 import { Map, MapMarker, MarkerContent } from "@/components/ui/map";
-import { MapPin, Search, X, Loader2, Check, Edit2 } from "lucide-react";
+import { MapPin, Search, X, Loader2, Check, Edit2, AlertTriangle } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useGoogleMaps } from "@/lib/use-google-maps";
 import {
   fetchProjectCoord,
   saveProjectCoord,
@@ -11,13 +12,10 @@ import {
 
 const CAIRO_CENTER: [number, number] = [31.2357, 30.0444];
 const DEFAULT_ZOOM = 10;
-const CAIRO_VIEWBOX = "31.0,30.3,31.7,29.8";
 
-type Suggestion = {
-  display_name: string;
-  lat: string;
-  lon: string;
-};
+// Greater Cairo bounding box — biases Google Places predictions to
+// Cairo/Giza results (strictBounds:false so nearby matches still surface).
+const CAIRO_BOUNDS = { west: 31.0, south: 29.8, east: 31.7, north: 30.3 };
 
 type Props = {
   projectName: string;
@@ -25,14 +23,14 @@ type Props = {
 
 // Inline project-coord picker for the listing edit form. Behavior:
 //   - Empty projectName → tell admin to enter one first (coord picker locked)
-//   - projectName already has coords saved → show "✅ Location set" with the
-//     current coords + an Edit button that reveals the picker
+//   - projectName already has coords saved → show "✅ Location set" summary
+//     with the current coords + an Edit button that reveals the picker
 //   - projectName is new → show the picker immediately so admin can drop a
-//     pin. Save happens via PUT /api/admin/project-coordinates as soon as
-//     a pin is placed (either search or click), no separate save button.
+//     pin via Google Places search OR by clicking the map. Save happens
+//     automatically on any pin drop.
 //
-// All units in this project (existing + future) will use these coords on
-// the master map. Editing coords updates it globally.
+// All units in this project (existing + future) share these coords on the
+// public map. Editing them updates the pin globally.
 export function ProjectPinInput({ projectName }: Props) {
   const trimmedName = projectName.trim();
   const [saved, setSaved] = useState<ProjectCoord | null>(null);
@@ -42,16 +40,12 @@ export function ProjectPinInput({ projectName }: Props) {
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const [mapInstance, setMapInstance] = useState<MapLibreGL.Map | null>(null);
-  const [query, setQuery] = useState("");
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const [searching, setSearching] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const { loaded: gmapsLoaded, error: gmapsError } = useGoogleMaps();
 
-  // Load whatever's saved for this project the first time projectName
-  // settles. 400ms debounce — typing "Solana East" letter-by-letter should
-  // fire ONE lookup after the last keystroke, not one per letter (which
-  // burns the admin rate limiter).
+  // Debounced lookup — checks if the current project name already has
+  // coords saved. 400ms so typing letter-by-letter fires once, not per key.
   useEffect(() => {
     if (!trimmedName) {
       setSaved(null);
@@ -74,52 +68,6 @@ export function ProjectPinInput({ projectName }: Props) {
     };
   }, [trimmedName]);
 
-  // Nominatim search — same debounced setup as the old ListingPinInput.
-  useEffect(() => {
-    if (!editing || !query.trim()) {
-      setSuggestions([]);
-      return;
-    }
-    const controller = new AbortController();
-    setSearching(true);
-    const timer = setTimeout(async () => {
-      try {
-        const url = new URL("https://nominatim.openstreetmap.org/search");
-        url.searchParams.set("q", query);
-        url.searchParams.set("format", "json");
-        url.searchParams.set("limit", "6");
-        url.searchParams.set("viewbox", CAIRO_VIEWBOX);
-        url.searchParams.set("countrycodes", "eg");
-        url.searchParams.set("accept-language", "en");
-        const res = await fetch(url.toString(), { signal: controller.signal });
-        if (!res.ok) throw new Error(String(res.status));
-        const data = (await res.json()) as Suggestion[];
-        setSuggestions(data);
-        setShowDropdown(true);
-      } catch (err) {
-        if ((err as { name?: string }).name !== "AbortError") {
-          setSuggestions([]);
-        }
-      } finally {
-        setSearching(false);
-      }
-    }, 500);
-    return () => {
-      controller.abort();
-      clearTimeout(timer);
-    };
-  }, [query, editing]);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-        setShowDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
   const setMap = (m: MapLibreGL.Map | null) => {
     if (!m || m === mapInstance) return;
     setMapInstance(m);
@@ -128,6 +76,37 @@ export function ProjectPinInput({ projectName }: Props) {
     });
     m.getCanvas().style.cursor = "crosshair";
   };
+
+  // Wire Google Places Autocomplete once the SDK loads + the input mounts
+  // (which only happens once we're in editing mode).
+  useEffect(() => {
+    if (!editing) return;
+    if (!gmapsLoaded || !inputRef.current || autocompleteRef.current) return;
+    const ac = new google.maps.places.Autocomplete(inputRef.current, {
+      bounds: CAIRO_BOUNDS,
+      strictBounds: false,
+      componentRestrictions: { country: "eg" },
+      fields: ["geometry", "formatted_address", "name"],
+    });
+    ac.addListener("place_changed", () => {
+      const place = ac.getPlace();
+      const loc = place.geometry?.location;
+      if (!loc) return;
+      const lat = loc.lat();
+      const lng = loc.lng();
+      mapInstance?.flyTo({ center: [lng, lat], zoom: 16, duration: 800 });
+      commitCoords(lat, lng, place.formatted_address ?? place.name ?? null);
+    });
+    autocompleteRef.current = ac;
+  }, [editing, gmapsLoaded, mapInstance]);
+
+  // Prefill the search box with the saved project when re-editing, so the
+  // admin has a starting point instead of empty.
+  useEffect(() => {
+    if (editing && saved && inputRef.current) {
+      inputRef.current.value = saved.address_line ?? saved.project_name;
+    }
+  }, [editing, saved]);
 
   const commitCoords = async (
     latitude: number,
@@ -154,16 +133,6 @@ export function ProjectPinInput({ projectName }: Props) {
     }
   };
 
-  const pickSuggestion = (s: Suggestion) => {
-    const lat = parseFloat(s.lat);
-    const lng = parseFloat(s.lon);
-    if (Number.isNaN(lat) || Number.isNaN(lng)) return;
-    mapInstance?.flyTo({ center: [lng, lat], zoom: 16, duration: 800 });
-    setShowDropdown(false);
-    setQuery(s.display_name.split(",").slice(0, 2).join(", "));
-    commitCoords(lat, lng, s.display_name);
-  };
-
   // ── Rendering states ────────────────────────────────────────────────────
 
   if (!trimmedName) {
@@ -184,7 +153,6 @@ export function ProjectPinInput({ projectName }: Props) {
     );
   }
 
-  // Already-saved read-only summary (with Edit button to reopen picker).
   if (saved && !editing) {
     return (
       <div className="p-4 rounded-xl bg-white border border-border/40">
@@ -233,36 +201,27 @@ export function ProjectPinInput({ projectName }: Props) {
         Every listing in this project will share this pin on the map.
       </p>
 
-      <div ref={wrapperRef} className="relative">
+      <div className="relative">
         <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground z-10" />
-        {searching && (
-          <Loader2 className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground animate-spin z-10" />
-        )}
         <Input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => suggestions.length > 0 && setShowDropdown(true)}
-          placeholder={`Search Google Maps — e.g. "${trimmedName}"`}
-          className="bg-white pl-9 pr-9"
+          ref={inputRef}
+          placeholder={
+            gmapsLoaded
+              ? `Search Google Maps — e.g. "${trimmedName}, Cairo"`
+              : "Loading Google Maps…"
+          }
+          disabled={!gmapsLoaded}
+          className="bg-white pl-9"
         />
-        {showDropdown && suggestions.length > 0 && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg border border-border/60 shadow-lg overflow-hidden z-20 max-h-64 overflow-y-auto">
-            {suggestions.map((s, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => pickSuggestion(s)}
-                className="w-full text-left px-3 py-2 text-sm hover:bg-primary/5 border-b border-border/30 last:border-0 flex items-start gap-2"
-              >
-                <MapPin className="w-3.5 h-3.5 text-accent mt-0.5 shrink-0" />
-                <span className="text-primary line-clamp-2">
-                  {s.display_name}
-                </span>
-              </button>
-            ))}
-          </div>
-        )}
       </div>
+
+      {gmapsError && (
+        <p className="text-xs text-accent flex items-center gap-1.5">
+          <AlertTriangle className="w-3.5 h-3.5" />
+          Google Maps failed to load ({gmapsError.message}). You can still
+          click the map manually to place the pin.
+        </p>
+      )}
 
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">
