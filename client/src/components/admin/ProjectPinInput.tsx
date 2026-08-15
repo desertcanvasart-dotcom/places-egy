@@ -39,6 +39,7 @@ export function ProjectPinInput({ projectName }: Props) {
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const [mapInstance, setMapInstance] = useState<MapLibreGL.Map | null>(null);
   const [query, setQuery] = useState("");
@@ -130,6 +131,7 @@ export function ProjectPinInput({ projectName }: Props) {
   ) => {
     if (!trimmedName) return;
     setSaveState("saving");
+    setSaveError(null);
     try {
       const next = await saveProjectCoord({
         project_name: trimmedName,
@@ -140,9 +142,10 @@ export function ProjectPinInput({ projectName }: Props) {
       setSaved(next);
       setSaveState("saved");
       setTimeout(() => setSaveState("idle"), 2500);
-    } catch {
+    } catch (err) {
+      setSaveError((err as Error).message || "Unknown error");
       setSaveState("error");
-      setTimeout(() => setSaveState("idle"), 4000);
+      setTimeout(() => setSaveState("idle"), 8000);
     }
   };
 
@@ -276,7 +279,12 @@ export function ProjectPinInput({ projectName }: Props) {
             </span>
           )}
           {saveState === "error" && (
-            <span className="text-xs text-accent">Save failed — try again</span>
+            <span
+              className="text-xs text-accent max-w-[20rem] truncate"
+              title={saveError ?? undefined}
+            >
+              Save failed: {saveError ?? "Unknown"}
+            </span>
           )}
           {saved && (
             <button
