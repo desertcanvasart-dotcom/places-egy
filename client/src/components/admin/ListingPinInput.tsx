@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import type * as MapLibreGL from "maplibre-gl";
 import { Map, MapMarker, MarkerContent } from "@/components/ui/map";
-import { MapPin, Search, X, AlertTriangle } from "lucide-react";
+import { MapPin, Search, X, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useGoogleMaps } from "@/lib/use-google-maps";
 
 const CAIRO_CENTER: [number, number] = [31.2357, 30.0444];
 const DEFAULT_ZOOM = 10;
 
-// Greater Cairo bounding box for biasing Places autocomplete predictions.
-const CAIRO_BOUNDS = { west: 31.0, south: 29.8, east: 31.7, north: 30.3 };
+// Greater Cairo bounding box — biases the geocoder to only return results
+// inside Cairo/Giza. Format for Nominatim: viewbox=left,top,right,bottom
+const CAIRO_VIEWBOX = "31.0,30.3,31.7,29.8";
 
 type Props = {
   latitude: number | null;
@@ -17,18 +17,26 @@ type Props = {
   onChange: (coords: { latitude: number; longitude: number } | null) => void;
 };
 
+type Suggestion = {
+  display_name: string;
+  lat: string;
+  lon: string;
+};
+
 // Admin pin-drop for a listing. Two ways to place the pin:
-//   1) Type into the autocomplete search box — dropdown shows Google Places
-//      suggestions biased to Greater Cairo. Pick one → pin drops.
-//   2) Click / drag on the map — dropped pin can be fine-tuned by dragging.
+//   1) Type into the search box → Nominatim (OpenStreetMap's free geocoder)
+//      returns Cairo-area matches → pick one → pin drops.
+//   2) Click / drag on the map → drop pin manually, drag to fine-tune.
 //
-// Google Maps JS SDK is loaded lazily via useGoogleMaps(). The map tiles
-// themselves stay on the free OpenFreeMap stack — we only spend on Places.
+// Nominatim is free, no API key, no billing. Rate limit is 1 req/sec per IP
+// which is fine here since we debounce keystrokes at 500ms.
 export function ListingPinInput({ latitude, longitude, onChange }: Props) {
   const [mapInstance, setMapInstance] = useState<MapLibreGL.Map | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
-  const { loaded: gmapsLoaded, error: gmapsError } = useGoogleMaps();
+  const [query, setQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const hasPin = latitude != null && longitude != null;
 
   const setMap = (m: MapLibreGL.Map | null) => {
@@ -40,26 +48,65 @@ export function ListingPinInput({ latitude, longitude, onChange }: Props) {
     m.getCanvas().style.cursor = "crosshair";
   };
 
-  // Wire up Google Places Autocomplete once the SDK is loaded + input exists.
+  // Debounced Nominatim search. Fires 500ms after the user stops typing.
   useEffect(() => {
-    if (!gmapsLoaded || !inputRef.current || autocompleteRef.current) return;
-    const ac = new google.maps.places.Autocomplete(inputRef.current, {
-      bounds: CAIRO_BOUNDS,
-      strictBounds: false,
-      componentRestrictions: { country: "eg" },
-      fields: ["geometry", "formatted_address", "name"],
-    });
-    ac.addListener("place_changed", () => {
-      const place = ac.getPlace();
-      const loc = place.geometry?.location;
-      if (!loc) return;
-      const lat = loc.lat();
-      const lng = loc.lng();
-      onChange({ latitude: lat, longitude: lng });
-      mapInstance?.flyTo({ center: [lng, lat], zoom: 16, duration: 800 });
-    });
-    autocompleteRef.current = ac;
-  }, [gmapsLoaded, mapInstance, onChange]);
+    if (!query.trim()) {
+      setSuggestions([]);
+      return;
+    }
+    const controller = new AbortController();
+    setSearching(true);
+    const timer = setTimeout(async () => {
+      try {
+        const url = new URL("https://nominatim.openstreetmap.org/search");
+        url.searchParams.set("q", query);
+        url.searchParams.set("format", "json");
+        url.searchParams.set("limit", "6");
+        url.searchParams.set("viewbox", CAIRO_VIEWBOX);
+        url.searchParams.set("bounded", "1");
+        url.searchParams.set("countrycodes", "eg");
+        const res = await fetch(url.toString(), {
+          signal: controller.signal,
+          headers: { "Accept-Language": "en" },
+        });
+        if (!res.ok) throw new Error(String(res.status));
+        const data = (await res.json()) as Suggestion[];
+        setSuggestions(data);
+        setShowDropdown(true);
+      } catch (err) {
+        if ((err as { name?: string }).name !== "AbortError") {
+          setSuggestions([]);
+        }
+      } finally {
+        setSearching(false);
+      }
+    }, 500);
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, [query]);
+
+  // Click-outside to close dropdown.
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const pickSuggestion = (s: Suggestion) => {
+    const lat = parseFloat(s.lat);
+    const lng = parseFloat(s.lon);
+    if (Number.isNaN(lat) || Number.isNaN(lng)) return;
+    onChange({ latitude: lat, longitude: lng });
+    mapInstance?.flyTo({ center: [lng, lat], zoom: 16, duration: 800 });
+    setShowDropdown(false);
+    setQuery(s.display_name.split(",").slice(0, 2).join(", "));
+  };
 
   const startCenter: [number, number] = hasPin
     ? [longitude, latitude]
@@ -68,27 +115,36 @@ export function ListingPinInput({ latitude, longitude, onChange }: Props) {
 
   return (
     <div className="space-y-3">
-      <div className="relative">
-        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+      <div ref={wrapperRef} className="relative">
+        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground z-10" />
+        {searching && (
+          <Loader2 className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground animate-spin z-10" />
+        )}
         <Input
-          ref={inputRef}
-          placeholder={
-            gmapsLoaded
-              ? "Search — e.g. Waterway, Mivida, Cairo Festival City"
-              : "Loading Google Maps…"
-          }
-          disabled={!gmapsLoaded}
-          className="bg-white pl-9"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => suggestions.length > 0 && setShowDropdown(true)}
+          placeholder="Search — e.g. Waterway, Mivida, Cairo Festival City"
+          className="bg-white pl-9 pr-9"
         />
+        {showDropdown && suggestions.length > 0 && (
+          <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg border border-border/60 shadow-lg overflow-hidden z-20 max-h-64 overflow-y-auto">
+            {suggestions.map((s, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => pickSuggestion(s)}
+                className="w-full text-left px-3 py-2 text-sm hover:bg-primary/5 border-b border-border/30 last:border-0 flex items-start gap-2"
+              >
+                <MapPin className="w-3.5 h-3.5 text-accent mt-0.5 shrink-0" />
+                <span className="text-primary line-clamp-2">
+                  {s.display_name}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
-
-      {gmapsError && (
-        <p className="text-xs text-accent flex items-center gap-1.5">
-          <AlertTriangle className="w-3.5 h-3.5" />
-          Search unavailable ({gmapsError.message}). You can still click the
-          map manually.
-        </p>
-      )}
 
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">

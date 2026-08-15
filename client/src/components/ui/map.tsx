@@ -144,8 +144,26 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
     if (map.isStyleLoaded()) setIsStyleLoaded(true);
     setMapInstance(map);
 
+    // ResizeObserver fix — when the map is inside a Dialog/Sheet/tab that
+    // mounts hidden or animates from 0 → real size, MapLibre computes tile
+    // dimensions from the 0-height container and never re-fetches on grow.
+    // Observing the container and calling map.resize() covers all those
+    // cases (dialog opens, sidebar collapses, tab activates, etc).
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined" && containerRef.current) {
+      resizeObserver = new ResizeObserver(() => {
+        try {
+          map.resize();
+        } catch {
+          // Map already removed — ignore.
+        }
+      });
+      resizeObserver.observe(containerRef.current);
+    }
+
     return () => {
       clearStyleTimeout();
+      resizeObserver?.disconnect();
       map.off("load", loadHandler);
       map.off("styledata", styleDataHandler);
       map.off("move", moveHandler);
