@@ -8,6 +8,7 @@ import { CountUp } from "@/components/ui/count-up";
 import { ServicesExplorer } from "@/components/ServicesExplorer";
 import { DeveloperStrip } from "@/components/DeveloperStrip";
 import { DealAnnouncementCarousel } from "@/components/DealAnnouncementCarousel";
+import { HomepageMap } from "@/components/HomepageMap";
 import { ListingCard } from "@/components/listings/ListingCard";
 import { ArrowRight, Building2, ClipboardList, BarChart3, ShieldCheck, CheckCircle2, Coins } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -193,6 +194,11 @@ export default function Home() {
             </div>
           </div>
         </section>
+      </FadeInSection>
+
+      {/* Master map — every project we broker, one pin each */}
+      <FadeInSection>
+        <HomepageMap />
       </FadeInSection>
 
       {/* Developer Logo Strip */}

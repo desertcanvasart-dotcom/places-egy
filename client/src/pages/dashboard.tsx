@@ -6,7 +6,7 @@ import { ClientLogosManager } from "@/components/admin/ClientLogosManager";
 import { LeadsManager } from "@/components/admin/LeadsManager";
 import { AccountsManager } from "@/components/admin/AccountsManager";
 import { BookingsManager } from "@/components/admin/BookingsManager";
-import { ListingPinInput } from "@/components/admin/ListingPinInput";
+import { ProjectPinInput } from "@/components/admin/ProjectPinInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -333,23 +333,16 @@ function ListingFormDialog({
               <Input value={form.location_area} onChange={(e) => set("location_area", e.target.value)} placeholder="e.g. Fifth Settlement" className="bg-white" />
             </div>
 
-            <div className="space-y-1.5 md:col-span-2">
-              <Label className="text-sm font-medium text-primary">Location on map</Label>
-              <ListingPinInput
-                latitude={form.latitude}
-                longitude={form.longitude}
-                onChange={(coords) => {
-                  set("latitude", coords?.latitude ?? null);
-                  set("longitude", coords?.longitude ?? null);
-                }}
-              />
-            </div>
-
             <SelectField label="Furnishing" value={form.furnishing} options={ENUM_OPTIONS.furnishing} onChange={(v) => set("furnishing", v)} />
 
             <div className="space-y-1.5">
               <Label className="text-sm font-medium text-primary">Project</Label>
               <Input value={form.project} onChange={(e) => set("project", e.target.value)} className="bg-white" />
+            </div>
+
+            <div className="space-y-1.5 md:col-span-2">
+              <Label className="text-sm font-medium text-primary">Project location on map</Label>
+              <ProjectPinInput projectName={form.project} />
             </div>
 
             <SelectField label="Currency" value={form.currency} options={ENUM_OPTIONS.currency} onChange={(v) => set("currency", v)} />

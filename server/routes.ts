@@ -28,6 +28,7 @@ import {
 } from "./mailer";
 import { handleCalendlyWebhook } from "./calendly-webhook";
 import { regenerateMarketReportHandler } from "./regenerate-report";
+import { registerProjectCoordsRoutes } from "./project-coords-routes";
 import {
   handleMilestoneOnFavorite,
   handleManualEmailRequest,
@@ -96,6 +97,8 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express,
 ): Promise<Server> {
+  registerProjectCoordsRoutes(app);
+
   // GET /api/blog/posts?page=1&per_page=9&category=market-insights&lang=en|ar
   // The `lang` param is Polylang's language filter — exposed to the REST API
   // by our custom snippet in WP's Code Snippets plugin. Only "en" or "ar"
