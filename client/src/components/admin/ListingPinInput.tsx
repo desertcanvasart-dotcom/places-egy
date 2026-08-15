@@ -68,9 +68,13 @@ export function ListingPinInput({ latitude, longitude, onChange }: Props) {
         // outside the tight box). countrycodes=eg keeps us Egypt-only.
         url.searchParams.set("viewbox", CAIRO_VIEWBOX);
         url.searchParams.set("countrycodes", "eg");
+        // accept-language via query param, NOT a header. Custom headers
+        // trigger a CORS preflight (OPTIONS) that Nominatim doesn't respond
+        // to consistently, causing the fetch to silently fail in-browser
+        // even though curl requests work fine.
+        url.searchParams.set("accept-language", "en");
         const res = await fetch(url.toString(), {
           signal: controller.signal,
-          headers: { "Accept-Language": "en" },
         });
         if (!res.ok) throw new Error(String(res.status));
         const data = (await res.json()) as Suggestion[];
