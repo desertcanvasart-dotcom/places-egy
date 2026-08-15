@@ -17,10 +17,12 @@ import {
 
 const STORAGE_KEY = "places_favorites_v1";
 
-// Hard gate: anonymous users can favorite up to 2 listings. Attempting a
-// 3rd triggers the signup modal instead of adding. Once signed in, the
-// server takes over favorite storage (with no cap).
-export const ANON_FAVORITES_CAP = 2;
+// Hard gate: anonymous users can favorite exactly 1 listing. Attempting a
+// 2nd triggers the signup modal instead of adding. Once signed in, the
+// server takes over favorite storage (with no cap). Rationale: hearting one
+// thing is browsing; hearting a second is a comparison, which is real
+// intent — that's the moment to capture their info.
+export const ANON_FAVORITES_CAP = 1;
 
 // Custom event so multiple <FavoriteButton /> instances re-render in sync
 // when any one of them mutates localStorage. Same-tab storage events don't

@@ -152,7 +152,7 @@ export function SignupGateModal() {
             Save more listings to your account
           </h2>
           <p className="text-xs text-white/70 mt-1.5">
-            Your first 2 favorites are already saved. Create a free account to
+            Your first favorite is already saved. Create a free account to
             keep saving, view them on any device, and get matched with new
             listings.
           </p>
