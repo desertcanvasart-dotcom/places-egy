@@ -5,6 +5,7 @@ import { Footer } from "@/components/layout/Footer";
 import { CornerSlideMagnet } from "@/components/magnets/CornerSlideMagnet";
 import { FilterSidebar, DEFAULT_FILTERS, PRICE_MIN, PRICE_MAX, type Filters } from "@/components/listings/FilterSidebar";
 import { ListingCard } from "@/components/listings/ListingCard";
+import { ListingsMap } from "@/components/listings/ListingsMap";
 import { supabase, type Listing } from "@/lib/supabase";
 import { FURNISHING_OPTIONS, getEnumLabel } from "@/lib/enums";
 import { DEVELOPER_DISPLAY_NAMES } from "@/lib/projects";
@@ -14,7 +15,7 @@ import { listingUrl } from "@/lib/listings";
 import { trackEvent } from "@/lib/analytics";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { SlidersHorizontal, Search, LayoutGrid, List } from "lucide-react";
+import { SlidersHorizontal, Search, LayoutGrid, List, Map as MapIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -106,7 +107,7 @@ export default function ListingsPage() {
   const [filters, setFilters] = useState<Filters>(getInitialFilters);
   const [searchQuery, setSearchQuery] = useState(getInitialQuery);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list" | "map">("grid");
 
   useListingsIndexability();
 
@@ -351,7 +352,25 @@ export default function ListingsPage() {
               >
                 <List className="w-4 h-4" />
               </button>
+              <button
+                onClick={() => setViewMode("map")}
+                aria-label="Map view"
+                className={`p-1.5 rounded-md transition-all hover:bg-primary/10 hover:text-primary active:scale-95 ${viewMode === "map" ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}
+              >
+                <MapIcon className="w-4 h-4" />
+              </button>
             </div>
+            {/* Mobile map toggle — the hidden md:flex block above doesn't
+                fire on phone screens; expose Map here so mobile users can
+                still switch views. */}
+            <button
+              onClick={() => setViewMode((v) => (v === "map" ? "grid" : "map"))}
+              aria-label={viewMode === "map" ? "Back to list" : "Map view"}
+              className={`md:hidden inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${viewMode === "map" ? "bg-primary text-white" : "bg-white border border-border/60 text-primary"}`}
+            >
+              <MapIcon className="w-3.5 h-3.5" />
+              {viewMode === "map" ? "List" : "Map"}
+            </button>
             <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
               <SelectTrigger className="w-auto h-8 px-2 gap-1 bg-transparent border-none shadow-none text-xs text-muted-foreground hover:text-primary focus:ring-0 focus-visible:ring-0">
                 <SelectValue />
@@ -419,11 +438,25 @@ export default function ListingsPage() {
                     <ListingCard key={listing.id} listing={listing} />
                   ))}
                 </div>
-              ) : (
+              ) : viewMode === "list" ? (
                 <div className="space-y-3">
                   {sortedListings.map((listing) => (
                     <ListingCard key={listing.id} listing={listing} listView />
                   ))}
+                </div>
+              ) : (
+                // Map view — on desktop, show the map alongside a scrollable
+                // narrow card column. On mobile, the map takes the full width
+                // (the card column collapses since the map toggle replaced it).
+                <div className="flex flex-col lg:flex-row gap-4">
+                  <div className="lg:w-2/5 lg:max-h-[70vh] lg:overflow-y-auto space-y-3 lg:pr-2 hidden lg:block">
+                    {sortedListings.map((listing) => (
+                      <ListingCard key={listing.id} listing={listing} listView />
+                    ))}
+                  </div>
+                  <div className="flex-1">
+                    <ListingsMap listings={sortedListings} />
+                  </div>
                 </div>
               )
             ) : (
