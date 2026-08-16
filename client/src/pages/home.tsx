@@ -196,10 +196,13 @@ export default function Home() {
         </section>
       </FadeInSection>
 
-      {/* Master map — every project we broker, one pin each */}
-      <FadeInSection>
+      {/* Master map — HIDDEN while Google Maps API key + CARTO tile-render
+          issues are being resolved. Re-enable by uncommenting once the pin-
+          drop admin picker works end-to-end AND at least a few projects
+          have real coordinates saved (otherwise section renders empty). */}
+      {/* <FadeInSection>
         <HomepageMap />
-      </FadeInSection>
+      </FadeInSection> */}
 
       {/* Developer Logo Strip */}
       <FadeInSection>
