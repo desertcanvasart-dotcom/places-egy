@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Map, MapMarker, MarkerContent } from "@/components/ui/map";
 import { fetchAllProjectCoords, type ProjectCoord } from "@/lib/project-coords";
 import { listingCurrency } from "@/lib/currency";
+import { listingUrl } from "@/lib/listings";
 import { trackEvent } from "@/lib/analytics";
 import { ArrowRight, Building2 } from "lucide-react";
 import type { Listing } from "@/lib/supabase";
@@ -224,19 +225,39 @@ export function ListingsMap({ listings }: Props) {
                   {fromPrice(selected.units)}
                 </span>
               </div>
-              <Link
-                href={`/listings?q=${encodeURIComponent(selected.projectName)}`}
-                onClick={() =>
-                  trackEvent("listings_map_popup_click", {
-                    project_name: selected.projectName,
-                    unit_count: selected.units.length,
-                  })
-                }
-                className="inline-flex items-center justify-center gap-1 w-full bg-primary hover:bg-primary/90 text-white text-sm font-medium py-2.5 rounded-full transition-colors"
-              >
-                View all units
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+              {/* Single-unit projects deep-link straight to the listing
+                  detail; multi-unit projects go to a filtered /listings
+                  page keyed on the project name so the user can compare. */}
+              {selected.units.length === 1 ? (
+                <Link
+                  href={listingUrl(selected.units[0])}
+                  onClick={() =>
+                    trackEvent("listings_map_popup_click", {
+                      project_name: selected.projectName,
+                      listing_id: selected.units[0].id,
+                      unit_count: 1,
+                    })
+                  }
+                  className="inline-flex items-center justify-center gap-1 w-full bg-primary hover:bg-primary/90 text-white text-sm font-medium py-2.5 rounded-full transition-colors"
+                >
+                  See this unit
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              ) : (
+                <Link
+                  href={`/listings?q=${encodeURIComponent(selected.projectName)}`}
+                  onClick={() =>
+                    trackEvent("listings_map_popup_click", {
+                      project_name: selected.projectName,
+                      unit_count: selected.units.length,
+                    })
+                  }
+                  className="inline-flex items-center justify-center gap-1 w-full bg-primary hover:bg-primary/90 text-white text-sm font-medium py-2.5 rounded-full transition-colors"
+                >
+                  See {selected.units.length} units in {selected.projectName}
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              )}
             </div>
           </div>
         </div>

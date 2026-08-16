@@ -29,6 +29,7 @@ if (process.env.NODE_ENV === "production") {
             "https://maps.googleapis.com",
             "https://maps.gstatic.com",
             "https://www.clarity.ms",
+            "https://*.clarity.ms",
             "https://static.cloudflareinsights.com",
             "https://assets.calendly.com",
           ],
