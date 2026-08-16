@@ -281,6 +281,22 @@
   font-style: italic;
   color: var(--color-primary);
 }
+/* Google Places Autocomplete dropdown (.pac-container) defaults to
+   z-index: 1000 which sits BEHIND Radix Dialog's content (z-50 + Radix
+   stacking context). Result: dropdown appears but clicks fall through to
+   the dialog backdrop. Bump above every Radix layer so it's fully
+   interactive inside modals. */
+.pac-container {
+  z-index: 10000 !important;
+}
+.pac-container .pac-item {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.pac-container .pac-item:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
 .listing-description hr {
   border: 0;
   border-top: 1px solid rgba(0,0,0,0.1);

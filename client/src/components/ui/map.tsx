@@ -31,12 +31,52 @@ function cn(...inputs: Array<string | false | null | undefined>) {
   return inputs.filter(Boolean).join(" ");
 }
 
-// CARTO — free, no API key, battle-tested (used by hundreds of thousands of
-// production apps), robust CDN, works in Egypt. Switched here after
-// OpenFreeMap was rendering blank in some browsers/regions.
+// Inline raster style built around CARTO's PNG tiles. Simple and bulletproof:
+// no external style.json fetch, no vector protobuf worker, no glyph fetch,
+// no sprite fetch — just raster PNG tiles rendered directly. Fixes the
+// blank-map bug where vector styles were resolving but tiles never appeared.
+// Trade-off: slightly heavier per pane (~40KB PNG vs ~5KB vector), no infinite
+// zoom smoothness. Fine for the admin pin-drop + public browse use cases.
+const RASTER_LIGHT_STYLE = {
+  version: 8 as const,
+  sources: {
+    "carto-light": {
+      type: "raster" as const,
+      tiles: [
+        "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
+        "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
+        "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
+      ],
+      tileSize: 256,
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    },
+  },
+  layers: [
+    { id: "carto-light", type: "raster" as const, source: "carto-light" },
+  ],
+};
+
+const RASTER_DARK_STYLE = {
+  ...RASTER_LIGHT_STYLE,
+  sources: {
+    "carto-dark": {
+      ...RASTER_LIGHT_STYLE.sources["carto-light"],
+      tiles: [
+        "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+        "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+        "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+      ],
+    },
+  },
+  layers: [
+    { id: "carto-dark", type: "raster" as const, source: "carto-dark" },
+  ],
+};
+
 const defaultStyles = {
-  dark: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
-  light: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+  dark: RASTER_DARK_STYLE as unknown as string,
+  light: RASTER_LIGHT_STYLE as unknown as string,
 };
 
 type Theme = "light" | "dark";
