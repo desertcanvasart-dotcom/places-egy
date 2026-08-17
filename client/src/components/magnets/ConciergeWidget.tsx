@@ -243,8 +243,12 @@ export function ConciergeWidget() {
   return (
     <div
       dir={isRtl ? "rtl" : "ltr"}
-      className={`fixed bottom-4 left-4 md:bottom-6 md:left-6 z-40 max-w-[calc(100vw-2rem)] transition-all duration-400 ease-out ${
-        visible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0 pointer-events-none"
+      // Top-right, offset below the navbar. Slides down on entry so the
+      // motion cue reads as "notification arriving" rather than "sales
+      // popup rising up at you". Avoids the Book-a-Meeting float
+      // (bottom-left) and the PDF corner magnet (bottom-right).
+      className={`fixed top-20 right-4 md:top-24 md:right-6 z-40 max-w-[calc(100vw-2rem)] transition-all duration-400 ease-out ${
+        visible ? "translate-y-0 opacity-100" : "-translate-y-8 opacity-0 pointer-events-none"
       }`}
     >
       {expanded ? (
@@ -339,24 +343,31 @@ export function ConciergeWidget() {
                 </div>
               )}
 
-              {/* Optional qualifiers — collapsed by default so the form
-                  stays short. Anyone motivated enough to open this is
-                  already engaged; the extra fields help the sales team
-                  qualify without pushing casual visitors away. */}
-              <div className="border-t border-border/40 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setDetailsOpen((v) => !v)}
-                  className="w-full flex items-center justify-between text-xs font-medium text-primary/80 hover:text-primary transition-colors"
-                >
-                  <span>{t.moreDetails}</span>
-                  <ChevronDown
-                    className={`w-3.5 h-3.5 transition-transform ${detailsOpen ? "rotate-180" : ""}`}
-                  />
-                </button>
+              {/* Optional qualifiers — progressively disclosed. Once the
+                  user has committed to filling out the form (name AND
+                  contact typed), we auto-reveal the extra qualifier
+                  fields. This surfaces them without punishing casual
+                  visitors who bounce after the first field. Users can
+                  also expand/collapse manually via the header. */}
+              {(() => {
+                const shouldAutoOpen =
+                  name.trim().length > 0 && contact.trim().length > 0;
+                const open = detailsOpen || shouldAutoOpen;
+                return (
+                  <div className="border-t border-border/40 pt-3">
+                    <button
+                      type="button"
+                      onClick={() => setDetailsOpen((v) => !v)}
+                      className="w-full flex items-center justify-between text-xs font-medium text-primary/80 hover:text-primary transition-colors"
+                    >
+                      <span>{t.moreDetails}</span>
+                      <ChevronDown
+                        className={`w-3.5 h-3.5 transition-transform ${open ? "rotate-180" : ""}`}
+                      />
+                    </button>
 
-                {detailsOpen && (
-                  <div className="mt-3 space-y-3">
+                    {open && (
+                      <div className="mt-3 space-y-3">
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <label className="block text-[11px] font-medium text-primary/80 mb-1">
@@ -434,8 +445,10 @@ export function ConciergeWidget() {
                       </div>
                     </div>
                   </div>
-                )}
-              </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {errorText && (
                 <p className="text-xs text-accent">{errorText}</p>
@@ -470,23 +483,23 @@ export function ConciergeWidget() {
         <button
           type="button"
           onClick={openForm}
-          className="group relative flex items-center gap-3 bg-white text-primary rounded-full shadow-2xl shadow-primary/20 ring-1 ring-primary/10 pl-3 pr-5 py-3 max-w-md hover:shadow-primary/30 hover:ring-accent/30 transition-all duration-300 hover:-translate-y-0.5"
+          className="group relative flex items-center gap-4 bg-white text-primary rounded-2xl shadow-2xl shadow-primary/25 ring-1 ring-primary/10 pl-4 pr-7 py-4 max-w-md hover:shadow-primary/35 hover:ring-accent/40 transition-all duration-300 hover:-translate-y-0.5"
         >
-          <span className="relative flex h-10 w-10 items-center justify-center shrink-0">
+          <span className="relative flex h-12 w-12 items-center justify-center shrink-0">
             <span
               className="absolute inline-flex h-full w-full rounded-full bg-accent/30 animate-ping"
               aria-hidden="true"
             />
-            <span className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-accent text-white shadow-md">
-              <MessageCircle className="w-5 h-5" />
+            <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-full bg-accent text-white shadow-md">
+              <MessageCircle className="w-6 h-6" />
             </span>
           </span>
 
           <div className={`text-${isRtl ? "right" : "left"} min-w-0 pr-6`}>
-            <p className="text-sm font-serif font-bold leading-tight">
+            <p className="text-base md:text-lg font-serif font-bold leading-tight">
               {t.bubblePrompt}
             </p>
-            <p className="text-[11px] text-muted-foreground mt-0.5 leading-tight">
+            <p className="text-xs text-muted-foreground mt-1 leading-tight">
               {t.bubbleSub}
             </p>
           </div>
@@ -505,9 +518,9 @@ export function ConciergeWidget() {
                 dismiss();
               }
             }}
-            className={`absolute top-1.5 ${isRtl ? "left-1.5" : "right-1.5"} flex items-center justify-center w-5 h-5 rounded-full text-muted-foreground hover:text-accent hover:bg-accent/10 cursor-pointer transition-colors`}
+            className={`absolute top-2 ${isRtl ? "left-2" : "right-2"} flex items-center justify-center w-6 h-6 rounded-full text-muted-foreground hover:text-accent hover:bg-accent/10 cursor-pointer transition-colors`}
           >
-            <X className="w-3 h-3" />
+            <X className="w-3.5 h-3.5" />
           </span>
         </button>
       )}
