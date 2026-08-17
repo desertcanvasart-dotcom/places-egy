@@ -310,7 +310,11 @@ function App() {
         <OutboundClickTracker />
         <Router />
         <MobileBottomBar />
-        <BookMeetingFloat />
+        {/* Book-a-meeting float HIDDEN 2026-08-17 per user request.
+            Component + build code intentionally kept in the codebase
+            (client/src/components/BookMeetingFloat.tsx). To re-enable,
+            uncomment the line below. */}
+        {/* <BookMeetingFloat /> */}
         <SignupGateModal />
         <ConciergeWidget />
         <CookieBanner />
