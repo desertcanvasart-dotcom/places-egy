@@ -97,6 +97,17 @@ export const conciergeLeadSchema = z
     // Free-text — for when they pick "other" or want to add specifics.
     // Optional even for "other" so submission never fails on it.
     message: z.string().trim().max(500).nullable().optional(),
+    // Optional qualifiers — the concierge form doesn't gate on these, but
+    // any that get filled in help the sales team qualify faster. Bucketed
+    // rather than free-text so the data is reportable.
+    company: z.string().trim().max(150).nullable().optional(),
+    job_title: z.string().trim().max(150).nullable().optional(),
+    area_range: z
+      .enum(["under-100", "100-300", "300-500", "500-plus"])
+      .nullable()
+      .optional(),
+    budget_from: z.number().int().nonnegative().max(1_000_000_000).nullable().optional(),
+    budget_to: z.number().int().nonnegative().max(1_000_000_000).nullable().optional(),
     preferred_language: z.enum(["en", "ar"]).optional(),
     page_url: z.string().max(500).nullable().optional(),
     utm_source: z.string().max(80).nullable().optional(),

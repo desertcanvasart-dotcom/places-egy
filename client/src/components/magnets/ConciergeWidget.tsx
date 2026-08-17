@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { MessageCircle, X, ArrowRight, Check, Loader2 } from "lucide-react";
+import { MessageCircle, X, ArrowRight, Check, Loader2, ChevronDown } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { detectPreferredLanguage } from "@/lib/detect-language";
 
@@ -28,6 +28,7 @@ const SUBMITTED_KEY = "concierge_widget_submitted_at";
 const SHOW_AFTER_MS = 20_000;
 
 type Intent = "buy" | "rent" | "browsing" | "other";
+type AreaRange = "under-100" | "100-300" | "300-500" | "500-plus";
 type Lang = "en" | "ar";
 
 const COPY = {
@@ -47,6 +48,19 @@ const COPY = {
     contactLabel: "Email or phone",
     contactHint: "Either one is fine — we'll reach out on whichever you prefer",
     messagePlaceholder: "Tell us more (optional) — size, budget, timeline…",
+    moreDetails: "Add more details (optional)",
+    companyLabel: "Company",
+    jobLabel: "Job title",
+    areaLabel: "Area needed",
+    areas: {
+      "under-100": "Under 100 m²",
+      "100-300": "100–300 m²",
+      "300-500": "300–500 m²",
+      "500-plus": "500+ m²",
+    } as Record<AreaRange, string>,
+    budgetLabel: "Budget range (EGP)",
+    budgetFrom: "From",
+    budgetTo: "To",
     submit: "Help me find the right office",
     submitting: "Sending…",
     success: "We got it — an advisor will reach out shortly.",
@@ -71,6 +85,19 @@ const COPY = {
     contactLabel: "البريد الإلكتروني أو الهاتف",
     contactHint: "أي منهما يكفي — سنتواصل معك بالطريقة التي تفضلها",
     messagePlaceholder: "أخبرنا بالمزيد (اختياري) — المساحة، الميزانية، الوقت…",
+    moreDetails: "أضف المزيد من التفاصيل (اختياري)",
+    companyLabel: "الشركة",
+    jobLabel: "المسمى الوظيفي",
+    areaLabel: "المساحة المطلوبة",
+    areas: {
+      "under-100": "أقل من 100 م²",
+      "100-300": "100–300 م²",
+      "300-500": "300–500 م²",
+      "500-plus": "أكثر من 500 م²",
+    } as Record<AreaRange, string>,
+    budgetLabel: "نطاق الميزانية (جنيه)",
+    budgetFrom: "من",
+    budgetTo: "إلى",
     submit: "ساعدني في إيجاد المكتب المناسب",
     submitting: "جاري الإرسال…",
     success: "تم استلام طلبك — سيتواصل معك أحد مستشارينا قريبًا.",
@@ -101,6 +128,12 @@ export function ConciergeWidget() {
   const [contact, setContact] = useState("");
   const [intent, setIntent] = useState<Intent | null>(null);
   const [message, setMessage] = useState("");
+  const [company, setCompany] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
+  const [areaRange, setAreaRange] = useState<AreaRange | null>(null);
+  const [budgetFrom, setBudgetFrom] = useState("");
+  const [budgetTo, setBudgetTo] = useState("");
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [errorText, setErrorText] = useState<string | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -169,12 +202,19 @@ export function ConciergeWidget() {
     // Simple heuristic: contains @ → email, else phone. Avoids forcing the
     // user to pick which field they're filling.
     const isEmail = contact.includes("@");
+    const parsedFrom = budgetFrom ? Number(budgetFrom.replace(/[^\d]/g, "")) : NaN;
+    const parsedTo = budgetTo ? Number(budgetTo.replace(/[^\d]/g, "")) : NaN;
     const payload = {
       name: name.trim(),
       email: isEmail ? contact.trim() : undefined,
       phone: !isEmail ? contact.trim() : undefined,
       intent,
       message: message.trim() || undefined,
+      company: company.trim() || undefined,
+      job_title: jobTitle.trim() || undefined,
+      area_range: areaRange ?? undefined,
+      budget_from: Number.isFinite(parsedFrom) ? parsedFrom : undefined,
+      budget_to: Number.isFinite(parsedTo) ? parsedTo : undefined,
       preferred_language: lang,
       page_url: typeof window !== "undefined" ? window.location.pathname : undefined,
     };
@@ -298,6 +338,104 @@ export function ConciergeWidget() {
                   />
                 </div>
               )}
+
+              {/* Optional qualifiers — collapsed by default so the form
+                  stays short. Anyone motivated enough to open this is
+                  already engaged; the extra fields help the sales team
+                  qualify without pushing casual visitors away. */}
+              <div className="border-t border-border/40 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setDetailsOpen((v) => !v)}
+                  className="w-full flex items-center justify-between text-xs font-medium text-primary/80 hover:text-primary transition-colors"
+                >
+                  <span>{t.moreDetails}</span>
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 transition-transform ${detailsOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+
+                {detailsOpen && (
+                  <div className="mt-3 space-y-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[11px] font-medium text-primary/80 mb-1">
+                          {t.companyLabel}
+                        </label>
+                        <input
+                          type="text"
+                          value={company}
+                          onChange={(e) => setCompany(e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-border/60 focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none text-sm bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-medium text-primary/80 mb-1">
+                          {t.jobLabel}
+                        </label>
+                        <input
+                          type="text"
+                          value={jobTitle}
+                          onChange={(e) => setJobTitle(e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-border/60 focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none text-sm bg-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-medium text-primary/80 mb-1.5">
+                        {t.areaLabel}
+                      </label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {(Object.keys(t.areas) as AreaRange[]).map((key) => (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() =>
+                              setAreaRange((cur) => (cur === key ? null : key))
+                            }
+                            className={`text-[11px] font-medium px-2.5 py-1.5 rounded-full border transition-all ${
+                              areaRange === key
+                                ? "bg-accent text-white border-accent"
+                                : "bg-white text-primary border-border/60 hover:border-accent/60 hover:bg-accent/5"
+                            }`}
+                          >
+                            {t.areas[key]}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-medium text-primary/80 mb-1">
+                        {t.budgetLabel}
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={budgetFrom}
+                          onChange={(e) =>
+                            setBudgetFrom(e.target.value.replace(/[^\d,]/g, ""))
+                          }
+                          placeholder={t.budgetFrom}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-border/60 focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none text-sm bg-white"
+                        />
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={budgetTo}
+                          onChange={(e) =>
+                            setBudgetTo(e.target.value.replace(/[^\d,]/g, ""))
+                          }
+                          placeholder={t.budgetTo}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-border/60 focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none text-sm bg-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {errorText && (
                 <p className="text-xs text-accent">{errorText}</p>

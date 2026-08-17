@@ -294,22 +294,55 @@ export async function registerRoutes(
       if (!parsed.success) {
         return res.status(400).json({ message: "Invalid submission" });
       }
-      const { website: honeypot, intent, message, ...rest } = parsed.data;
+      const {
+        website: honeypot,
+        intent,
+        message,
+        company,
+        job_title,
+        area_range,
+        budget_from,
+        budget_to,
+        ...rest
+      } = parsed.data;
       if (honeypot && honeypot.trim().length > 0) {
         return res.json({ ok: true });
       }
 
-      // Compose the message with the intent tag so admin sees intent at a
-      // glance in the leads dashboard without needing a new column.
+      // Compose everything the admin needs into the message field so it
+      // shows up front-and-center in the Leads dashboard without any new
+      // DB columns. Layout is intent first (headline), then any qualifiers
+      // that were filled in, then the free-text message.
       const intentLabel = {
         buy: "Wants to BUY an office",
         rent: "Wants to RENT an office",
         browsing: "Just browsing",
         other: "Other / undecided",
       }[intent];
-      const composedMessage = message
-        ? `${intentLabel}\n\n${message}`
-        : intentLabel;
+      const areaLabel = area_range
+        ? {
+            "under-100": "Under 100 m²",
+            "100-300": "100–300 m²",
+            "300-500": "300–500 m²",
+            "500-plus": "500+ m²",
+          }[area_range]
+        : null;
+      const budgetLabel =
+        budget_from != null || budget_to != null
+          ? `${budget_from != null ? new Intl.NumberFormat("en-US").format(budget_from) : "?"} – ${budget_to != null ? new Intl.NumberFormat("en-US").format(budget_to) : "?"} EGP`
+          : null;
+      const qualifiers: string[] = [];
+      if (company) qualifiers.push(`Company: ${company}`);
+      if (job_title) qualifiers.push(`Title: ${job_title}`);
+      if (areaLabel) qualifiers.push(`Area needed: ${areaLabel}`);
+      if (budgetLabel) qualifiers.push(`Budget: ${budgetLabel}`);
+      const composedMessage = [
+        intentLabel,
+        qualifiers.length ? qualifiers.join("\n") : null,
+        message,
+      ]
+        .filter(Boolean)
+        .join("\n\n");
 
       const { data: inserted, error } = await supabaseAdmin
         .from("leads")
