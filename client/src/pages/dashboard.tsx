@@ -559,7 +559,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
           {([
             { key: "listings", label: "Listings" },
             { key: "deals", label: "Deals" },
-            { key: "logos", label: "Client Logos" },
+            { key: "logos", label: "Clients" },
             { key: "leads", label: "Leads" },
             { key: "accounts", label: "Accounts" },
             { key: "bookings", label: "Bookings" },
