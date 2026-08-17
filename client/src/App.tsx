@@ -9,6 +9,7 @@ import { CookieBanner } from "@/components/CookieBanner";
 import { MobileBottomBar } from "@/components/layout/MobileBottomBar";
 import { BookMeetingFloat } from "@/components/BookMeetingFloat";
 import { SignupGateModal } from "@/components/SignupGateModal";
+import { ConciergeWidget } from "@/components/magnets/ConciergeWidget";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { organizationSchema, websiteSchema } from "@/lib/schema";
 
@@ -308,6 +309,7 @@ function App() {
         <MobileBottomBar />
         <BookMeetingFloat />
         <SignupGateModal />
+        <ConciergeWidget />
         <CookieBanner />
       </TooltipProvider>
     </QueryClientProvider>

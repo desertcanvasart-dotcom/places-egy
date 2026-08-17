@@ -81,6 +81,37 @@ export const leadInsertSchema = z
   })
   .strict();
 
+// Concierge widget schema — lightweight lead capture from the "Looking for
+// something specific?" bottom-left popup. Deliberately minimal to maximize
+// conversion: name required, contact (email OR phone) required, intent as
+// enum. No locations, no separate message.
+//
+// Goes into the same `leads` table as everything else — lead_source is
+// hardcoded server-side to "concierge_widget", magnet stays null.
+export const conciergeLeadSchema = z
+  .object({
+    name: z.string().trim().min(1).max(120),
+    email: z.string().trim().email().max(200).nullable().optional(),
+    phone: z.string().trim().min(4).max(40).nullable().optional(),
+    intent: z.enum(["buy", "rent", "browsing", "other"]),
+    // Free-text — for when they pick "other" or want to add specifics.
+    // Optional even for "other" so submission never fails on it.
+    message: z.string().trim().max(500).nullable().optional(),
+    preferred_language: z.enum(["en", "ar"]).optional(),
+    page_url: z.string().max(500).nullable().optional(),
+    utm_source: z.string().max(80).nullable().optional(),
+    utm_medium: z.string().max(80).nullable().optional(),
+    utm_campaign: z.string().max(80).nullable().optional(),
+    utm_term: z.string().max(80).nullable().optional(),
+    utm_content: z.string().max(80).nullable().optional(),
+    website: z.string().max(200).optional(), // honeypot
+  })
+  .strict()
+  .refine((d) => (d.email && d.email.length > 0) || (d.phone && d.phone.length > 0), {
+    message: "Provide email or phone so we can reach you",
+    path: ["email"],
+  });
+
 // Admin-only PATCH for updating a lead (mark followed-up, add notes, change
 // status). No new leads allowed here — inserts always come through the
 // public POST route above.

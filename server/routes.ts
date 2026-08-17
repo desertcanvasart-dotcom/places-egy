@@ -7,7 +7,7 @@ import { strictLimiter, adminLimiter, uploadLimiter } from "./rate-limit";
 import { listingInsertSchema, listingUpdateSchema } from "./listing-schema";
 import { dealInsertSchema, dealUpdateSchema } from "./deal-schema";
 import { clientLogoInsertSchema, clientLogoUpdateSchema } from "./client-logo-schema";
-import { leadInsertSchema, leadUpdateSchema } from "./lead-schema";
+import { leadInsertSchema, leadUpdateSchema, conciergeLeadSchema } from "./lead-schema";
 import {
   accountSignupSchema,
   addFavoriteSchema,
@@ -274,6 +274,83 @@ export async function registerRoutes(
           lang: lead.preferred_language ?? "en",
         });
       }
+
+      res.json({ ok: true, id: inserted.id });
+    },
+  );
+
+  // ── Concierge widget lead capture ────────────────────────────────────────
+  // Lightweight lead from the bottom-left "Looking for something specific?"
+  // popup. Same `leads` table, but its own schema (no locations required,
+  // email OR phone). lead_source hardcoded so admin can filter by it later.
+  app.post(
+    "/api/leads/concierge",
+    strictLimiter,
+    async (req: Request, res: Response) => {
+      if (!supabaseAdmin) {
+        return res.status(503).json({ message: "Backend not configured" });
+      }
+      const parsed = conciergeLeadSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid submission" });
+      }
+      const { website: honeypot, intent, message, ...rest } = parsed.data;
+      if (honeypot && honeypot.trim().length > 0) {
+        return res.json({ ok: true });
+      }
+
+      // Compose the message with the intent tag so admin sees intent at a
+      // glance in the leads dashboard without needing a new column.
+      const intentLabel = {
+        buy: "Wants to BUY an office",
+        rent: "Wants to RENT an office",
+        browsing: "Just browsing",
+        other: "Other / undecided",
+      }[intent];
+      const composedMessage = message
+        ? `${intentLabel}\n\n${message}`
+        : intentLabel;
+
+      const { data: inserted, error } = await supabaseAdmin
+        .from("leads")
+        .insert({
+          name: rest.name,
+          email: rest.email ?? "",
+          phone: rest.phone ?? "",
+          message: composedMessage,
+          locations: [],
+          lead_source: "concierge_widget",
+          magnet: null,
+          page_url: rest.page_url ?? null,
+          utm_source: rest.utm_source ?? null,
+          utm_medium: rest.utm_medium ?? null,
+          utm_campaign: rest.utm_campaign ?? null,
+          utm_term: rest.utm_term ?? null,
+          utm_content: rest.utm_content ?? null,
+          preferred_language: rest.preferred_language ?? null,
+          status: "new",
+        })
+        .select()
+        .single();
+      if (error) {
+        console.error("[concierge] insert failed:", error.message);
+        return res.status(500).json({ message: "Could not save submission" });
+      }
+
+      void sendAdminLeadNotification({
+        name: rest.name,
+        email: rest.email ?? "(not provided)",
+        phone: rest.phone ?? null,
+        message: composedMessage,
+        lead_source: "concierge_widget",
+        magnet: null,
+        listing_id: null,
+        page_url: rest.page_url ?? null,
+        locations: null,
+        utm_source: rest.utm_source ?? null,
+        utm_medium: rest.utm_medium ?? null,
+        utm_campaign: rest.utm_campaign ?? null,
+      });
 
       res.json({ ok: true, id: inserted.id });
     },
