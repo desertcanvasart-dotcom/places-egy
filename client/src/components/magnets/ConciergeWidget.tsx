@@ -25,7 +25,7 @@ import { detectPreferredLanguage } from "@/lib/detect-language";
 
 const DISMISS_KEY = "concierge_widget_dismissed_this_session";
 const SUBMITTED_KEY = "concierge_widget_submitted_at";
-const SHOW_AFTER_MS = 20_000;
+const SHOW_AFTER_MS = 3_000;
 
 type Intent = "buy" | "rent" | "browsing" | "other";
 type AreaRange = "under-100" | "100-300" | "300-500" | "500-plus";

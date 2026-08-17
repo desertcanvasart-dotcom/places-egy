@@ -22,7 +22,7 @@ import { trackEvent } from "@/lib/analytics";
 // See CornerSlideMagnet.tsx for the rationale.
 const DISMISS_KEY = "blog_magnet_dismissed_this_session";
 const SUBMITTED_KEY = "market_report_submitted_at";
-const SHOW_AFTER_MS = 3000; // 3s — appear early, matching corner popup cadence
+const SHOW_AFTER_MS = 15000; // 15s — matches homepage corner cadence; concierge widget fires first at 3s
 
 function isSuppressed(): boolean {
   try {

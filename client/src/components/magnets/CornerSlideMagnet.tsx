@@ -19,7 +19,7 @@ import { trackEvent } from "@/lib/analytics";
 // in localStorage) — that persists forever across visits.
 const DISMISS_KEY = "corner_magnet_dismissed_this_session";
 const SUBMITTED_KEY = "market_report_submitted_at";
-const SHOW_AFTER_MS = 3000; // 3s — appear early, grab attention while intent is fresh
+const SHOW_AFTER_MS = 15000; // 15s — let the concierge widget (3s) fire first; PDF magnet is the follow-up offer
 
 function isSuppressed(): boolean {
   try {
