@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { MessageCircle, X, ArrowRight, Check, Loader2, ChevronDown } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { detectPreferredLanguage } from "@/lib/detect-language";
+import { markConciergeActive, markConciergeInactive } from "@/lib/magnet-coord";
 
 // Concierge widget — a friendly bottom-LEFT chat-bubble prompt asking
 // visitors what they're looking for. Positioned opposite the PDF market-
@@ -45,8 +46,8 @@ const COPY = {
       other: "Something else",
     } as Record<Intent, string>,
     nameLabel: "Your name",
-    contactLabel: "Email or phone",
-    contactHint: "Either one is fine — we'll reach out on whichever you prefer",
+    emailLabel: "Email",
+    phoneLabel: "Phone",
     messagePlaceholder: "Tell us more (optional) — size, budget, timeline…",
     moreDetails: "Add more details (optional)",
     companyLabel: "Company",
@@ -65,7 +66,8 @@ const COPY = {
     submitting: "Sending…",
     success: "We got it — an advisor will reach out shortly.",
     close: "Close",
-    validationContact: "Please share an email or phone so we can reach you.",
+    validationEmail: "Please share your email so we can reach you.",
+    validationPhone: "Please share your phone number.",
     validationName: "What's your name?",
     error: "Something went wrong — please try again.",
   },
@@ -82,8 +84,8 @@ const COPY = {
       other: "شيء آخر",
     } as Record<Intent, string>,
     nameLabel: "اسمك",
-    contactLabel: "البريد الإلكتروني أو الهاتف",
-    contactHint: "أي منهما يكفي — سنتواصل معك بالطريقة التي تفضلها",
+    emailLabel: "البريد الإلكتروني",
+    phoneLabel: "الهاتف",
     messagePlaceholder: "أخبرنا بالمزيد (اختياري) — المساحة، الميزانية، الوقت…",
     moreDetails: "أضف المزيد من التفاصيل (اختياري)",
     companyLabel: "الشركة",
@@ -102,7 +104,8 @@ const COPY = {
     submitting: "جاري الإرسال…",
     success: "تم استلام طلبك — سيتواصل معك أحد مستشارينا قريبًا.",
     close: "إغلاق",
-    validationContact: "من فضلك شارك بريدًا إلكترونيًا أو رقم هاتف حتى نتمكن من التواصل معك.",
+    validationEmail: "من فضلك شارك بريدك الإلكتروني حتى نتمكن من التواصل معك.",
+    validationPhone: "من فضلك شارك رقم هاتفك.",
     validationName: "ما اسمك؟",
     error: "حدث خطأ ما — من فضلك حاول مرة أخرى.",
   },
@@ -125,7 +128,8 @@ export function ConciergeWidget() {
   const [lang, setLang] = useState<Lang>("en");
 
   const [name, setName] = useState("");
-  const [contact, setContact] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [intent, setIntent] = useState<Intent | null>(null);
   const [message, setMessage] = useState("");
   const [company, setCompany] = useState("");
@@ -143,6 +147,9 @@ export function ConciergeWidget() {
     if (isSuppressed()) return;
     const t = setTimeout(() => {
       setMounted(true);
+      // Set the coord flag so the PDF magnet knows to hold off. Cleared
+      // in dismiss() and on success submit (via SUBMITTED_KEY suppression).
+      markConciergeActive();
       requestAnimationFrame(() => setVisible(true));
       trackEvent("concierge_shown", {});
     }, SHOW_AFTER_MS);
@@ -167,6 +174,8 @@ export function ConciergeWidget() {
     } catch {
       // ignore — worst case they see it again next tab
     }
+    // Free the PDF magnet to fire its 15s timer from now on.
+    markConciergeInactive();
     trackEvent("concierge_dismiss", { expanded });
     setVisible(false);
     setTimeout(() => {
@@ -191,23 +200,24 @@ export function ConciergeWidget() {
       setErrorText(t.validationName);
       return;
     }
-    if (!contact.trim()) {
-      setErrorText(t.validationContact);
+    if (!email.trim() || !email.includes("@")) {
+      setErrorText(t.validationEmail);
+      return;
+    }
+    if (!phone.trim() || phone.trim().length < 4) {
+      setErrorText(t.validationPhone);
       return;
     }
     if (!intent) {
       setErrorText(t.intentLabel);
       return;
     }
-    // Simple heuristic: contains @ → email, else phone. Avoids forcing the
-    // user to pick which field they're filling.
-    const isEmail = contact.includes("@");
     const parsedFrom = budgetFrom ? Number(budgetFrom.replace(/[^\d]/g, "")) : NaN;
     const parsedTo = budgetTo ? Number(budgetTo.replace(/[^\d]/g, "")) : NaN;
     const payload = {
       name: name.trim(),
-      email: isEmail ? contact.trim() : undefined,
-      phone: !isEmail ? contact.trim() : undefined,
+      email: email.trim(),
+      phone: phone.trim(),
       intent,
       message: message.trim() || undefined,
       company: company.trim() || undefined,
@@ -316,19 +326,30 @@ export function ConciergeWidget() {
 
               <div>
                 <label className="block text-xs font-medium text-primary mb-1">
-                  {t.contactLabel}
+                  {t.emailLabel} <span className="text-accent">*</span>
                 </label>
                 <input
-                  type="text"
+                  type="email"
                   inputMode="email"
-                  value={contact}
-                  onChange={(e) => setContact(e.target.value)}
-                  placeholder="you@example.com or +20 100 …"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
                   className="w-full px-3 py-2 rounded-lg border border-border/60 focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none text-sm bg-white"
                 />
-                <p className="text-[10px] text-muted-foreground mt-1 leading-snug">
-                  {t.contactHint}
-                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-primary mb-1">
+                  {t.phoneLabel} <span className="text-accent">*</span>
+                </label>
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+20 100 000 0000"
+                  className="w-full px-3 py-2 rounded-lg border border-border/60 focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none text-sm bg-white"
+                />
               </div>
 
               {intent === "other" && (
@@ -351,7 +372,9 @@ export function ConciergeWidget() {
                   also expand/collapse manually via the header. */}
               {(() => {
                 const shouldAutoOpen =
-                  name.trim().length > 0 && contact.trim().length > 0;
+                  name.trim().length > 0 &&
+                  email.trim().length > 0 &&
+                  phone.trim().length > 0;
                 const open = detailsOpen || shouldAutoOpen;
                 return (
                   <div className="border-t border-border/40 pt-3">

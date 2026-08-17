@@ -24,9 +24,12 @@ function loadGoogleMaps(): Promise<void> {
   }
   loadPromise = new Promise<void>((resolve, reject) => {
     const script = document.createElement("script");
+    // `loading=async` is required for the new PlaceAutocompleteElement
+    // component + suppresses the perf warning. `v=weekly` keeps us on the
+    // latest stable release channel.
     script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(
       API_KEY,
-    )}&libraries=places&v=weekly`;
+    )}&libraries=places&v=weekly&loading=async`;
     script.async = true;
     script.defer = true;
     script.onload = () => resolve();

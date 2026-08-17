@@ -10,6 +10,7 @@ import { MobileBottomBar } from "@/components/layout/MobileBottomBar";
 import { BookMeetingFloat } from "@/components/BookMeetingFloat";
 import { SignupGateModal } from "@/components/SignupGateModal";
 import { ConciergeWidget } from "@/components/magnets/ConciergeWidget";
+import { ChunkErrorBoundary } from "@/components/ChunkErrorBoundary";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { organizationSchema, websiteSchema } from "@/lib/schema";
 
@@ -203,6 +204,7 @@ function PageLoader() {
 
 function Router() {
   return (
+    <ChunkErrorBoundary>
     <Suspense fallback={<PageLoader />}>
     <Switch>
       <Route path="/" component={Home} />
@@ -291,6 +293,7 @@ function Router() {
       <Route component={NotFound} />
     </Switch>
     </Suspense>
+    </ChunkErrorBoundary>
   );
 }
 

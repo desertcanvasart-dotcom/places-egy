@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type * as MapLibreGL from "maplibre-gl";
 import { Map, MapMarker, MarkerContent } from "@/components/ui/map";
-import { MapPin, Search, X, Loader2, Check, Edit2, AlertTriangle } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { MapPin, X, Loader2, Check, Edit2, AlertTriangle } from "lucide-react";
 import { useGoogleMaps } from "@/lib/use-google-maps";
 import {
   fetchProjectCoord,
@@ -40,8 +39,8 @@ export function ProjectPinInput({ projectName }: Props) {
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const [mapInstance, setMapInstance] = useState<MapLibreGL.Map | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const autocompleteContainerRef = useRef<HTMLDivElement>(null);
+  const autocompleteElementRef = useRef<HTMLElement | null>(null);
   const { loaded: gmapsLoaded, error: gmapsError } = useGoogleMaps();
 
   // Debounced lookup — checks if the current project name already has
@@ -77,36 +76,84 @@ export function ProjectPinInput({ projectName }: Props) {
     m.getCanvas().style.cursor = "crosshair";
   };
 
-  // Wire Google Places Autocomplete once the SDK loads + the input mounts
-  // (which only happens once we're in editing mode).
+  // Wire the new google.maps.places.PlaceAutocompleteElement. This is the
+  // web-component replacement for the classic Autocomplete widget which
+  // Google no longer allows new customer accounts to instantiate (as of
+  // March 2025). New element renders its own input + dropdown; we just
+  // mount it into a container div and listen for gmp-select.
   useEffect(() => {
     if (!editing) return;
-    if (!gmapsLoaded || !inputRef.current || autocompleteRef.current) return;
-    const ac = new google.maps.places.Autocomplete(inputRef.current, {
-      bounds: CAIRO_BOUNDS,
-      strictBounds: false,
-      componentRestrictions: { country: "eg" },
-      fields: ["geometry", "formatted_address", "name"],
-    });
-    ac.addListener("place_changed", () => {
-      const place = ac.getPlace();
-      const loc = place.geometry?.location;
-      if (!loc) return;
-      const lat = loc.lat();
-      const lng = loc.lng();
-      mapInstance?.flyTo({ center: [lng, lat], zoom: 16, duration: 800 });
-      commitCoords(lat, lng, place.formatted_address ?? place.name ?? null);
-    });
-    autocompleteRef.current = ac;
-  }, [editing, gmapsLoaded, mapInstance]);
+    if (!gmapsLoaded || !autocompleteContainerRef.current) return;
+    if (autocompleteElementRef.current) return;
 
-  // Prefill the search box with the saved project when re-editing, so the
-  // admin has a starting point instead of empty.
-  useEffect(() => {
-    if (editing && saved && inputRef.current) {
-      inputRef.current.value = saved.address_line ?? saved.project_name;
-    }
-  }, [editing, saved]);
+    // The importLibrary() call is idempotent — safe on re-runs.
+    let cancelled = false;
+    (async () => {
+      const { PlaceAutocompleteElement } = (await google.maps.importLibrary(
+        "places",
+      )) as unknown as { PlaceAutocompleteElement: new (opts: object) => HTMLElement };
+
+      if (cancelled || !autocompleteContainerRef.current) return;
+
+      const el = new PlaceAutocompleteElement({
+        includedRegionCodes: ["eg"],
+        locationBias: {
+          west: CAIRO_BOUNDS.west,
+          south: CAIRO_BOUNDS.south,
+          east: CAIRO_BOUNDS.east,
+          north: CAIRO_BOUNDS.north,
+        },
+      });
+      // Style the injected element so it looks like our other inputs.
+      el.style.width = "100%";
+      autocompleteContainerRef.current.replaceChildren(el);
+      autocompleteElementRef.current = el;
+
+      // Prefill with saved value when editing existing coords.
+      if (saved) {
+        const initialValue = saved.address_line ?? saved.project_name;
+        // The element exposes `.value` at runtime; TS types don't cover it.
+        (el as unknown as { value: string }).value = initialValue;
+      }
+
+      el.addEventListener("gmp-select", async (event: Event) => {
+        // The event's placePrediction has a toPlace() that fetches full
+        // Place details. Request geometry + formatted address.
+        const detail = (event as unknown as {
+          placePrediction: {
+            toPlace: () => {
+              fetchFields: (opts: { fields: string[] }) => Promise<void>;
+              location: { lat: () => number; lng: () => number } | null;
+              formattedAddress: string | null;
+              displayName: string | null;
+            };
+          };
+        }).placePrediction;
+        if (!detail) return;
+        const place = detail.toPlace();
+        await place.fetchFields({
+          fields: ["location", "formattedAddress", "displayName"],
+        });
+        const loc = place.location;
+        if (!loc) return;
+        const lat = loc.lat();
+        const lng = loc.lng();
+        mapInstance?.flyTo({ center: [lng, lat], zoom: 16, duration: 800 });
+        commitCoords(
+          lat,
+          lng,
+          place.formattedAddress ?? place.displayName ?? null,
+        );
+      });
+    })().catch((err) => {
+      console.error("[ProjectPinInput] failed to init PlaceAutocompleteElement:", err);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editing, gmapsLoaded]);
 
   const commitCoords = async (
     latitude: number,
@@ -202,17 +249,20 @@ export function ProjectPinInput({ projectName }: Props) {
       </p>
 
       <div className="relative">
-        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground z-10" />
-        <Input
-          ref={inputRef}
-          placeholder={
-            gmapsLoaded
-              ? `Search Google Maps — e.g. "${trimmedName}, Cairo"`
-              : "Loading Google Maps…"
-          }
-          disabled={!gmapsLoaded}
-          className="bg-white pl-9"
-        />
+        {/* Google's PlaceAutocompleteElement mounts here. It's a web
+            component so it renders its own <input> + dropdown; we style
+            the container so it visually matches our other form inputs. */}
+        <div
+          ref={autocompleteContainerRef}
+          className="[&_gmp-place-autocomplete]:w-full [&_input]:w-full [&_input]:h-10 [&_input]:px-3 [&_input]:rounded-full [&_input]:border [&_input]:border-border/60 [&_input]:bg-white [&_input]:text-sm [&_input]:focus:border-accent [&_input]:focus:outline-none [&_input]:focus:ring-2 [&_input]:focus:ring-accent/20"
+        >
+          {!gmapsLoaded && (
+            <div className="w-full h-10 px-3 rounded-full border border-border/60 bg-white flex items-center text-sm text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              Loading Google Maps…
+            </div>
+          )}
+        </div>
       </div>
 
       {gmapsError && (

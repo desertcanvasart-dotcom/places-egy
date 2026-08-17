@@ -117,6 +117,17 @@ export function Footer() {
                 </li>
               ))}
             </ul>
+            {/* Free Market Report CTA — moved from Company column to fill
+                empty vertical space here; also feels more at home under
+                Services since it IS one of the things PLACES offers. */}
+            <div className="mt-4">
+              <Link
+                href="/resources/market-report"
+                className="inline-flex items-center gap-2 bg-accent hover:bg-accent/90 text-white text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-full shadow-lg shadow-accent/20 transition-all hover:scale-105"
+              >
+                📄 Free Market Report
+              </Link>
+            </div>
           </div>
 
           {/* COMPANY */}
@@ -133,14 +144,6 @@ export function Footer() {
               <li><Link href="/faqs" className="hover:text-white transition-colors">FAQs</Link></li>
               <li><Link href="/glossary" className="hover:text-white transition-colors">Glossary</Link></li>
             </ul>
-            <div className="mt-4">
-              <Link
-                href="/resources/market-report"
-                className="inline-flex items-center gap-2 bg-accent hover:bg-accent/90 text-white text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-full shadow-lg shadow-accent/20 transition-all hover:scale-105"
-              >
-                📄 Free Market Report
-              </Link>
-            </div>
           </div>
         </div>
 

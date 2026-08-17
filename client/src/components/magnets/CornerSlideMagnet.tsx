@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { X, FileText, ArrowRight } from "lucide-react";
 import { LeadForm } from "@/components/LeadForm";
 import { trackEvent } from "@/lib/analytics";
+import { isConciergeActive } from "@/lib/magnet-coord";
 
 // Bottom-right corner slide-in for homepage + listing pages.
 // Dark primary card, accent-red icon + button, larger typography, one-shot

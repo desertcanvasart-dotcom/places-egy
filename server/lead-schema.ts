@@ -91,8 +91,8 @@ export const leadInsertSchema = z
 export const conciergeLeadSchema = z
   .object({
     name: z.string().trim().min(1).max(120),
-    email: z.string().trim().email().max(200).nullable().optional(),
-    phone: z.string().trim().min(4).max(40).nullable().optional(),
+    email: z.string().trim().email().max(200),
+    phone: z.string().trim().min(4).max(40),
     intent: z.enum(["buy", "rent", "browsing", "other"]),
     // Free-text — for when they pick "other" or want to add specifics.
     // Optional even for "other" so submission never fails on it.
@@ -117,11 +117,7 @@ export const conciergeLeadSchema = z
     utm_content: z.string().max(80).nullable().optional(),
     website: z.string().max(200).optional(), // honeypot
   })
-  .strict()
-  .refine((d) => (d.email && d.email.length > 0) || (d.phone && d.phone.length > 0), {
-    message: "Provide email or phone so we can reach you",
-    path: ["email"],
-  });
+  .strict();
 
 // Admin-only PATCH for updating a lead (mark followed-up, add notes, change
 // status). No new leads allowed here — inserts always come through the

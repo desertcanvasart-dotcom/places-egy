@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { X, FileText, ArrowRight } from "lucide-react";
 import { LeadForm } from "@/components/LeadForm";
 import { trackEvent } from "@/lib/analytics";
+import { isConciergeActive } from "@/lib/magnet-coord";
 
 // Corner slide-in for blog pages. Bottom-right, dark primary card with accent
 // red button = high-contrast against the light background. Same UX pattern
@@ -28,6 +29,8 @@ function isSuppressed(): boolean {
   try {
     if (localStorage.getItem(SUBMITTED_KEY)) return true;
     if (sessionStorage.getItem(DISMISS_KEY)) return true;
+    // Wait if the concierge widget is on-screen — no double popups.
+    if (isConciergeActive()) return true;
     return false;
   } catch {
     return false;
