@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { Facebook, Instagram, Linkedin, Phone, Mail, MessageCircle } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 
 const SOCIAL_LINKS = [
   { name: "Instagram", href: "https://www.instagram.com/places.egy", icon: Instagram },
@@ -34,6 +35,22 @@ function SubHeading({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Small helper to keep all footer outbound clicks in one shape. GA4 events
+// are the correct tool for attribution of clicks LEAVING the site — UTMs
+// only work for INBOUND traffic (they live in the URL of the destination).
+// Every outbound event includes source=footer + which channel + the page
+// the click happened on so we can see "which pages drive social follows".
+function trackFooterOutbound(channel: string) {
+  return () => {
+    trackEvent("outbound_click", {
+      channel,
+      source: "footer",
+      page_url:
+        typeof window !== "undefined" ? window.location.pathname : null,
+    });
+  };
+}
+
 export function Footer() {
   return (
     <footer className="bg-primary text-white pt-16 pb-8">
@@ -47,19 +64,33 @@ export function Footer() {
             </p>
             <ul className="space-y-3 text-sm text-gray-300 pt-2">
               <li>
-                <a href={PHONE_TEL} className="flex items-center gap-3 hover:text-white transition-colors">
+                <a
+                  href={PHONE_TEL}
+                  onClick={trackFooterOutbound("call")}
+                  className="flex items-center gap-3 hover:text-white transition-colors"
+                >
                   <Phone className="w-4 h-4 text-accent shrink-0" />
                   <span>{PHONE_DISPLAY}</span>
                 </a>
               </li>
               <li>
-                <a href={WHATSAPP_HREF} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 hover:text-white transition-colors">
+                <a
+                  href={WHATSAPP_HREF}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={trackFooterOutbound("whatsapp")}
+                  className="flex items-center gap-3 hover:text-white transition-colors"
+                >
                   <MessageCircle className="w-4 h-4 text-accent shrink-0" />
                   <span>WhatsApp</span>
                 </a>
               </li>
               <li>
-                <a href={`mailto:${EMAIL}`} className="flex items-center gap-3 hover:text-white transition-colors break-all">
+                <a
+                  href={`mailto:${EMAIL}`}
+                  onClick={trackFooterOutbound("email")}
+                  className="flex items-center gap-3 hover:text-white transition-colors break-all"
+                >
                   <Mail className="w-4 h-4 text-accent shrink-0" />
                   <span>{EMAIL}</span>
                 </a>
@@ -72,6 +103,7 @@ export function Footer() {
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={trackFooterOutbound(name.toLowerCase())}
                   aria-label={`PLACES on ${name}`}
                   className="w-9 h-9 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-gray-300 hover:text-accent hover:border-accent transition-colors"
                 >
@@ -82,6 +114,7 @@ export function Footer() {
                 href="https://www.tiktok.com/@places.eg"
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={trackFooterOutbound("tiktok")}
                 aria-label="PLACES on TikTok"
                 className="w-9 h-9 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-gray-300 hover:text-accent hover:border-accent transition-colors"
               >

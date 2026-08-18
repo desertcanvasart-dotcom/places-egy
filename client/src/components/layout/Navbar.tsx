@@ -2,6 +2,7 @@ import { Link, useLocation } from "wouter";
 import { Menu, X, Building2, TrendingUp, Handshake, Repeat, Coins, MessageCircle, ChevronDown, ArrowRight, Newspaper, HelpCircle, BookOpen } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { trackEvent } from "@/lib/analytics";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -247,12 +248,21 @@ export function Navbar() {
           {/* Contact (flat) */}
           <Link href="/contact" onClick={closeMobile} className="text-lg font-medium py-3 border-b border-white/10 hover:text-accent">Contact</Link>
 
-          {/* WhatsApp direct link */}
+          {/* WhatsApp direct link — GA4 outbound_click so we can measure
+              which pages drive the most WA taps from the mobile nav. */}
           <a
             href={WHATSAPP_HREF}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={closeMobile}
+            onClick={() => {
+              trackEvent("outbound_click", {
+                channel: "whatsapp",
+                source: "navbar_mobile",
+                page_url:
+                  typeof window !== "undefined" ? window.location.pathname : null,
+              });
+              closeMobile();
+            }}
             className="flex items-center gap-2 text-base font-medium py-3 text-accent hover:text-accent/80"
           >
             <MessageCircle className="w-5 h-5" /> WhatsApp us directly
