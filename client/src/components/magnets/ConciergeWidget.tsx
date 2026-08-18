@@ -311,17 +311,34 @@ export function ConciergeWidget() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-primary mb-1">
-                  {t.nameLabel}
-                </label>
-                <input
-                  ref={nameInputRef}
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-border/60 focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none text-sm bg-white"
-                />
+              {/* Name + Phone side-by-side (denser first row), Email full
+                  width below. Keeps the base form to 2 rows instead of 3. */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-primary mb-1">
+                    {t.nameLabel} <span className="text-accent">*</span>
+                  </label>
+                  <input
+                    ref={nameInputRef}
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-border/60 focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none text-sm bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-primary mb-1">
+                    {t.phoneLabel} <span className="text-accent">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+20 100 …"
+                    className="w-full px-3 py-2 rounded-lg border border-border/60 focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none text-sm bg-white"
+                  />
+                </div>
               </div>
 
               <div>
@@ -334,20 +351,6 @@ export function ConciergeWidget() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="w-full px-3 py-2 rounded-lg border border-border/60 focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none text-sm bg-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-primary mb-1">
-                  {t.phoneLabel} <span className="text-accent">*</span>
-                </label>
-                <input
-                  type="tel"
-                  inputMode="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+20 100 000 0000"
                   className="w-full px-3 py-2 rounded-lg border border-border/60 focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none text-sm bg-white"
                 />
               </div>
