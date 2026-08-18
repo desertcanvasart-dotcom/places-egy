@@ -30,14 +30,49 @@ function formatDate(iso: string): string {
   });
 }
 
+// Small color palette so common UTM sources are visually distinct at a
+// glance in the compact table row. Anything unknown falls back to gray.
+const UTM_SOURCE_STYLES: Record<string, string> = {
+  google: "bg-blue-100 text-blue-700",
+  gbp: "bg-blue-100 text-blue-700",
+  instagram: "bg-pink-100 text-pink-700",
+  facebook: "bg-indigo-100 text-indigo-700",
+  linkedin: "bg-sky-100 text-sky-700",
+  whatsapp: "bg-emerald-100 text-emerald-700",
+  newsletter: "bg-amber-100 text-amber-700",
+  email: "bg-amber-100 text-amber-700",
+  tiktok: "bg-neutral-800 text-white",
+};
+
+function utmSourceLabel(source: string | null | undefined): string {
+  return source ?? "direct";
+}
+
 export function LeadsManager() {
   const queryClient = useQueryClient();
   const [expanded, setExpanded] = useState<number | null>(null);
+  const [sourceFilter, setSourceFilter] = useState<string>("all");
 
-  const { data: leads = [], isLoading } = useQuery<Lead[]>({
+  const { data: allLeads = [], isLoading } = useQuery<Lead[]>({
     queryKey: ["admin-leads"],
     queryFn: () => adminFetch("/api/admin/leads"),
   });
+
+  // Distinct UTM sources across the current lead set — powers the filter
+  // dropdown. Includes a synthetic 'direct' bucket for leads without any
+  // utm_source (someone who typed the URL or clicked an untagged link).
+  const sourceCounts = (() => {
+    const counts = new Map<string, number>();
+    for (const l of allLeads) {
+      const key = utmSourceLabel(l.utm_source);
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return counts;
+  })();
+
+  const leads = sourceFilter === "all"
+    ? allLeads
+    : allLeads.filter((l) => utmSourceLabel(l.utm_source) === sourceFilter);
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, patch }: { id: number; patch: Partial<Lead> }) => {
@@ -76,11 +111,35 @@ export function LeadsManager() {
 
   return (
     <div>
-      <div className="mb-5">
+      <div className="mb-5 flex flex-col md:flex-row md:items-end md:justify-between gap-3">
         <p className="text-sm text-muted-foreground">
           Every form submission from the website. Click a row to expand for the
           full message, source, and notes.
         </p>
+
+        {/* Source filter — filters by utm_source. 'Direct' = no UTM tag
+            (someone typed the URL or came from an untagged link). Counts
+            reflect the un-filtered totals so the admin can see channel
+            volume at a glance. */}
+        {allLeads.length > 0 && (
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-muted-foreground">Source:</label>
+            <select
+              value={sourceFilter}
+              onChange={(e) => setSourceFilter(e.target.value)}
+              className="text-xs font-medium px-3 py-1.5 rounded-full border border-border/60 bg-white text-primary focus:outline-none focus:border-accent"
+            >
+              <option value="all">All ({allLeads.length})</option>
+              {Array.from(sourceCounts.entries())
+                .sort((a, b) => b[1] - a[1])
+                .map(([source, count]) => (
+                  <option key={source} value={source}>
+                    {source} ({count})
+                  </option>
+                ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {isLoading ? (
@@ -146,6 +205,21 @@ export function LeadsManager() {
                         </div>
                       </td>
                       <td className="px-4 py-3 text-xs">
+                        {/* UTM source pill on top (channel/campaign attribution),
+                            lead_source below (which form on the site). */}
+                        {(() => {
+                          const src = utmSourceLabel(lead.utm_source);
+                          const style =
+                            UTM_SOURCE_STYLES[src] ??
+                            "bg-neutral-200 text-neutral-700";
+                          return (
+                            <span
+                              className={`inline-block text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full mb-1 ${style}`}
+                            >
+                              {src}
+                            </span>
+                          );
+                        })()}
                         <div className="text-primary/80">{lead.lead_source}</div>
                         {lead.magnet && (
                           <div className="text-muted-foreground">
