@@ -3,11 +3,16 @@ import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
 import type { MarkerOptions, PopupOptions } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-// Point MapLibre at its own worker bundle via Vite's ?url import. This
-// resolves to a hashed asset URL like /assets/maplibre-gl-worker-abc123.mjs
-// that actually exists on disk — otherwise the request falls through the
-// SPA catch-all and returns index.html with a text/html MIME type, which
-// browsers refuse to execute as a module worker → blank map.
+// Point MapLibre at its own worker bundle via Vite's ?url import. Vite
+// emits the worker as a hashed asset like /assets/maplibre-gl-worker-<hash>.mjs.
+// The worker then internally does `import "./maplibre-gl-shared.mjs"` at
+// runtime — a relative path that resolves against the worker's own URL,
+// so it always requests /assets/maplibre-gl-shared.mjs (NOT hashed).
+// Vite has no built-in way to emit that dependency at the exact URL the
+// worker asks for, so we ship the file verbatim from client/public/assets/
+// (see build script for the copy step). If that file is missing, the
+// worker crashes silently on load and every dynamic map subsystem
+// (Google Places dropdown, marker updates, style changes) stops working.
 MapLibreGL.setWorkerUrl(maplibreWorkerUrl);
 import {
   createContext,

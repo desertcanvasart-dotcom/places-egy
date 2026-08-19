@@ -1,6 +1,6 @@
 import { build as esbuild } from "esbuild";
 import { build as viteBuild } from "vite";
-import { rm, readFile } from "fs/promises";
+import { rm, readFile, copyFile, mkdir } from "fs/promises";
 import { generateSitemap } from "./build-sitemap";
 import { prerender } from "./prerender";
 import { buildListingsSeo } from "./build-listings-seo";
@@ -41,8 +41,33 @@ const allowlist = [
   "zod-validation-error",
 ];
 
+// MapLibre's worker runs in the browser and internally does
+// `import "./maplibre-gl-shared.mjs"` at runtime — a relative path
+// that resolves to /assets/maplibre-gl-shared.mjs. Vite doesn't emit
+// this file on its own, so we copy it from node_modules into the built
+// assets dir on every build. If maplibre-gl is upgraded, this pulls
+// the fresh shared file automatically. Do NOT remove — without this,
+// the map worker silently crashes in prod and every dynamic map
+// subsystem stops working (Google Places dropdown, marker updates, etc).
+async function copyMapLibreShared() {
+  const src = "node_modules/maplibre-gl/dist/maplibre-gl-shared.mjs";
+  const destDir = "client/public/assets";
+  const dest = `${destDir}/maplibre-gl-shared.mjs`;
+  try {
+    await mkdir(destDir, { recursive: true });
+    await copyFile(src, dest);
+    console.log(`[maplibre] copied shared.mjs → ${dest}`);
+  } catch (err) {
+    console.warn("[maplibre] failed to copy shared.mjs:", err);
+  }
+}
+
 async function buildAll() {
   await rm("dist", { recursive: true, force: true });
+
+  // Copy the maplibre shared runtime BEFORE Vite runs so it lands in
+  // the vite-built asset folder verbatim (via public/).
+  await copyMapLibreShared();
 
   console.log("building client...");
   await viteBuild();
