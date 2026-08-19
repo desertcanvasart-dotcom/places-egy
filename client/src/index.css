@@ -281,6 +281,139 @@
   font-style: italic;
   color: var(--color-primary);
 }
+/* ─────────────────────────────────────────────────────────────────────────
+   Guide content styling.
+
+   The GuideLayout component wraps content in <article class="guide-content">.
+   We're NOT using @tailwindcss/typography (not installed) so all prose-*
+   utility classes are no-ops. Everything here is real CSS scoped to
+   .guide-content so guide markup renders with proper hierarchy, spacing,
+   and table structure regardless of Tailwind config.
+   ───────────────────────────────────────────────────────────────────────── */
+.guide-content {
+  color: rgba(17, 17, 17, 0.88);
+  font-size: 1rem;
+  line-height: 1.75;
+}
+.guide-content > * + * {
+  margin-top: 1.1rem;
+}
+.guide-content h2 {
+  font-family: var(--font-serif, "Playfair Display", Georgia, serif);
+  font-size: 1.65rem;
+  line-height: 1.25;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+  letter-spacing: -0.01em;
+}
+@media (min-width: 768px) {
+  .guide-content h2 { font-size: 1.9rem; }
+}
+.guide-content h2:first-child { margin-top: 0; }
+.guide-content h3 {
+  font-family: var(--font-serif, "Playfair Display", Georgia, serif);
+  font-size: 1.2rem;
+  line-height: 1.35;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-top: 2rem;
+  margin-bottom: 0.6rem;
+}
+@media (min-width: 768px) {
+  .guide-content h3 { font-size: 1.3rem; }
+}
+.guide-content p {
+  margin-top: 1.1rem;
+  margin-bottom: 0;
+}
+.guide-content p.lead {
+  font-size: 1.15rem;
+  line-height: 1.7;
+  color: rgba(17, 17, 17, 0.92);
+}
+.guide-content strong {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+.guide-content a {
+  color: var(--color-accent);
+  text-decoration: none;
+  font-weight: 500;
+  border-bottom: 1px solid rgba(232, 64, 74, 0.35);
+  transition: border-color 0.2s ease;
+}
+.guide-content a:hover {
+  border-bottom-color: var(--color-accent);
+}
+.guide-content ul, .guide-content ol {
+  margin-top: 1.1rem;
+  padding-left: 1.6rem;
+}
+.guide-content ul { list-style: disc; }
+.guide-content ol { list-style: decimal; }
+.guide-content li {
+  margin-top: 0.45rem;
+  padding-left: 0.25rem;
+}
+.guide-content li::marker {
+  color: var(--color-accent);
+}
+.guide-content li > p {
+  margin-top: 0.4rem;
+}
+.guide-content hr {
+  border: 0;
+  border-top: 1px solid rgba(17, 17, 17, 0.08);
+  margin: 2.5rem 0;
+}
+/* Tables — the main thing the screenshot showed as broken. */
+.guide-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.9rem;
+  background: #ffffff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(17, 17, 17, 0.04);
+  border: 1px solid rgba(17, 17, 17, 0.08);
+}
+.guide-content thead {
+  background: #F8F5F1;
+}
+.guide-content th {
+  text-align: left;
+  padding: 0.9rem 1rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid rgba(17, 17, 17, 0.08);
+  white-space: nowrap;
+}
+.guide-content td {
+  padding: 0.85rem 1rem;
+  vertical-align: top;
+  border-bottom: 1px solid rgba(17, 17, 17, 0.06);
+  color: rgba(17, 17, 17, 0.85);
+}
+.guide-content tbody tr:last-child td { border-bottom: 0; }
+.guide-content tbody tr:hover td { background: rgba(232, 64, 74, 0.02); }
+.guide-content td:first-child { font-weight: 600; color: var(--color-primary); }
+/* Emphasized "callout" style — the .lead paragraph gets slightly larger. */
+.guide-content blockquote {
+  border-left: 3px solid var(--color-accent);
+  padding: 0.5rem 0 0.5rem 1.25rem;
+  margin: 1.5rem 0;
+  color: var(--color-primary);
+  font-style: italic;
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
 /* Google Places Autocomplete dropdown (.pac-container) defaults to
    z-index: 1000 which sits BEHIND Radix Dialog's content (z-50 + Radix
    stacking context). Result: dropdown appears but clicks fall through to

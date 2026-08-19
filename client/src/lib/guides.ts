@@ -39,7 +39,7 @@ export const GUIDES: Guide[] = [
     readMinutes: 9,
     publishedAt: "2026-08-20",
     updatedAt: "2026-08-20",
-    imageUrl: "/images/offices-hero.jpg",
+    imageUrl: "/images/cairo-festival-city.webp",
   },
   {
     slug: "how-to-rent-office-cairo",
@@ -52,7 +52,7 @@ export const GUIDES: Guide[] = [
     readMinutes: 12,
     publishedAt: "2026-08-20",
     updatedAt: "2026-08-20",
-    imageUrl: "/images/offices-hero.jpg",
+    imageUrl: "/images/office-interior.jpg",
   },
   {
     slug: "buy-vs-rent-office-cairo",
@@ -65,7 +65,7 @@ export const GUIDES: Guide[] = [
     readMinutes: 10,
     publishedAt: "2026-08-20",
     updatedAt: "2026-08-20",
-    imageUrl: "/images/offices-hero.jpg",
+    imageUrl: "/images/hero-main.jpg",
   },
   {
     slug: "office-size-guide",
@@ -78,7 +78,7 @@ export const GUIDES: Guide[] = [
     readMinutes: 8,
     publishedAt: "2026-08-20",
     updatedAt: "2026-08-20",
-    imageUrl: "/images/offices-hero.jpg",
+    imageUrl: "/images/general-office.jpg",
   },
   {
     slug: "office-fit-out-costs-cairo",
@@ -91,7 +91,7 @@ export const GUIDES: Guide[] = [
     readMinutes: 11,
     publishedAt: "2026-08-20",
     updatedAt: "2026-08-20",
-    imageUrl: "/images/offices-hero.jpg",
+    imageUrl: "/images/Mivida-Business-Park.jpg",
   },
 ];
 

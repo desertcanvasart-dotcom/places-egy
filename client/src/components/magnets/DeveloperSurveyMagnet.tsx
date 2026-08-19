@@ -504,26 +504,65 @@ export function DeveloperSurveyMagnet({ variant, guideSlug }: Props) {
   );
 
   // ── INLINE variant ────────────────────────────────────────────────────
+  // Editorial-feel CTA banner that lives inside the guide text. Deliberately
+  // NOT a form — dumping a full form mid-article is jarring and breaks the
+  // reading flow. Instead this is a subtle branded aside that OPENS the
+  // popup version of the magnet when clicked. The popup provides the form.
   if (variant === "inline") {
     if (!mounted) return null;
     return (
-      <div
+      <aside
         dir={isRtl ? "rtl" : "ltr"}
-        className="my-10 not-prose bg-white rounded-2xl border border-primary/10 shadow-lg overflow-hidden"
+        className="my-10 not-prose"
       >
-        <div className="bg-primary px-6 py-5 relative">
-          <span className="inline-block text-[10px] font-bold uppercase tracking-widest text-accent bg-accent/20 px-2.5 py-1 rounded-full mb-2">
-            {isRtl ? "استطلاع مجاني · PDF · 2026" : "Free Survey · PDF · 2026"}
-          </span>
-          <h3 className="text-xl md:text-2xl font-serif font-bold text-white leading-tight">
-            {t.hookHeadline}
-          </h3>
-          <p className="text-sm text-white/75 mt-2 leading-relaxed">
-            {t.hookSubtitle}
-          </p>
+        <div className="relative overflow-hidden rounded-2xl border border-accent/20 bg-gradient-to-br from-[#FDFBF8] via-white to-[#FDFBF8] shadow-sm">
+          {/* Accent bar down the side */}
+          <div className={`absolute inset-y-0 ${isRtl ? "right-0" : "left-0"} w-1 bg-accent`} />
+
+          <div className="grid md:grid-cols-[1fr_auto] items-center gap-5 md:gap-8 p-6 md:p-8 pl-8 md:pl-10">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-accent mb-2 inline-flex items-center gap-2">
+                <FileText className="w-3 h-3" />
+                {isRtl ? "استطلاع PLACES 2026" : "PLACES 2026 Survey"}
+              </p>
+              <h3 className="font-serif text-lg md:text-xl font-bold text-primary leading-snug mb-2">
+                {t.hookHeadline}
+              </h3>
+              <p className="text-sm text-primary/70 leading-relaxed max-w-xl">
+                {isRtl
+                  ? "أرقام فعلية من صفقات ميدانية عبر التجمع الخامس، الشيخ زايد، و6 أكتوبر."
+                  : "Real transaction numbers from ground-level deals across New Cairo, Sheikh Zayed, and 6th October."}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                trackEvent("developer_survey_open", {
+                  variant: "inline",
+                  guide_slug: guideSlug ?? null,
+                });
+                // Scroll to the popup (which will already be visible bottom-
+                // left after 15s) OR open it now via a coord flag. Since the
+                // popup is a separate component instance, we can't directly
+                // trigger it — instead we emit a custom event the popup
+                // instance can listen to and expand.
+                window.dispatchEvent(
+                  new CustomEvent("places-open-developer-survey", {
+                    detail: { source: "inline", guide_slug: guideSlug ?? null },
+                  }),
+                );
+              }}
+              className="group inline-flex items-center justify-center gap-2 whitespace-nowrap bg-primary hover:bg-primary/90 text-white text-sm font-medium px-6 py-3 rounded-full transition-all shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5"
+            >
+              {isRtl ? "احصل على PDF مجاناً" : "Get the free PDF"}
+              <ArrowRight
+                className={`w-4 h-4 transition-transform group-hover:translate-x-0.5 ${isRtl ? "rotate-180" : ""}`}
+              />
+            </button>
+          </div>
         </div>
-        {formInner}
-      </div>
+      </aside>
     );
   }
 
