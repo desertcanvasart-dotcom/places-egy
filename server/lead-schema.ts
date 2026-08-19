@@ -119,6 +119,43 @@ export const conciergeLeadSchema = z
   })
   .strict();
 
+// Developer survey lead magnet schema — the /guides/* popup + inline embed
+// that captures info-seeking traffic and emails back the PLACES developer
+// price survey PDF. Same shape as the concierge widget (name, phone, email
+// all required + all the optional qualifiers) so admin sees consistent
+// data across both funnels.
+export const developerSurveyLeadSchema = z
+  .object({
+    name: z.string().trim().min(1).max(120),
+    email: z.string().trim().email().max(200),
+    phone: z.string().trim().min(4).max(40),
+    intent: z.enum(["buy", "rent", "browsing", "other"]),
+    // Optional qualifiers — all identical to the concierge widget so we
+    // can compose one shared "friendlyLead" formatter in the future.
+    company: z.string().trim().max(150).nullable().optional(),
+    job_title: z.string().trim().max(150).nullable().optional(),
+    area_range: z
+      .enum(["under-100", "100-300", "300-500", "500-plus"])
+      .nullable()
+      .optional(),
+    budget_from: z.number().int().nonnegative().max(1_000_000_000).nullable().optional(),
+    budget_to: z.number().int().nonnegative().max(1_000_000_000).nullable().optional(),
+    message: z.string().trim().max(500).nullable().optional(),
+    preferred_language: z.enum(["en", "ar"]).optional(),
+    // 'popup' vs 'inline' so admin can see which placement drove the lead.
+    placement: z.enum(["popup", "inline"]),
+    // Which guide URL surfaced the magnet.
+    guide_slug: z.string().trim().max(120).nullable().optional(),
+    page_url: z.string().max(500).nullable().optional(),
+    utm_source: z.string().max(80).nullable().optional(),
+    utm_medium: z.string().max(80).nullable().optional(),
+    utm_campaign: z.string().max(80).nullable().optional(),
+    utm_term: z.string().max(80).nullable().optional(),
+    utm_content: z.string().max(80).nullable().optional(),
+    website: z.string().max(200).optional(), // honeypot
+  })
+  .strict();
+
 // Admin-only PATCH for updating a lead (mark followed-up, add notes, change
 // status). No new leads allowed here — inserts always come through the
 // public POST route above.

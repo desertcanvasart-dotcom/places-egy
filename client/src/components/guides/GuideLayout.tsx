@@ -8,6 +8,7 @@ import { articleSchema, breadcrumbSchema } from "@/lib/schema";
 import { ArrowRight, ArrowLeft, Clock, ChevronRight, MessageCircle } from "lucide-react";
 import { nextGuide, type Guide } from "@/lib/guides";
 import { trackEvent } from "@/lib/analytics";
+import { DeveloperSurveyMagnet } from "@/components/magnets/DeveloperSurveyMagnet";
 
 // Shared layout for every /guides/* page. Handles:
 //   - <title>, meta description, canonical, og:*
@@ -245,6 +246,10 @@ export function GuideLayout({ guide, wordCount, children }: Props) {
       </main>
 
       <Footer />
+
+      {/* Developer survey popup — bottom-left, 15s delay, session-dismiss.
+          Guide-specific magnet, appears only on /guides/* pages. */}
+      <DeveloperSurveyMagnet variant="popup" guideSlug={guide.slug} />
     </div>
   );
 }

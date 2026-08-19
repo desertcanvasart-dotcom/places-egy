@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { GuideLayout } from "@/components/guides/GuideLayout";
+import { DeveloperSurveyMagnet } from "@/components/magnets/DeveloperSurveyMagnet";
 import { findGuide } from "@/lib/guides";
 
 const guide = findGuide("office-rental-prices-cairo-2026")!;
@@ -131,6 +132,8 @@ export default function OfficeRentalPricesCairo2026Guide() {
         confirm the split before signing. PLACES generally negotiates a
         service-charge cap into new leases at this price point.
       </p>
+
+      <DeveloperSurveyMagnet variant="inline" guideSlug={guide.slug} />
 
       <h2 id="sheikh-zayed">Sheikh Zayed & West Cairo</h2>
 

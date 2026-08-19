@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { GuideLayout } from "@/components/guides/GuideLayout";
+import { DeveloperSurveyMagnet } from "@/components/magnets/DeveloperSurveyMagnet";
 import { findGuide } from "@/lib/guides";
 
 const guide = findGuide("office-fit-out-costs-cairo")!;
@@ -192,6 +193,8 @@ export default function OfficeFitOutCostsCairoGuide() {
         least <strong>EGP 150,000</strong> on reception if client
         perception matters to your business.
       </p>
+
+      <DeveloperSurveyMagnet variant="inline" guideSlug={guide.slug} />
 
       <h2 id="hidden-costs">The four categories most tenants underestimate</h2>
 

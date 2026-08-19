@@ -7,7 +7,12 @@ import { strictLimiter, adminLimiter, uploadLimiter } from "./rate-limit";
 import { listingInsertSchema, listingUpdateSchema } from "./listing-schema";
 import { dealInsertSchema, dealUpdateSchema } from "./deal-schema";
 import { clientLogoInsertSchema, clientLogoUpdateSchema } from "./client-logo-schema";
-import { leadInsertSchema, leadUpdateSchema, conciergeLeadSchema } from "./lead-schema";
+import {
+  leadInsertSchema,
+  leadUpdateSchema,
+  conciergeLeadSchema,
+  developerSurveyLeadSchema,
+} from "./lead-schema";
 import {
   accountSignupSchema,
   addFavoriteSchema,
@@ -24,6 +29,7 @@ import {
   sendMail,
   sendAdminLeadNotification,
   sendMarketReportReply,
+  sendDeveloperSurveyReply,
   escapeHtml,
 } from "./mailer";
 import { handleCalendlyWebhook } from "./calendly-webhook";
@@ -383,6 +389,134 @@ export async function registerRoutes(
         utm_source: rest.utm_source ?? null,
         utm_medium: rest.utm_medium ?? null,
         utm_campaign: rest.utm_campaign ?? null,
+      });
+
+      res.json({ ok: true, id: inserted.id });
+    },
+  );
+
+  // ── Developer survey magnet ─────────────────────────────────────────────
+  // The /guides/* lead magnet — captures name/phone/email + qualifiers in
+  // exchange for the PLACES Cairo Developer Price Survey PDF. Same schema
+  // shape as concierge (with placement + guide_slug added). Auto-reply
+  // email delivers the PDF; admin gets the friendly-formatted notification.
+  app.post(
+    "/api/leads/developer-survey",
+    strictLimiter,
+    async (req: Request, res: Response) => {
+      if (!supabaseAdmin) {
+        return res.status(503).json({ message: "Backend not configured" });
+      }
+      const parsed = developerSurveyLeadSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid submission" });
+      }
+      const {
+        website: honeypot,
+        intent,
+        message,
+        company,
+        job_title,
+        area_range,
+        budget_from,
+        budget_to,
+        placement,
+        guide_slug,
+        ...rest
+      } = parsed.data;
+      if (honeypot && honeypot.trim().length > 0) {
+        return res.json({ ok: true });
+      }
+
+      // Compose the message: intent + qualifiers + placement context, so
+      // admin sees at a glance both what the user asked for AND where the
+      // magnet was surfaced.
+      const intentLabel = {
+        buy: "Wants to BUY an office",
+        rent: "Wants to RENT an office",
+        browsing: "Just browsing",
+        other: "Other / undecided",
+      }[intent];
+      const areaLabel = area_range
+        ? {
+            "under-100": "Under 100 m²",
+            "100-300": "100–300 m²",
+            "300-500": "300–500 m²",
+            "500-plus": "500+ m²",
+          }[area_range]
+        : null;
+      const budgetLabel =
+        budget_from != null || budget_to != null
+          ? `${budget_from != null ? new Intl.NumberFormat("en-US").format(budget_from) : "?"} – ${budget_to != null ? new Intl.NumberFormat("en-US").format(budget_to) : "?"} EGP`
+          : null;
+      const qualifiers: string[] = [];
+      if (company) qualifiers.push(`Company: ${company}`);
+      if (job_title) qualifiers.push(`Title: ${job_title}`);
+      if (areaLabel) qualifiers.push(`Area needed: ${areaLabel}`);
+      if (budgetLabel) qualifiers.push(`Budget: ${budgetLabel}`);
+      if (guide_slug) qualifiers.push(`Read guide: ${guide_slug}`);
+      const composedMessage = [
+        intentLabel,
+        qualifiers.length ? qualifiers.join("\n") : null,
+        message,
+      ]
+        .filter(Boolean)
+        .join("\n\n");
+
+      // lead_source encodes placement so LEAD_SOURCE_LABELS in mailer.ts
+      // can render it distinctly ('Developer survey popup' vs '... inline').
+      const leadSource =
+        placement === "inline"
+          ? "developer_survey_inline"
+          : "developer_survey_popup";
+
+      const { data: inserted, error } = await supabaseAdmin
+        .from("leads")
+        .insert({
+          name: rest.name,
+          email: rest.email,
+          phone: rest.phone,
+          message: composedMessage,
+          locations: [],
+          lead_source: leadSource,
+          magnet: "cairo_developer_survey_2026",
+          page_url: rest.page_url ?? null,
+          utm_source: rest.utm_source ?? null,
+          utm_medium: rest.utm_medium ?? null,
+          utm_campaign: rest.utm_campaign ?? null,
+          utm_term: rest.utm_term ?? null,
+          utm_content: rest.utm_content ?? null,
+          preferred_language: rest.preferred_language ?? null,
+          status: "new",
+        })
+        .select()
+        .single();
+      if (error) {
+        console.error("[developer-survey] insert failed:", error.message);
+        return res.status(500).json({ message: "Could not save submission" });
+      }
+
+      // Admin notification via the existing friendly-formatted mailer.
+      void sendAdminLeadNotification({
+        name: rest.name,
+        email: rest.email,
+        phone: rest.phone,
+        message: composedMessage,
+        lead_source: leadSource,
+        magnet: "cairo_developer_survey_2026",
+        listing_id: null,
+        page_url: rest.page_url ?? null,
+        locations: null,
+        utm_source: rest.utm_source ?? null,
+        utm_medium: rest.utm_medium ?? null,
+        utm_campaign: rest.utm_campaign ?? null,
+      });
+
+      // Auto-reply to the visitor with the PDF download link.
+      void sendDeveloperSurveyReply({
+        toEmail: rest.email,
+        toName: rest.name,
+        lang: rest.preferred_language ?? "en",
       });
 
       res.json({ ok: true, id: inserted.id });

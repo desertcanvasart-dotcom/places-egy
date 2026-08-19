@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { GuideLayout } from "@/components/guides/GuideLayout";
+import { DeveloperSurveyMagnet } from "@/components/magnets/DeveloperSurveyMagnet";
 import { findGuide } from "@/lib/guides";
 
 const guide = findGuide("office-size-guide")!;
@@ -98,6 +99,8 @@ export default function OfficeSizeGuidePage() {
         adjacent circulation — they don't include meeting rooms, kitchen,
         or reception, which come next.
       </p>
+
+      <DeveloperSurveyMagnet variant="inline" guideSlug={guide.slug} />
 
       <h2 id="meeting-rooms">Meeting rooms</h2>
 

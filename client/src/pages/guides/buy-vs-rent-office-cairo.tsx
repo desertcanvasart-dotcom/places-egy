@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { GuideLayout } from "@/components/guides/GuideLayout";
+import { DeveloperSurveyMagnet } from "@/components/magnets/DeveloperSurveyMagnet";
 import { findGuide } from "@/lib/guides";
 
 const guide = findGuide("buy-vs-rent-office-cairo")!;
@@ -90,6 +91,8 @@ export default function BuyVsRentOfficeCairoGuide() {
         minus EGP 7.4M higher outlay). The break-even flips positive
         around <strong>year 4</strong> in a stable market.
       </p>
+
+      <DeveloperSurveyMagnet variant="inline" guideSlug={guide.slug} />
 
       <h2 id="the-catch">The catch: opportunity cost</h2>
 
