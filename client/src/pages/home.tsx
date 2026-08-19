@@ -196,13 +196,14 @@ export default function Home() {
         </section>
       </FadeInSection>
 
-      {/* Master map — HIDDEN while Google Maps API key + CARTO tile-render
-          issues are being resolved. Re-enable by uncommenting once the pin-
-          drop admin picker works end-to-end AND at least a few projects
-          have real coordinates saved (otherwise section renders empty). */}
-      {/* <FadeInSection>
+      {/* Master map. Renders every project we've saved coordinates for in
+          project_coordinates. Auto-updates when new pins are added via
+          the admin picker — React Query refetches on tab focus + on the
+          60s staleTime. If no coords are saved yet the whole section is
+          skipped (see HomepageMap's early-return guard). */}
+      <FadeInSection>
         <HomepageMap />
-      </FadeInSection> */}
+      </FadeInSection>
 
       {/* Developer Logo Strip */}
       <FadeInSection>

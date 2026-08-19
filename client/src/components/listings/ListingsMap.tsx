@@ -48,8 +48,13 @@ export function ListingsMap({ listings }: Props) {
   const { data: coords = [] } = useQuery<ProjectCoord[]>({
     queryKey: ["project-coordinates"],
     queryFn: fetchAllProjectCoords,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
+    // Short staleTime so newly-pinned projects surface quickly. React Query
+    // refetches automatically when the tab regains focus — which means an
+    // admin who pins a project in one tab, then switches back to the
+    // homepage tab, sees the new pin without needing to hard-refresh.
+    staleTime: 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: true,
   });
 
   const coordsMap = useMemo(() => {

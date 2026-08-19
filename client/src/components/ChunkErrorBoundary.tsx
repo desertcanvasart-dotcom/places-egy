@@ -15,6 +15,11 @@ type Props = { children: ReactNode };
 type State = { hasError: boolean };
 
 const RELOAD_KEY = "chunk_error_reload_attempted";
+// If more than this much time has passed since the last reload attempt,
+// treat the boundary as fresh again — a chunk error in a new browsing
+// session after a deploy shouldn't be blocked by a stale one-shot flag
+// from hours ago.
+const RELOAD_FLAG_TTL_MS = 5 * 60 * 1000; // 5 min
 
 function isChunkLoadError(err: unknown): boolean {
   if (!err) return false;
@@ -24,8 +29,23 @@ function isChunkLoadError(err: unknown): boolean {
     name === "ChunkLoadError" ||
     /loading chunk \d+ failed/i.test(msg) ||
     /failed to fetch dynamically imported module/i.test(msg) ||
-    /importing a module script failed/i.test(msg)
+    /importing a module script failed/i.test(msg) ||
+    /dynamically imported module.*(?:failed|not found)/i.test(msg) ||
+    /Unable to preload css/i.test(msg) ||
+    /Loading CSS chunk/i.test(msg)
   );
+}
+
+function reloadFlagIsFresh(): boolean {
+  try {
+    const raw = sessionStorage.getItem(RELOAD_KEY);
+    if (!raw) return false;
+    const ts = Number(raw);
+    if (!Number.isFinite(ts)) return false;
+    return Date.now() - ts < RELOAD_FLAG_TTL_MS;
+  } catch {
+    return false;
+  }
 }
 
 export class ChunkErrorBoundary extends Component<Props, State> {
@@ -42,11 +62,12 @@ export class ChunkErrorBoundary extends Component<Props, State> {
       console.error("[ChunkErrorBoundary] non-chunk error:", error);
       return;
     }
-    // Guard against reload loops: if we already tried once this session,
-    // stop and show the manual fallback instead.
+    // Reload-loop guard with TTL: only skip the auto-reload if we tried
+    // in the last few minutes. Otherwise a legit chunk error hours later
+    // (new deploy, stale tab) would be trapped showing the manual button.
     try {
-      if (sessionStorage.getItem(RELOAD_KEY)) return;
-      sessionStorage.setItem(RELOAD_KEY, "1");
+      if (reloadFlagIsFresh()) return;
+      sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
     } catch {
       // If sessionStorage is blocked, still attempt one reload.
     }
