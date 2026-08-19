@@ -1,6 +1,14 @@
 import { Link } from "wouter";
 import { GuideLayout } from "@/components/guides/GuideLayout";
 import { DeveloperSurveyMagnet } from "@/components/magnets/DeveloperSurveyMagnet";
+import {
+  HighlightNumber,
+  StatCallout,
+  KeyInsight,
+  PullQuote,
+  ComparisonPanel,
+  GuideImage,
+} from "@/components/guides/GuideElements";
 import { findGuide } from "@/lib/guides";
 
 const guide = findGuide("buy-vs-rent-office-cairo")!;
@@ -20,19 +28,35 @@ export default function BuyVsRentOfficeCairoGuide() {
         and the four situations where owning wins outright.
       </p>
 
+      <StatCallout
+        value="~4 years"
+        label="Break-even point in a stable Cairo market"
+        caption="Ownership starts winning against renting somewhere around year 4 on a prime New Cairo unit — but only if the down-payment capital wasn't better deployed in your operating business."
+      />
+
       <h2 id="tldr">TL;DR</h2>
 
-      <p>
-        <strong>Rent if:</strong> you're growing fast, uncertain about
-        headcount in 3 years, want to preserve capital for the operating
-        business, or your team's location preferences are still shifting.
-      </p>
-
-      <p>
-        <strong>Buy if:</strong> you have a stable ~50+ person team, a
-        long-term district commitment, capital that isn't better
-        deployed in the business, and a 7+ year holding view.
-      </p>
+      <ComparisonPanel
+        left={{
+          label: "Rent if",
+          points: [
+            "You're growing fast and don't know your 3-year headcount",
+            "Capital would earn more deployed in the operating business",
+            "Your district commitment is still uncertain",
+            "You want break-clause optionality mid-lease",
+          ],
+        }}
+        right={{
+          label: "Buy if",
+          tone: "accent",
+          points: [
+            "Stable 50+ person team, 7+ year holding view",
+            "Excess capital not better deployed in the business",
+            "Long-term commitment to a specific district",
+            "You need deep customisation of the space",
+          ],
+        }}
+      />
 
       <h2 id="financial-comparison">The financial comparison</h2>
 
@@ -44,7 +68,7 @@ export default function BuyVsRentOfficeCairoGuide() {
       <h3>The rent scenario</h3>
 
       <ul>
-        <li>Asking rent: EGP 750/m²/month</li>
+        <li>Asking rent: <HighlightNumber>EGP 750/m²/month</HighlightNumber></li>
         <li>Monthly rent: EGP 225,000</li>
         <li>Service charges: EGP 24,000/month (EGP 80/m²)</li>
         <li>Total monthly outlay: <strong>EGP 249,000</strong></li>
@@ -52,23 +76,29 @@ export default function BuyVsRentOfficeCairoGuide() {
         <li>5-year total (with 8% annual escalation): <strong>~EGP 17.5M</strong></li>
         <li>Fit-out (one-time, amortized over lease): EGP 2.4M</li>
         <li>
-          <strong>Total 5-year cost: ~EGP 19.9M</strong>
+          Total 5-year cost:{" "}
+          <HighlightNumber>~EGP 19.9M</HighlightNumber>
         </li>
       </ul>
 
       <h3>The buy scenario</h3>
 
       <ul>
-        <li>Purchase price: EGP 24M (~EGP 80,000/m² for admin space in this district)</li>
+        <li>
+          Purchase price:{" "}
+          <HighlightNumber>EGP 24M</HighlightNumber> (~EGP 80,000/m² for
+          admin space in this district)
+        </li>
         <li>Financing: 40% down (EGP 9.6M), 60% financed (EGP 14.4M)</li>
-        <li>Bank rate: 22% (typical corporate rate at time of writing)</li>
+        <li>Bank rate: <HighlightNumber>22%</HighlightNumber> (typical corporate rate at time of writing)</li>
         <li>Monthly mortgage payment (7-year): ~EGP 380,000</li>
         <li>Service charges: EGP 24,000/month</li>
         <li>Property taxes + insurance: ~EGP 8,000/month</li>
         <li>Total monthly outlay: <strong>EGP 412,000</strong></li>
         <li>Fit-out: EGP 2.4M</li>
         <li>
-          <strong>5-year total cash outlay: ~EGP 27.3M</strong> — significantly
+          5-year total cash outlay:{" "}
+          <HighlightNumber>~EGP 27.3M</HighlightNumber> — significantly
           higher than renting.
         </li>
       </ul>
@@ -93,6 +123,14 @@ export default function BuyVsRentOfficeCairoGuide() {
       </p>
 
       <DeveloperSurveyMagnet variant="inline" guideSlug={guide.slug} />
+
+      <KeyInsight label="The 5-year gap">
+        The buy scenario ends year 5 roughly{" "}
+        <HighlightNumber>EGP 17.6M ahead</HighlightNumber> in equity terms
+        — but only if that <HighlightNumber>EGP 9.6M</HighlightNumber> down
+        payment wouldn't have earned more compounding inside your operating
+        business. That's the real trade-off.
+      </KeyInsight>
 
       <h2 id="the-catch">The catch: opportunity cost</h2>
 
@@ -191,6 +229,13 @@ export default function BuyVsRentOfficeCairoGuide() {
         for your business today may not be prime in 5 years. Renting
         preserves the option to move; buying commits you.
       </p>
+
+      <PullQuote>
+        The right answer for most Cairo businesses under 50 people is
+        rent. The right answer for most family businesses with capital on
+        the books and a district they've been in for 20+ years is buy.
+        Everyone else lives in the middle.
+      </PullQuote>
 
       <h2 id="hybrid">The hybrid model: rent core, buy the trophy</h2>
 

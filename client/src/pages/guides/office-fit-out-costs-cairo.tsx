@@ -1,6 +1,14 @@
 import { Link } from "wouter";
 import { GuideLayout } from "@/components/guides/GuideLayout";
 import { DeveloperSurveyMagnet } from "@/components/magnets/DeveloperSurveyMagnet";
+import {
+  HighlightNumber,
+  StatCallout,
+  KeyInsight,
+  PullQuote,
+  BudgetBreakdown,
+  GuideImage,
+} from "@/components/guides/GuideElements";
 import { findGuide } from "@/lib/guides";
 
 const guide = findGuide("office-fit-out-costs-cairo")!;
@@ -12,14 +20,21 @@ export default function OfficeFitOutCostsCairoGuide() {
     <GuideLayout guide={guide} wordCount={WORD_COUNT}>
       <p className="lead" style={{ fontSize: "1.15rem" }}>
         Fitting out a Cairo office in 2026 costs between{" "}
-        <strong>EGP 3,500 and EGP 12,000 per square meter</strong>{" "}
+        <HighlightNumber>EGP 3,500 and EGP 12,000 per m²</HighlightNumber>{" "}
         depending on the finish level. A modest professional-services
-        office at 300 m² lands around <strong>EGP 1.8–2.4 million
-        all-in</strong>; a fully custom-finished tech HQ can be
-        <strong> EGP 3.5 million+</strong>. This guide breaks the budget
-        down by category so you know where the money goes and where
-        you can cut without regret.
+        office at 300 m² lands around{" "}
+        <HighlightNumber>EGP 1.8–2.4 million all-in</HighlightNumber>;
+        a fully custom-finished tech HQ can be{" "}
+        <HighlightNumber>EGP 3.5 million+</HighlightNumber>. This guide
+        breaks the budget down by category so you know where the money
+        goes and where you can cut without regret.
       </p>
+
+      <StatCallout
+        value="EGP 3,500 – 12,000"
+        label="Per m², depending on finish tier"
+        caption="Basic functional at the low end, premium bespoke at the top. A mid-market corporate fit-out lands around EGP 7,000/m²."
+      />
 
       <h2 id="quick-benchmark">Quick benchmark: three finish tiers</h2>
 
@@ -65,6 +80,20 @@ export default function OfficeFitOutCostsCairoGuide() {
         For a mid-market 300 m² office fit-out at ~EGP 7,000/m² (total
         ~EGP 2.1M), here's how the budget typically breaks down:
       </p>
+
+      <BudgetBreakdown
+        total="EGP 2.1M for a 300 m² mid-market fit-out"
+        rows={[
+          { label: "Partitions + doors", pct: 17 },
+          { label: "HVAC + MEP", pct: 18 },
+          { label: "Furniture", pct: 17 },
+          { label: "Flooring", pct: 12 },
+          { label: "Ceiling + lighting", pct: 10 },
+          { label: "IT + AV", pct: 10 },
+          { label: "Reception + branding", pct: 8 },
+          { label: "Contingency + permits", pct: 8 },
+        ]}
+      />
 
       <h3>1. Partitions and doors — 15–20% of budget (~EGP 315k–420k)</h3>
 
@@ -280,6 +309,12 @@ export default function OfficeFitOutCostsCairoGuide() {
         — the effective rate can be 30–50% above what you'd pay
         directly. Only makes sense for tenants without capital or time.
       </p>
+
+      <GuideImage
+        src="/images/Mivida-Business-Park.jpg"
+        alt="Mivida Business Park office building"
+        caption="Fit-out timelines are the difference between paying rent on empty space and moving in on schedule. Every landlord meeting starts with 'we can hand over in 2 weeks' — plan for 8."
+      />
 
       <h2 id="timeline">Timeline: how long fit-out actually takes</h2>
 

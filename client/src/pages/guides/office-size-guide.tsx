@@ -1,6 +1,13 @@
 import { Link } from "wouter";
 import { GuideLayout } from "@/components/guides/GuideLayout";
 import { DeveloperSurveyMagnet } from "@/components/magnets/DeveloperSurveyMagnet";
+import {
+  HighlightNumber,
+  StatCallout,
+  KeyInsight,
+  PullQuote,
+  GuideImage,
+} from "@/components/guides/GuideElements";
 import { findGuide } from "@/lib/guides";
 
 const guide = findGuide("office-size-guide")!;
@@ -11,13 +18,20 @@ export default function OfficeSizeGuidePage() {
   return (
     <GuideLayout guide={guide} wordCount={WORD_COUNT}>
       <p className="lead" style={{ fontSize: "1.15rem" }}>
-        A simple rule of thumb: <strong>plan for 8–12 m² per full-time
-        employee in Cairo</strong>. That covers workstations, meeting
-        rooms, kitchen, reception, and circulation. But the useful
-        version of this question depends on your role mix, meeting
-        density, and hybrid ratio. This guide gives you the sizing
-        table PLACES uses with real clients.
+        A simple rule of thumb: <strong>plan for{" "}
+        <HighlightNumber>8–12 m² per full-time employee</HighlightNumber>{" "}
+        in Cairo</strong>. That covers workstations, meeting rooms,
+        kitchen, reception, and circulation. But the useful version of
+        this question depends on your role mix, meeting density, and
+        hybrid ratio. This guide gives you the sizing table PLACES uses
+        with real clients.
       </p>
+
+      <StatCallout
+        value="8 – 12 m²"
+        label="Per full-time employee, all-in"
+        caption="Below 8 = your team feels cramped and starts leaving. Above 14 = you're overpaying rent for space that doesn't earn its keep."
+      />
 
       <h2 id="the-formula">The formula</h2>
 
@@ -101,6 +115,12 @@ export default function OfficeSizeGuidePage() {
       </p>
 
       <DeveloperSurveyMagnet variant="inline" guideSlug={guide.slug} />
+
+      <GuideImage
+        src="/images/general-office.jpg"
+        alt="Modern open-plan office with rows of desks"
+        caption="Standard open-plan at ~6 m² per seat — the sweet spot most Cairo corporates land at, balancing density with tolerable acoustic + circulation quality."
+      />
 
       <h2 id="meeting-rooms">Meeting rooms</h2>
 
@@ -201,8 +221,17 @@ export default function OfficeSizeGuidePage() {
 
       <p>
         <strong>Subtotal: 339 m²</strong>. Add 18% circulation:{" "}
-        <strong>~400 m² total</strong> — or about 13 m² per person.
+        <HighlightNumber>~400 m² total</HighlightNumber> — or about{" "}
+        <HighlightNumber>13 m² per person</HighlightNumber>.
       </p>
+
+      <KeyInsight label="Reality check">
+        Aggressive hot-desking (below <HighlightNumber>0.7:1</HighlightNumber>{" "}
+        seat ratio) works in tech companies where employees expect no fixed
+        desks. It usually doesn't work in Egyptian professional services
+        firms where senior staff expect assigned space. Size for what your
+        culture actually is, not what you wish it were.
+      </KeyInsight>
 
       <p>
         That's for a firm with a reasonable mix of privacy and open-plan.
