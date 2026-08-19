@@ -120,11 +120,11 @@ export function GuideLayout({ guide, wordCount, children }: Props) {
             </span>
           </div>
 
-          <h1 className="font-serif text-3xl md:text-5xl font-bold text-primary tracking-tight leading-tight mb-4">
+          <h1 className="font-serif text-3xl md:text-5xl font-bold text-primary tracking-tight leading-[1.1] mb-3">
             {guide.title}
           </h1>
 
-          <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed mb-6">
+          <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed mb-3">
             {guide.description}
           </p>
 
@@ -145,7 +145,7 @@ export function GuideLayout({ guide, wordCount, children }: Props) {
           </p>
         </div>
 
-        <hr className="my-10 border-border/30 max-w-4xl mx-auto" />
+        <hr className="mt-6 mb-8 border-border/30 max-w-4xl mx-auto" />
 
         <div className="container mx-auto px-4 md:px-8 max-w-4xl">
           <div className="lg:grid lg:grid-cols-[1fr_240px] lg:gap-10">
@@ -188,7 +188,7 @@ export function GuideLayout({ guide, wordCount, children }: Props) {
             <p className="text-[11px] font-bold uppercase tracking-widest text-accent mb-2">
               Talk to PLACES
             </p>
-            <h3 className="font-serif text-2xl md:text-3xl font-bold mb-3">
+            <h3 className="font-serif text-2xl md:text-3xl font-bold mb-3 text-white">
               Ready to find your office?
             </h3>
             <p className="text-white/80 mb-6 max-w-2xl leading-relaxed">

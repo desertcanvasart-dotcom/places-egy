@@ -107,7 +107,7 @@ export default function GuidesIndexPage() {
         {/* Footer CTA */}
         <section className="container mx-auto px-4 md:px-8 max-w-5xl mt-16">
           <div className="bg-primary text-white rounded-2xl p-8 md:p-10 text-center">
-            <h3 className="font-serif text-2xl md:text-3xl font-bold mb-3">
+            <h3 className="font-serif text-2xl md:text-3xl font-bold mb-3 text-white">
               Need advice specific to your situation?
             </h3>
             <p className="text-white/80 mb-6 max-w-xl mx-auto leading-relaxed">
