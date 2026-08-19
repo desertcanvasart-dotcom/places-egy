@@ -1,5 +1,59 @@
 import type { ReactNode } from "react";
 
+// ─── Guide image ─────────────────────────────────────────────────────────
+// Full-width editorial photo inside a guide article. Uses images from the
+// codebase's existing photo library (client/public/images/). Renders with:
+//   - 16:9 aspect ratio (consistent visual rhythm across guides)
+//   - Rounded corners + subtle shadow
+//   - Optional italic caption below in the same style as PLACES's other
+//     figure captions
+//   - Lazy-loaded so it never blocks initial page paint
+//   - Responsive: full width in the article column on any viewport
+//
+//   <GuideImage
+//     src="/images/cairo-festival-city.webp"
+//     alt="Aerial view of Cairo Festival City Business Park"
+//     caption="Cairo Festival City — anchor of the New Cairo prime price
+//     band at ~EGP 1,100–1,400/m²/month."
+//   />
+export function GuideImage({
+  src,
+  alt,
+  caption,
+  credit,
+}: {
+  src: string;
+  alt: string;
+  caption?: string;
+  credit?: string;
+}) {
+  return (
+    <figure className="not-prose my-6 md:my-8">
+      <div className="relative overflow-hidden rounded-2xl shadow-md shadow-primary/10 ring-1 ring-primary/[0.04] aspect-video bg-primary/5">
+        <img
+          src={src}
+          alt={alt}
+          loading="lazy"
+          decoding="async"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      </div>
+      {(caption || credit) && (
+        <figcaption className="mt-3 text-xs sm:text-sm text-primary/60 leading-relaxed italic px-1">
+          {caption}
+          {credit && (
+            <span className="not-italic text-primary/40">
+              {caption ? " · " : ""}
+              {credit}
+            </span>
+          )}
+        </figcaption>
+      )}
+    </figure>
+  );
+}
+
+
 // Reusable editorial building blocks for /guides/* content. Each element
 // is designed to earn its place — used sparingly (2-5 per guide) so guides
 // feel produced rather than cluttered. Voice matches PLACES brand: serif

@@ -7,6 +7,7 @@ import {
   KeyInsight,
   PullQuote,
   PriceRangeBar,
+  GuideImage,
 } from "@/components/guides/GuideElements";
 import { findGuide } from "@/lib/guides";
 
@@ -131,6 +132,12 @@ export default function OfficeRentalPricesCairo2026Guide() {
 
       <h2 id="new-cairo">New Cairo (Fifth Settlement)</h2>
 
+      <GuideImage
+        src="/images/cairo-festival-city.webp"
+        alt="Cairo Festival City Business Park, New Cairo"
+        caption="Cairo Festival City Business Park — anchor of New Cairo's prime price band at ~EGP 1,100–1,400/m² per month."
+      />
+
       <p>
         <strong>The premium district.</strong> Egypt's most sought-after
         office market in 2026 — and where PLACES sees the strongest tenant
@@ -169,6 +176,12 @@ export default function OfficeRentalPricesCairo2026Guide() {
 
       <h2 id="sheikh-zayed">Sheikh Zayed & West Cairo</h2>
 
+      <GuideImage
+        src="/images/Sheikh-zayed.jpg"
+        alt="Sheikh Zayed business district"
+        caption="Sheikh Zayed has closed most of the price gap with New Cairo — prime rents now sit at EGP 900–1,100/m², roughly 15–20% behind Fifth Settlement."
+      />
+
       <p>
         <strong>The tech and corporate hub of West Cairo.</strong> Sheikh
         Zayed has closed most of the price gap with New Cairo over the past
@@ -197,6 +210,12 @@ export default function OfficeRentalPricesCairo2026Guide() {
 
       <h2 id="6th-october">6th of October City</h2>
 
+      <GuideImage
+        src="/images/October Plaza Business District.webp"
+        alt="October Plaza Business District, 6th of October City"
+        caption="6th of October's newer business parks — where you get the most square meters per pound in Greater Cairo, at EGP 350–750/m²."
+      />
+
       <p>
         <strong>The value district.</strong> 6th October is where you get
         the most square meters per pound in Greater Cairo — with the
@@ -224,6 +243,12 @@ export default function OfficeRentalPricesCairo2026Guide() {
       </p>
 
       <h2 id="downtown-cairo">Downtown Cairo</h2>
+
+      <GuideImage
+        src="/images/downtown-cairo.jpg"
+        alt="Downtown Cairo architecture"
+        caption="Downtown Cairo — restored Belle Époque stock in Garden City and Zamalek still commands EGP 450–550/m², while older CBD buildings drop as low as EGP 200/m²."
+      />
 
       <p>
         <strong>The cheapest quality office rents in Greater Cairo</strong>{" "}
@@ -278,6 +303,12 @@ export default function OfficeRentalPricesCairo2026Guide() {
       </p>
 
       <h2 id="maadi">Maadi</h2>
+
+      <GuideImage
+        src="/images/Maadi.jpg"
+        alt="Maadi tree-lined streets"
+        caption="Maadi's residential character carries through to its office market — near-zero large floorplates, mostly villa conversions, rents from EGP 400–900/m²."
+      />
 
       <p>
         <strong>The niche high-end district.</strong> Maadi supplies a small
