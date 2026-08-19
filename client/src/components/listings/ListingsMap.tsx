@@ -290,11 +290,10 @@ export function ListingsMap({ listings, embedded = false }: Props) {
       <div className="absolute top-3 left-3 z-10 inline-flex items-center gap-1.5 bg-white/95 backdrop-blur-sm rounded-full px-3 py-1.5 text-xs font-medium text-primary shadow-md border border-border/40">
         <span className="w-2 h-2 rounded-full bg-accent" />
         {grouped.length} {grouped.length === 1 ? "project" : "projects"}
-        {unmappedCount > 0 && (
-          <span className="text-muted-foreground">
-            {" "}· {unmappedCount} unit{unmappedCount === 1 ? "" : "s"} unmapped
-          </span>
-        )}
+        {/* Unmapped-count intentionally omitted from the public UI —
+            admin can see it via /dashboard rather than surfacing it as
+            marketing UI. Kept unmappedCount computed above so future
+            admin-only chip is a one-line change. */}
       </div>
     </div>
   );

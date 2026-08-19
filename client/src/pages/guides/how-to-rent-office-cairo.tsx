@@ -1,6 +1,13 @@
 import { Link } from "wouter";
 import { GuideLayout } from "@/components/guides/GuideLayout";
 import { DeveloperSurveyMagnet } from "@/components/magnets/DeveloperSurveyMagnet";
+import {
+  HighlightNumber,
+  StatCallout,
+  KeyInsight,
+  PullQuote,
+  GuideImage,
+} from "@/components/guides/GuideElements";
 import { findGuide } from "@/lib/guides";
 
 const guide = findGuide("how-to-rent-office-cairo")!;
@@ -24,6 +31,12 @@ export default function HowToRentOfficeCairoGuide() {
         the one that keeps you from signing a lease you regret twelve
         months in.
       </p>
+
+      <StatCallout
+        value="7 steps"
+        label="From first requirements list to signed lease"
+        caption="Rushing any step compounds cost over the 3–5 year lease. Doing them in order takes 4–8 weeks and typically saves 15–30% on total lease cost through better negotiation."
+      />
 
       <h2 id="step-1-requirements">Step 1: Nail down your requirements</h2>
 
@@ -186,25 +199,43 @@ export default function HowToRentOfficeCairoGuide() {
         move the total cost of the lease by 20–40%.
       </p>
 
+      <GuideImage
+        src="/images/office-interior.jpg"
+        alt="Interior of a Cairo office space during a site visit"
+        caption="Site visits are where 80% of the elimination happens. Elevator wait times at 9 AM, HVAC noise in an empty unit, and restroom count tell you more than any brochure."
+      />
+
       <h3>Lever 1: The rent-free period</h3>
 
       <p>
-        Cairo landlords routinely give 1–4 months rent-free at the start
-        of a lease — but only if you ask. It's the easiest concession to
-        win and worth 2–7% off the effective rent depending on lease
-        length. Ask for 3 months rent-free on a 3-year lease and 4 on a
-        5-year.
+        Cairo landlords routinely give{" "}
+        <HighlightNumber>1–4 months</HighlightNumber> rent-free at the
+        start of a lease — but only if you ask. It's the easiest concession
+        to win and worth{" "}
+        <HighlightNumber>2–7% off the effective rent</HighlightNumber>{" "}
+        depending on lease length. Ask for 3 months rent-free on a 3-year
+        lease and 4 on a 5-year.
       </p>
 
       <h3>Lever 2: The annual escalation</h3>
 
       <p>
-        Most landlords quote 10–12% annual escalation as "standard." It
-        isn't — it's the opening offer. On institutional-quality
-        buildings you can typically negotiate down to 5–7%. On smaller
-        buildings, the escalation is often tied to inflation with a cap.
-        Push for capped escalation on any lease longer than 3 years.
+        Most landlords quote{" "}
+        <HighlightNumber>10–12% annual escalation</HighlightNumber> as
+        "standard." It isn't — it's the opening offer. On
+        institutional-quality buildings you can typically negotiate down to{" "}
+        <HighlightNumber>5–7%</HighlightNumber>. On smaller buildings, the
+        escalation is often tied to inflation with a cap. Push for capped
+        escalation on any lease longer than 3 years.
       </p>
+
+      <KeyInsight label="High-leverage moment">
+        The four negotiation levers — rent-free, escalation, service
+        charges, and fit-out contribution — collectively move total
+        lease cost by <HighlightNumber>20–40%</HighlightNumber>. Most
+        tenants only negotiate the headline rent. Read this section
+        twice.
+      </KeyInsight>
 
       <h3>Lever 3: Service charges</h3>
 
@@ -221,9 +252,10 @@ export default function HowToRentOfficeCairoGuide() {
         On shell-and-core units, most institutional landlords will
         contribute EGP 1,000 – 3,000 per m² toward tenant fit-out for a
         3+ year lease. This isn't advertised — you have to ask. On a
-        200 m² unit, that's up to EGP 600,000 the landlord pays toward
-        your fit-out. This alone often flips the buy-vs-rent economics
-        for a growing business (
+        200 m² unit, that's up to{" "}
+        <HighlightNumber>EGP 600,000</HighlightNumber> the landlord pays
+        toward your fit-out. This alone often flips the buy-vs-rent
+        economics for a growing business (
         <Link href="/guides/buy-vs-rent-office-cairo">
           full analysis here
         </Link>
@@ -289,6 +321,12 @@ export default function HowToRentOfficeCairoGuide() {
         Landlords sometimes discourage registration to keep the rental
         income informal. That's exactly why you should insist on it.
       </p>
+
+      <PullQuote attribution="PLACES advisory team">
+        The single biggest mistake we see in Cairo commercial leases:
+        signing the landlord's standard contract unedited. Every one of
+        them is lopsided. Expect to negotiate roughly 20 changes.
+      </PullQuote>
 
       <h2 id="mistakes">Common mistakes to avoid</h2>
 

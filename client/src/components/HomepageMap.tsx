@@ -64,11 +64,10 @@ export function HomepageMap() {
               Explore on the map
             </span>
             <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-3 leading-tight tracking-tight">
-              PLACES units across Cairo
+              Where you'll find our units
             </h2>
             <p className="text-muted-foreground text-base md:text-lg leading-relaxed">
-              Every project we broker, one map. Click a pin to see the units
-              available in that building.
+              Every project we broker, on one map.
             </p>
           </div>
 
