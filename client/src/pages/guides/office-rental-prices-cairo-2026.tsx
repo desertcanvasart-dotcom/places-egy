@@ -1,43 +1,75 @@
 import { Link } from "wouter";
 import { GuideLayout } from "@/components/guides/GuideLayout";
 import { DeveloperSurveyMagnet } from "@/components/magnets/DeveloperSurveyMagnet";
+import {
+  HighlightNumber,
+  StatCallout,
+  KeyInsight,
+  PullQuote,
+  PriceRangeBar,
+} from "@/components/guides/GuideElements";
 import { findGuide } from "@/lib/guides";
 
 const guide = findGuide("office-rental-prices-cairo-2026")!;
 
-// Word count — updated when the content is substantively rewritten. Used
-// for schema.org wordCount so Google recognizes long-form article eligibility.
 const WORD_COUNT = 1780;
+
+// Shared district-price dataset — used by the PriceRangeBar chart and by
+// the reference table below. Kept as a constant so any future price
+// update propagates to both places from a single edit.
+const DISTRICT_PRICES = [
+  { label: "New Cairo (Fifth Settlement)", min: 700, max: 1400 },
+  { label: "Sheikh Zayed / West Cairo", min: 500, max: 1100 },
+  { label: "Maadi", min: 400, max: 900 },
+  { label: "6th of October City", min: 350, max: 750 },
+  { label: "Sheraton / Nasr City", min: 300, max: 650 },
+  { label: "Downtown Cairo", min: 200, max: 550 },
+];
 
 export default function OfficeRentalPricesCairo2026Guide() {
   return (
     <GuideLayout guide={guide} wordCount={WORD_COUNT}>
       <p className="lead" style={{ fontSize: "1.15rem" }}>
-        Office rents in Cairo range from about <strong>EGP 200 per square
-        meter per month</strong> in older Downtown buildings to <strong>EGP
-        1,400 per square meter per month</strong> for prime shell-and-core
-        space in New Cairo's Fifth Settlement. This guide breaks down what
-        you'll actually pay across every major business district in 2026 —
-        what drives the differences, and where PLACES is seeing the best
-        value right now.
+        Office rents in Cairo range from about{" "}
+        <HighlightNumber>EGP 200 per square meter per month</HighlightNumber>{" "}
+        in older Downtown buildings to{" "}
+        <HighlightNumber>EGP 1,400 per square meter per month</HighlightNumber>{" "}
+        for prime shell-and-core space in New Cairo's Fifth Settlement. This
+        guide breaks down what you'll actually pay across every major business
+        district in 2026 — what drives the differences, and where PLACES is
+        seeing the best value right now.
       </p>
 
+      <StatCallout
+        value="EGP 200 – 1,400"
+        label="The Cairo office rental spread, 2026"
+        caption="Per m² per month, shell-and-core, exclusive of maintenance and VAT. The 7× gap between low and high is one of the widest in any MENA city market."
+      />
+
       <p>
-        A quick note on how we're using numbers: the ranges below are
-        real 2026 asking rents for administrative office space —{" "}
+        A quick note on how we're using numbers: the ranges below are real
+        2026 asking rents for administrative office space —{" "}
         <strong>not serviced or coworking</strong>, and not retail. Every
-        number is for a shell-and-core or lightly-finished unit,
-        exclusive of maintenance fees, VAT, and utilities. Where a
-        district trades in USD (which happens for prime premises let by
-        international-standard developers), we've converted at ~EGP 48/USD.
+        number is for a shell-and-core or lightly-finished unit, exclusive of
+        maintenance fees, VAT, and utilities. Where a district trades in USD
+        (which happens for prime premises let by international-standard
+        developers), we've converted at{" "}
+        <HighlightNumber>~EGP 48/USD</HighlightNumber>.
       </p>
 
-      <h2 id="quick-reference">Quick reference: 2026 rents by district</h2>
+      <h2 id="quick-reference">Rent ranges at a glance</h2>
 
       <p>
-        The table below is a snapshot — quality band by quality band, the
-        real-world spread is wide within every district. Deeper analysis
-        follows below.
+        Six districts, one chart — sorted from most to least expensive so you
+        can eyeball your options in seconds. The wider the bar, the wider the
+        real-world spread within that district.
+      </p>
+
+      <PriceRangeBar rows={DISTRICT_PRICES} unit="EGP / m² / month" />
+
+      <p>
+        And if you need the full table with USD equivalents and typical unit
+        sizes:
       </p>
 
       <div style={{ overflowX: "auto" }}>
@@ -104,17 +136,17 @@ export default function OfficeRentalPricesCairo2026Guide() {
         office market in 2026 — and where PLACES sees the strongest tenant
         demand. Prime buildings in Waterway, Cairo Festival City Business
         Park, and the CBD spine along the 90th Street commercial belt
-        command <strong>EGP 1,100 – 1,400 per square meter</strong>, with
-        international-standard shell-and-core units in newer towers
+        command <HighlightNumber>EGP 1,100 – 1,400 per m²</HighlightNumber>,
+        with international-standard shell-and-core units in newer towers
         pushing the top of that range.
       </p>
 
       <p>
         Older or smaller admin buildings — think converted floors above
-        street-level retail on 90th Street or in the First Settlement —
-        rent from around <strong>EGP 700</strong>. That's the entry point
-        for a business that wants a New Cairo address without paying prime
-        rates.
+        street-level retail on 90th Street or in the First Settlement — rent
+        from around <HighlightNumber>EGP 700</HighlightNumber>. That's the
+        entry point for a business that wants a New Cairo address without
+        paying prime rates.
       </p>
 
       <p>
@@ -125,13 +157,13 @@ export default function OfficeRentalPricesCairo2026Guide() {
         parking ratios of ~1 space per 40 m² of leased area.
       </p>
 
-      <p>
-        <strong>What to watch:</strong> service-charge inflation. Prime
-        buildings quote all-in figures that include maintenance, but many
-        landlords have raised service charges 15–25% over 2025 rates, so
+      <KeyInsight label="Watch out">
+        Prime buildings quote all-in figures that include maintenance, but
+        many landlords have raised service charges{" "}
+        <HighlightNumber>15–25%</HighlightNumber> over 2025 rates — so
         confirm the split before signing. PLACES generally negotiates a
         service-charge cap into new leases at this price point.
-      </p>
+      </KeyInsight>
 
       <DeveloperSurveyMagnet variant="inline" guideSlug={guide.slug} />
 
@@ -139,20 +171,21 @@ export default function OfficeRentalPricesCairo2026Guide() {
 
       <p>
         <strong>The tech and corporate hub of West Cairo.</strong> Sheikh
-        Zayed has closed most of the price gap with New Cairo over the
-        past three years, driven by tech tenants who wanted campus-style
-        buildings closer to Sheikh Zayed and 6th October residential
-        stock. Prime rents in <strong>SODIC West, Beverly Hills Business
-        Park, and Zed West</strong> now sit at <strong>EGP 900 – 1,100 per
-        square meter</strong>, roughly 15–20% behind New Cairo prime.
+        Zayed has closed most of the price gap with New Cairo over the past
+        three years, driven by tech tenants who wanted campus-style
+        buildings closer to Sheikh Zayed and 6th October residential stock.
+        Prime rents in{" "}
+        <strong>SODIC West, Beverly Hills Business Park, and Zed West</strong>{" "}
+        now sit at <HighlightNumber>EGP 900 – 1,100 per m²</HighlightNumber>,
+        roughly 15–20% behind New Cairo prime.
       </p>
 
       <p>
         The mid-market — small business parks along the 26th of July axis
         and the Cairo–Alex road exit — offers substantially more space for
-        the money: <strong>EGP 500 – 750</strong> gets you a decent shell
-        unit in a low-rise building with parking. That's where most SMB
-        tenants land.
+        the money: <HighlightNumber>EGP 500 – 750</HighlightNumber> gets you
+        a decent shell unit in a low-rise building with parking. That's
+        where most SMB tenants land.
       </p>
 
       <p>
@@ -172,20 +205,22 @@ export default function OfficeRentalPricesCairo2026Guide() {
       </p>
 
       <p>
-        Rents span <strong>EGP 350 – 750 per square meter</strong>, with
-        the higher end reflecting newer buildings in the Central Axis
+        Rents span <HighlightNumber>EGP 350 – 750 per m²</HighlightNumber>,
+        with the higher end reflecting newer buildings in the Central Axis
         (near Mall of Arabia) and larger business parks like{" "}
-        <strong>O West Business Park and 6th of October Central
-        Business District</strong>. Older stock in the industrial pockets
-        (which get quoted as "administrative" but are really warehouse
-        conversions) trades below EGP 350.
+        <strong>
+          O West Business Park and 6th of October Central Business District
+        </strong>
+        . Older stock in the industrial pockets (which get quoted as
+        "administrative" but are really warehouse conversions) trades below
+        EGP 350.
       </p>
 
       <p>
-        <strong>Best fit for:</strong> back-office operations, call
-        centers, logistics coordination, factories that need attached
-        admin floors, and cost-sensitive corporates that don't need a
-        prime address to close deals.
+        <strong>Best fit for:</strong> back-office operations, call centers,
+        logistics coordination, factories that need attached admin floors,
+        and cost-sensitive corporates that don't need a prime address to
+        close deals.
       </p>
 
       <h2 id="downtown-cairo">Downtown Cairo</h2>
@@ -193,29 +228,30 @@ export default function OfficeRentalPricesCairo2026Guide() {
       <p>
         <strong>The cheapest quality office rents in Greater Cairo</strong>{" "}
         — but with an asterisk. Downtown covers a wide spread from{" "}
-        <strong>Garden City and Zamalek</strong> (still command <strong>
-        EGP 450 – 550 per square meter</strong> for restored Belle Époque
-        stock) down to older buildings in the CBD around Kasr El Nil and
-        Talaat Harb, where rents can drop as low as{" "}
-        <strong>EGP 200 – 300</strong>.
+        <strong>Garden City and Zamalek</strong> (still command{" "}
+        <HighlightNumber>EGP 450 – 550 per m²</HighlightNumber> for restored
+        Belle Époque stock) down to older buildings in the CBD around Kasr
+        El Nil and Talaat Harb, where rents can drop as low as{" "}
+        <HighlightNumber>EGP 200 – 300</HighlightNumber>.
       </p>
 
       <p>
-        The catch: Downtown stock is mostly pre-1970 and has real
-        constraints — no dedicated parking (street parking only, and
-        it's brutal), narrow elevators, single-phase power in many
-        buildings, and structural quirks that limit fit-out flexibility.
-        For a law firm or a small consultancy that wants a prestigious
-        address in a period building, Downtown works beautifully. For a
-        30-person tech team with racks of gear, it doesn't.
+        The catch: Downtown stock is mostly pre-1970 and has real constraints
+        — no dedicated parking (street parking only, and it's brutal),
+        narrow elevators, single-phase power in many buildings, and
+        structural quirks that limit fit-out flexibility. For a law firm or
+        a small consultancy that wants a prestigious address in a period
+        building, Downtown works beautifully. For a 30-person tech team with
+        racks of gear, it doesn't.
       </p>
 
-      <p>
-        <strong>Watch out for:</strong> lease structures often include a
-        "furniture" clause that inflates the effective rent by 20–30% —
-        common in older buildings owned by families rather than
-        institutional landlords.
-      </p>
+      <KeyInsight label="Watch out">
+        Lease structures in Downtown often include a "furniture" clause that
+        inflates the effective rent by <HighlightNumber>20–30%</HighlightNumber>
+        {" "}
+        — common in older buildings owned by families rather than
+        institutional landlords. Always ask for the naked-rent breakdown.
+      </KeyInsight>
 
       <h2 id="sheraton-nasr-city">Sheraton & Nasr City</h2>
 
@@ -223,7 +259,7 @@ export default function OfficeRentalPricesCairo2026Guide() {
         <strong>The airport-adjacent play.</strong> Sheraton — technically
         Al-Nozha and Heliopolis Extension — is the district for businesses
         that need to be close to Cairo International. Rents run{" "}
-        <strong>EGP 300 – 650 per square meter</strong>, with newer
+        <HighlightNumber>EGP 300 – 650 per m²</HighlightNumber>, with newer
         buildings on Al-Nozha Road and around the Sheraton and JW Marriott
         commanding the top of the range.
       </p>
@@ -231,8 +267,8 @@ export default function OfficeRentalPricesCairo2026Guide() {
       <p>
         Nasr City proper (Abbas El Akkad, Makram Ebeid, City Stars axis)
         overlaps in price but attracts a different tenant profile —
-        retail-adjacent office space, medical practices, and back-office
-        for the CBD-headquartered banks.
+        retail-adjacent office space, medical practices, and back-office for
+        the CBD-headquartered banks.
       </p>
 
       <p>
@@ -244,67 +280,77 @@ export default function OfficeRentalPricesCairo2026Guide() {
       <h2 id="maadi">Maadi</h2>
 
       <p>
-        <strong>The niche high-end district.</strong> Maadi supplies a
-        small but loyal office market — mostly NGOs, embassies' economic
-        sections, professional services, and businesses whose founders
-        live in Old Maadi. Rents run <strong>EGP 400 – 900 per square
-        meter</strong>, with the premium end (Cornich El Nil and Road 9)
-        pulling closer to New Cairo pricing than the tree-lined
-        residential streets.
+        <strong>The niche high-end district.</strong> Maadi supplies a small
+        but loyal office market — mostly NGOs, embassies' economic sections,
+        professional services, and businesses whose founders live in Old
+        Maadi. Rents run <HighlightNumber>EGP 400 – 900 per m²</HighlightNumber>,
+        with the premium end (Cornich El Nil and Road 9) pulling closer to
+        New Cairo pricing than the tree-lined residential streets.
       </p>
 
       <p>
         Supply is very tight — Maadi has near-zero large-floorplate
         buildings, so most stock is villa conversions or small blocks. If
-        you need more than ~250 m² of contiguous space, expect a long
-        search.
+        you need more than <HighlightNumber>~250 m²</HighlightNumber> of
+        contiguous space, expect a long search.
       </p>
 
       <h2 id="pricing-mechanics">How Cairo office pricing actually works</h2>
 
       <p>
-        A few things that surprise most first-time office tenants in
-        Cairo:
+        A few things that surprise most first-time office tenants in Cairo:
       </p>
 
       <ul>
         <li>
-          <strong>Rents are usually quoted per square meter per month,
-          not per year.</strong> The annual figure is 12× the quoted rate,
-          so an EGP 800/m²/month unit at 200 m² is EGP 1.92 million per year.
+          <strong>Rents are usually quoted per square meter per month, not
+          per year.</strong> The annual figure is 12× the quoted rate, so an
+          EGP 800/m²/month unit at 200 m² is{" "}
+          <HighlightNumber>EGP 1.92 million per year</HighlightNumber>.
         </li>
         <li>
-          <strong>USD-denominated leases are common in prime buildings.
-          </strong> Landlords in New Cairo and prime Sheikh Zayed often quote
-          in USD to hedge against EGP devaluation, then convert to EGP
-          monthly at the day-of-payment rate. This shifts FX risk to the
-          tenant — negotiate a fixed exchange rate or a cap.
+          <strong>USD-denominated leases are common in prime buildings.</strong>{" "}
+          Landlords in New Cairo and prime Sheikh Zayed often quote in USD
+          to hedge against EGP devaluation, then convert to EGP monthly at
+          the day-of-payment rate. This shifts FX risk to the tenant —
+          negotiate a fixed exchange rate or a cap.
         </li>
         <li>
           <strong>Escalation clauses are near-universal.</strong> Most Cairo
-          office leases include an annual escalation of 5–12% baked into
-          the contract. A "cheap" rent with 12% escalation compounds fast
-          — verify the effective 3-year and 5-year totals before signing.
+          office leases include an annual escalation of{" "}
+          <HighlightNumber>5–12%</HighlightNumber> baked into the contract.
+          A "cheap" rent with 12% escalation compounds fast — verify the
+          effective 3-year and 5-year totals before signing.
         </li>
         <li>
-          <strong>Service charges are quoted separately.</strong> Expect
-          EGP 40–120 per square meter on top of rent for maintenance,
-          security, elevators, and common-area cleaning. Prime buildings
-          quote the higher end. Always confirm what's included.
+          <strong>Service charges are quoted separately.</strong> Expect{" "}
+          <HighlightNumber>EGP 40–120 per m²</HighlightNumber> on top of
+          rent for maintenance, security, elevators, and common-area
+          cleaning. Prime buildings quote the higher end. Always confirm
+          what's included.
         </li>
       </ul>
 
-      <h2 id="what-drives-price-differences">What actually drives the price differences</h2>
+      <PullQuote attribution="PLACES advisory team, 2026">
+        The tenants who win in Cairo are the ones who read the total 3-year
+        cost — not the sticker rent. Escalation clauses and uncapped service
+        charges account for more nasty surprises than any other line item.
+      </PullQuote>
+
+      <h2 id="what-drives-price-differences">
+        What actually drives the price differences
+      </h2>
 
       <p>
-        Beyond the district-level averages, four factors set your final
-        rent within a district:
+        Beyond the district-level averages, four factors set your final rent
+        within a district:
       </p>
 
       <ol>
         <li>
-          <strong>Building age.</strong> A 2022 building at the same
-          address as a 2005 one rents 20–35% higher, all else equal.
+          <strong>Building age.</strong> A 2022 building at the same address
+          as a 2005 one rents{" "}
+          <HighlightNumber>20–35% higher</HighlightNumber>, all else equal.
         </li>
         <li>
           <strong>Floor plate.</strong> Bigger floor plates (500+ m²) trade
@@ -313,31 +359,31 @@ export default function OfficeRentalPricesCairo2026Guide() {
         </li>
         <li>
           <strong>Fit-out state.</strong> Fully finished furnished units
-          command a premium of 40–70% over shell-and-core, but that
-          premium disappears if you have specific requirements the
+          command a premium of{" "}
+          <HighlightNumber>40–70%</HighlightNumber> over shell-and-core, but
+          that premium disappears if you have specific requirements the
           existing fit-out doesn't match.
         </li>
         <li>
           <strong>Parking allocation.</strong> Buildings with dedicated
-          parking (rather than shared or street) command 10–15% higher
-          rents. In New Cairo and Sheikh Zayed this is table stakes; in
-          Downtown it's almost never available.
+          parking (rather than shared or street) command{" "}
+          <HighlightNumber>10–15% higher</HighlightNumber> rents. In New
+          Cairo and Sheikh Zayed this is table stakes; in Downtown it's
+          almost never available.
         </li>
       </ol>
 
       <h2 id="what-to-do-next">What to do next</h2>
 
-      <p>
-        If you're actively looking, three practical next steps:
-      </p>
+      <p>If you're actively looking, three practical next steps:</p>
 
       <ol>
         <li>
           <strong>
             <Link href="/listings">Browse current PLACES listings</Link>
           </strong>{" "}
-          filtered to your district and budget. Rent asking prices are
-          right on the card.
+          filtered to your district and budget. Rent asking prices are right
+          on the card.
         </li>
         <li>
           <strong>
@@ -360,8 +406,9 @@ export default function OfficeRentalPricesCairo2026Guide() {
 
       <p>
         Prices update whenever the Egyptian pound moves or a large
-        speculative building delivers into a district. We refresh this
-        guide quarterly — last update: August 2026.
+        speculative building delivers into a district. We refresh this guide
+        quarterly — last update:{" "}
+        <strong>August 2026</strong>.
       </p>
     </GuideLayout>
   );

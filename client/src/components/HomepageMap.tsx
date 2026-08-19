@@ -10,13 +10,13 @@ import { ArrowRight, MapPin } from "lucide-react";
 // coordinates). A user can browse geographically → click any pin → land
 // on the filtered /listings page for that project.
 //
-// Kept in its own component so the fetching + heading + CTA logic doesn't
-// bloat home.tsx and so the same fetch can be reused later on /map if we
-// build a full-screen version.
+// Visually: no colored section wrapper — the map sits directly on the
+// homepage's cream background so it blends with everything above/below
+// instead of reading as a separate module. The heading + subtitle are
+// typographically consistent with the other homepage sections.
 export function HomepageMap() {
   const { data: listings = [], isLoading } = useQuery<Listing[]>({
     queryKey: ["listings", "map-homepage"],
-    // Same 60s freshness as the /listings page — matches user expectations.
     staleTime: 60 * 1000,
     gcTime: 5 * 60 * 1000,
     queryFn: async () => {
@@ -30,20 +30,20 @@ export function HomepageMap() {
     },
   });
 
-  // Skip the whole section on the very first render if the fetch is still
-  // in flight AND we have no cached data. Prevents a big empty box in the
-  // scroll flow.
   const hasContent = useMemo(() => listings.length > 0, [listings]);
 
   if (isLoading && !hasContent) {
+    // Loading skeleton — sits on the same transparent background so the
+    // page rhythm doesn't jump when data arrives.
     return (
-      <section className="py-16 md:py-20 bg-muted">
+      <section className="py-8 md:py-12">
         <div className="container mx-auto px-6 md:px-10">
-          <div className="max-w-2xl mb-8">
-            <div className="h-8 w-72 bg-white/70 rounded animate-pulse mb-3" />
-            <div className="h-4 w-96 bg-white/70 rounded animate-pulse" />
+          <div className="max-w-2xl mb-6">
+            <div className="h-6 w-40 bg-primary/5 rounded-full animate-pulse mb-4" />
+            <div className="h-8 w-72 bg-primary/10 rounded animate-pulse mb-3" />
+            <div className="h-4 w-96 bg-primary/5 rounded animate-pulse" />
           </div>
-          <div className="h-[420px] rounded-2xl bg-white/70 animate-pulse" />
+          <div className="h-[480px] rounded-3xl bg-white/70 animate-pulse" />
         </div>
       </section>
     );
@@ -52,22 +52,26 @@ export function HomepageMap() {
   if (!hasContent) return null;
 
   return (
-    <section className="py-16 md:py-20 bg-muted">
+    <section className="py-8 md:py-12">
       <div className="container mx-auto px-6 md:px-10">
-        <div className="flex items-end justify-between gap-6 mb-8 flex-wrap">
+        {/* Header — same typographic system as the other homepage sections:
+            small accent-red uppercase eyebrow, serif h2, muted body. No
+            fenced background. */}
+        <div className="mb-8 md:mb-10 flex items-end justify-between gap-6 flex-wrap">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-accent mb-3">
+            <span className="inline-flex items-center gap-2.5 text-xs font-bold uppercase tracking-widest text-accent bg-accent/10 px-4 py-2 rounded-full shadow-sm shadow-accent/10 mb-4">
               <MapPin className="w-3.5 h-3.5" />
               Explore on the map
-            </div>
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-3 leading-tight">
+            </span>
+            <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-3 leading-tight tracking-tight">
               PLACES units across Cairo
             </h2>
-            <p className="text-muted-foreground">
-              See every project we broker on one map. Click a pin to view the
-              available units in that building.
+            <p className="text-muted-foreground text-base md:text-lg leading-relaxed">
+              Every project we broker, one map. Click a pin to see the units
+              available in that building.
             </p>
           </div>
+
           <Link
             href="/listings"
             className="hidden md:inline-flex items-center text-primary font-medium hover:text-accent transition-colors group whitespace-nowrap"
@@ -77,8 +81,15 @@ export function HomepageMap() {
           </Link>
         </div>
 
-        <ListingsMap listings={listings} />
+        {/* The map itself gets a soft shadow + rounded frame so it feels
+            like a photographic hero rather than a floating utility box.
+            The shadow color picks up the brand's dark-primary tone at low
+            opacity — subtle grounding rather than heavy separation. */}
+        <div className="relative rounded-3xl overflow-hidden shadow-xl shadow-primary/[0.08] ring-1 ring-primary/[0.06]">
+          <ListingsMap listings={listings} />
+        </div>
 
+        {/* Mobile version of the CTA below the map. */}
         <div className="mt-6 md:hidden">
           <Link
             href="/listings"
