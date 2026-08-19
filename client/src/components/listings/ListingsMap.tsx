@@ -15,6 +15,10 @@ const DEFAULT_ZOOM = 10;
 
 type Props = {
   listings: Listing[];
+  // When embedded on a scrolling page (homepage, guides), disable wheel
+  // zoom so users trying to scroll the page don't accidentally hijack
+  // the zoom. Wheel zoom stays on for the standalone /listings map view.
+  embedded?: boolean;
 };
 
 type GroupedProject = {
@@ -38,7 +42,7 @@ function fromPrice(units: Listing[]): string {
 // ONE pin per project (not per listing). Projects without saved coordinates
 // silently drop off the map — admin sees which are unmapped via the count
 // chip in the legend.
-export function ListingsMap({ listings }: Props) {
+export function ListingsMap({ listings, embedded = false }: Props) {
   const [mapInstance, setMapInstance] = useState<MapLibreGL.Map | null>(null);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const didFitRef = useRef(false);
@@ -160,13 +164,28 @@ export function ListingsMap({ listings }: Props) {
   }
 
   return (
-    <div className="relative h-[70vh] rounded-2xl overflow-hidden border border-border/40 shadow-sm">
+    <div
+      className={`relative rounded-2xl overflow-hidden border border-border/40 shadow-sm ${
+        // Embedded on scrolling pages gets a shorter, mobile-friendly
+        // height so it doesn't dominate the viewport. Full standalone
+        // /listings map gets the taller 70vh treatment.
+        embedded
+          ? "h-[380px] sm:h-[440px] md:h-[520px] lg:h-[560px]"
+          : "h-[60vh] min-h-[420px] md:h-[70vh]"
+      }`}
+    >
       <Map
         ref={(m) => {
           if (m && m !== mapInstance) setMapInstance(m);
         }}
         viewport={{ center: CAIRO_CENTER, zoom: DEFAULT_ZOOM }}
         className="h-full w-full"
+        // When embedded, disable wheel + double-click zoom so users
+        // scrolling past the map on homepage / guides can't hijack
+        // their scroll into a rapid zoom. Standalone /listings map
+        // (embedded=false) keeps all interactions enabled.
+        scrollZoom={!embedded}
+        doubleClickZoom={!embedded}
       >
         {grouped.map((g) => {
           const key = g.projectName.trim().toLowerCase();

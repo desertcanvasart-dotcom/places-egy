@@ -86,7 +86,7 @@ export function HomepageMap() {
             The shadow color picks up the brand's dark-primary tone at low
             opacity — subtle grounding rather than heavy separation. */}
         <div className="relative rounded-3xl overflow-hidden shadow-xl shadow-primary/[0.08] ring-1 ring-primary/[0.06]">
-          <ListingsMap listings={listings} />
+          <ListingsMap listings={listings} embedded />
         </div>
 
         {/* Mobile version of the CTA below the map. */}

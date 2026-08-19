@@ -41,22 +41,24 @@ export function StatCallout({
   caption?: string;
 }) {
   return (
-    <div className="not-prose my-8 border-y border-accent/20 py-6 md:py-8 grid md:grid-cols-[auto_1fr] items-center gap-4 md:gap-8">
+    <div className="not-prose my-6 md:my-8 border-y border-accent/20 py-6 md:py-8 grid md:grid-cols-[auto_1fr] items-center gap-3 md:gap-8">
       <div
-        className="font-serif font-bold text-accent leading-none"
+        className="font-serif font-bold text-accent leading-none break-words"
         style={{
           fontVariantNumeric: "tabular-nums",
-          fontSize: "clamp(2.25rem, 5vw, 3.25rem)",
+          // Smaller minimum for narrow phones so long values like
+          // "EGP 200 – 1,400" don't overflow the container.
+          fontSize: "clamp(1.75rem, 6vw, 3.25rem)",
         }}
       >
         {value}
       </div>
       <div>
-        <p className="text-sm font-semibold text-primary uppercase tracking-widest">
+        <p className="text-xs md:text-sm font-semibold text-primary uppercase tracking-widest leading-snug">
           {label}
         </p>
         {caption && (
-          <p className="text-sm text-primary/60 mt-1 leading-relaxed">
+          <p className="text-sm text-primary/60 mt-1.5 leading-relaxed">
             {caption}
           </p>
         )}
@@ -80,12 +82,12 @@ export function KeyInsight({
   label?: string;
 }) {
   return (
-    <aside className="not-prose my-8 rounded-2xl bg-[#FDFBF8] border border-accent/15 p-6 relative overflow-hidden">
+    <aside className="not-prose my-6 md:my-8 rounded-2xl bg-[#FDFBF8] border border-accent/15 p-5 sm:p-6 pl-6 sm:pl-7 relative overflow-hidden">
       <div className="absolute inset-y-0 left-0 w-1 bg-accent" />
       <p className="text-[10px] font-bold uppercase tracking-widest text-accent mb-2">
         {label}
       </p>
-      <div className="text-primary text-base leading-relaxed">{children}</div>
+      <div className="text-primary text-sm sm:text-base leading-relaxed">{children}</div>
     </aside>
   );
 }
@@ -101,12 +103,12 @@ export function PullQuote({
   attribution?: string;
 }) {
   return (
-    <blockquote className="not-prose my-10 border-l-4 border-accent pl-6 md:pl-8">
-      <p className="font-serif text-xl md:text-2xl italic text-primary leading-snug">
+    <blockquote className="not-prose my-8 md:my-10 border-l-4 border-accent pl-5 sm:pl-6 md:pl-8">
+      <p className="font-serif text-lg sm:text-xl md:text-2xl italic text-primary leading-snug">
         {children}
       </p>
       {attribution && (
-        <p className="mt-3 text-xs font-semibold uppercase tracking-widest text-primary/60">
+        <p className="mt-3 text-[11px] sm:text-xs font-semibold uppercase tracking-widest text-primary/60">
           — {attribution}
         </p>
       )}
@@ -142,13 +144,13 @@ export function PriceRangeBar({
   const span = globalMax - globalMin || 1;
 
   return (
-    <div className="not-prose my-8 rounded-2xl border border-border/60 bg-white p-6 md:p-7 shadow-sm">
-      <div className="flex items-center justify-between mb-5">
-        <p className="text-xs font-bold uppercase tracking-widest text-primary/60">
+    <div className="not-prose my-6 md:my-8 rounded-2xl border border-border/60 bg-white p-4 sm:p-6 md:p-7 shadow-sm">
+      <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
+        <p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-primary/60">
           Rental range · by district
         </p>
         <p
-          className="text-xs text-primary/60 font-medium"
+          className="text-[10px] sm:text-xs text-primary/60 font-medium"
           style={{ fontVariantNumeric: "tabular-nums" }}
         >
           {unit}
@@ -161,12 +163,12 @@ export function PriceRangeBar({
           const widthPct = ((row.max - row.min) / span) * 100;
           return (
             <div key={row.label}>
-              <div className="flex items-baseline justify-between mb-1.5">
-                <p className="text-sm font-semibold text-primary">
+              <div className="flex items-baseline justify-between gap-2 mb-1.5 flex-wrap">
+                <p className="text-xs sm:text-sm font-semibold text-primary leading-snug">
                   {row.label}
                 </p>
                 <p
-                  className="text-xs font-medium text-primary/70"
+                  className="text-[11px] sm:text-xs font-medium text-primary/70 whitespace-nowrap"
                   style={{ fontVariantNumeric: "tabular-nums" }}
                 >
                   {format(row.min)} – {format(row.max)}
@@ -326,13 +328,13 @@ export function BudgetBreakdown({
 }) {
   const palette = ["#E8404A", "#171717", "#4A4A4A", "#8A6C50", "#B8956B", "#6B7A88", "#A85A66"];
   return (
-    <div className="not-prose my-8 rounded-2xl border border-border/60 bg-white p-6 md:p-7 shadow-sm">
-      <div className="flex items-baseline justify-between mb-4">
-        <p className="text-xs font-bold uppercase tracking-widest text-primary/60">
+    <div className="not-prose my-6 md:my-8 rounded-2xl border border-border/60 bg-white p-4 sm:p-6 md:p-7 shadow-sm">
+      <div className="flex items-baseline justify-between gap-3 mb-4 flex-wrap">
+        <p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-primary/60">
           Budget breakdown
         </p>
         <p
-          className="text-xs font-medium text-primary"
+          className="text-[11px] sm:text-xs font-medium text-primary"
           style={{ fontVariantNumeric: "tabular-nums" }}
         >
           {total}

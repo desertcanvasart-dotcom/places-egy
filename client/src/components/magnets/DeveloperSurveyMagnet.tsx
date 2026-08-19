@@ -519,7 +519,7 @@ export function DeveloperSurveyMagnet({ variant, guideSlug }: Props) {
           {/* Accent bar down the side */}
           <div className={`absolute inset-y-0 ${isRtl ? "right-0" : "left-0"} w-1 bg-accent`} />
 
-          <div className="grid md:grid-cols-[1fr_auto] items-center gap-5 md:gap-8 p-6 md:p-8 pl-8 md:pl-10">
+          <div className="grid md:grid-cols-[1fr_auto] items-center gap-4 sm:gap-5 md:gap-8 p-5 sm:p-6 md:p-8 pl-6 sm:pl-8 md:pl-10">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-accent mb-2 inline-flex items-center gap-2">
                 <FileText className="w-3 h-3" />
@@ -553,7 +553,7 @@ export function DeveloperSurveyMagnet({ variant, guideSlug }: Props) {
                   }),
                 );
               }}
-              className="group inline-flex items-center justify-center gap-2 whitespace-nowrap bg-primary hover:bg-primary/90 text-white text-sm font-medium px-6 py-3 rounded-full transition-all shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5"
+              className="group inline-flex items-center justify-center gap-2 whitespace-nowrap w-full md:w-auto bg-primary hover:bg-primary/90 text-white text-sm font-medium px-6 py-3 rounded-full transition-all shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5"
             >
               {isRtl ? "احصل على PDF مجاناً" : "Get the free PDF"}
               <ArrowRight
