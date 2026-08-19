@@ -97,6 +97,33 @@ export function registerRedirects(app: Express) {
           return;
         }
 
+        // Retired "Guides and Tips" WP category → admin-offices. Same reason
+        // as the uncategorized shim above: prevents 404s from any external
+        // links or GSC-indexed URLs pointing at the old slug. Covers the
+        // common WordPress slug variants for this category name.
+        const isRetiredGuidesTips =
+          catLower === "guides-and-tips" ||
+          catLower === "guides-tips" ||
+          catLower === "guides" ||
+          catLower === "tips" ||
+          catLower === "guides-tips-en" ||
+          // Arabic variants. WP usually slugifies "أدلة ونصائح" by
+          // replacing the space with a hyphen but keeps the original
+          // characters in the URL when someone links to it uncleaned.
+          // Match both forms.
+          catRaw === "أدلة ونصائح" ||
+          catRaw === "أدلة-ونصائح" ||
+          catRaw === "الأدلة-والنصائح" ||
+          catRaw === "الأدلة والنصائح" ||
+          catRaw === "نصائح" ||
+          catRaw === "أدلة";
+        if (isRetiredGuidesTips) {
+          const replacement =
+            base === "/ar/blog" ? "المكاتب-الإدارية" : "admin-offices";
+          res.redirect(301, `${base}/category/${encodeURIComponent(replacement)}`);
+          return;
+        }
+
         // Legacy query-string form → clean path form (only when the request
         // came in via ?category=; already-clean path URLs are left alone).
         if (isBlogEn || isBlogAr) {
