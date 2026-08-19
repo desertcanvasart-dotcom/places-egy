@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -108,6 +109,26 @@ export default function ListingsPage() {
   const [searchQuery, setSearchQuery] = useState(getInitialQuery);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [viewMode, setViewMode] = useState<"grid" | "list" | "map">("grid");
+
+  // Sync searchQuery + viewMode from the URL every time wouter's location
+  // changes. When a visitor clicks a project pin on the map, we navigate
+  // to /listings?q=<project> via client-side routing — the component
+  // doesn't remount, so without this effect the useState initializers
+  // never re-run and the query is silently ignored. We also switch to
+  // grid view on navigation-with-query so the user actually SEES the
+  // filtered units rather than staying in map view.
+  const [wouterLocation] = useLocation();
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get("q") ?? "";
+    const project = params.get("project") ?? "";
+    const effective = q || project;
+    if (effective) {
+      setSearchQuery(effective);
+      setViewMode("grid");
+    }
+  }, [wouterLocation]);
 
   useListingsIndexability();
 
