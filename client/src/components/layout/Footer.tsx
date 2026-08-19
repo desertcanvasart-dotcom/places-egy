@@ -173,6 +173,7 @@ export function Footer() {
             </ul>
             <SubHeading>Resources</SubHeading>
             <ul className="space-y-2 text-sm text-gray-300">
+              <li><Link href="/guides" className="hover:text-white transition-colors">Guides</Link></li>
               <li><Link href="/blog" className="hover:text-white transition-colors">Blog</Link></li>
               <li><Link href="/faqs" className="hover:text-white transition-colors">FAQs</Link></li>
               <li><Link href="/glossary" className="hover:text-white transition-colors">Glossary</Link></li>

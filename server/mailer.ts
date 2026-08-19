@@ -289,6 +289,83 @@ function brandedShell(opts: {
 
 // ── Admin: new lead notification ────────────────────────────────────────────
 // Clean scannable summary the PLACES team can act on in 5 seconds.
+
+// Human-facing labels for the internal slugs stored in leads.lead_source,
+// leads.magnet, leads.locations, and leads.page_url. The DB keeps the raw
+// slug (greppable, filterable), the email shows the friendly form. When
+// adding a new lead source or magnet slug, add its label here too — anything
+// unknown gracefully falls back to a title-cased version of the slug.
+const LEAD_SOURCE_LABELS: Record<string, string> = {
+  corner_popup: "Homepage popup",
+  blog_slide_up: "Blog popup",
+  footer: "Footer button",
+  market_report_page: "Market report page",
+  concierge_widget: "Concierge chat widget",
+  contact_page: "Contact page",
+  listing_inquiry: "Listing inquiry form",
+  exit_intent: "Exit-intent popup",
+  favorites_email_me_now: "'Email my saved list' button",
+};
+
+const MAGNET_LABELS: Record<string, string> = {
+  cairo_office_market_report_2026: "Cairo Office Market Report (2026)",
+};
+
+const LOCATION_LABELS: Record<string, string> = {
+  "new-cairo": "New Cairo",
+  "sheikh-zayed": "Sheikh Zayed",
+  "6th-october": "6th October",
+  "downtown-cairo": "Downtown Cairo",
+  sheraton: "Sheraton",
+  maadi: "Maadi",
+};
+
+// Title-case a slug as a graceful fallback ("some_slug-here" → "Some Slug Here").
+function humanizeSlug(slug: string): string {
+  return slug
+    .replace(/[-_]+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function friendlyLeadSource(slug: string): string {
+  return LEAD_SOURCE_LABELS[slug] ?? humanizeSlug(slug);
+}
+function friendlyMagnet(slug: string): string {
+  return MAGNET_LABELS[slug] ?? humanizeSlug(slug);
+}
+function friendlyLocations(locations: string[]): string {
+  return locations.map((l) => LOCATION_LABELS[l] ?? humanizeSlug(l)).join(", ");
+}
+// Convert URL paths to readable page names. "/" → "Homepage",
+// "/listings/123-mivida-tower" → "Listing detail (Mivida Tower)", etc.
+function friendlyPageUrl(pageUrl: string): string {
+  if (!pageUrl || pageUrl === "/") return "Homepage";
+  if (pageUrl === "/listings") return "Listings page";
+  if (pageUrl.startsWith("/listings/")) {
+    const rest = pageUrl.slice("/listings/".length);
+    // Format: <id>-<slug>
+    const dashIdx = rest.indexOf("-");
+    const nameSlug = dashIdx >= 0 ? rest.slice(dashIdx + 1) : rest;
+    const readable = humanizeSlug(nameSlug);
+    return readable ? `Listing detail (${readable})` : "Listing detail";
+  }
+  if (pageUrl.startsWith("/blog/")) return `Blog post: ${humanizeSlug(pageUrl.slice("/blog/".length))}`;
+  if (pageUrl === "/blog") return "Blog";
+  if (pageUrl.startsWith("/guides/")) return `Guide: ${humanizeSlug(pageUrl.slice("/guides/".length))}`;
+  if (pageUrl === "/guides") return "Guides hub";
+  if (pageUrl.startsWith("/services/")) return `Service: ${humanizeSlug(pageUrl.slice("/services/".length))}`;
+  if (pageUrl === "/services") return "Services page";
+  if (pageUrl === "/contact") return "Contact page";
+  if (pageUrl === "/why-places") return "Why PLACES";
+  if (pageUrl.startsWith("/admin/")) return `Office type: ${humanizeSlug(pageUrl.slice("/admin/".length))}`;
+  if (pageUrl.startsWith("/developers/")) return `Developer: ${humanizeSlug(pageUrl.slice("/developers/".length))}`;
+  if (pageUrl === "/saved") return "Saved list";
+  if (pageUrl === "/resources/market-report") return "Market report landing page";
+  // Fallback — strip leading slash + humanize.
+  return humanizeSlug(pageUrl.replace(/^\//, "")) || pageUrl;
+}
+
 export type AdminLeadEmailOptions = {
   name: string;
   email: string;
@@ -317,23 +394,26 @@ function renderAdminLeadHtml(lead: AdminLeadEmailOptions): string {
   `;
 
   const locationsRow = lead.locations && lead.locations.length > 0
-    ? row("Interested in", escapeHtml(lead.locations.join(", ")))
+    ? row("Interested in", escapeHtml(friendlyLocations(lead.locations)))
     : "";
   const magnetRow = lead.magnet
-    ? row("Lead magnet", escapeHtml(lead.magnet))
+    ? row("Lead magnet", escapeHtml(friendlyMagnet(lead.magnet)))
     : "";
   const listingRow = lead.listing_id
     ? row("Listing #", String(lead.listing_id))
     : "";
+  // Humanize UTM values individually so 'gbp' → 'GBP', 'cpc' → 'CPC', etc.
   const utmParts = [
-    lead.utm_source && `source: ${lead.utm_source}`,
-    lead.utm_medium && `medium: ${lead.utm_medium}`,
-    lead.utm_campaign && `campaign: ${lead.utm_campaign}`,
+    lead.utm_source && `Source: ${humanizeSlug(lead.utm_source)}`,
+    lead.utm_medium && `Medium: ${humanizeSlug(lead.utm_medium)}`,
+    lead.utm_campaign && `Campaign: ${humanizeSlug(lead.utm_campaign)}`,
   ].filter(Boolean);
   const utmRow = utmParts.length > 0
     ? row("Campaign", escapeHtml(utmParts.join(" · ")))
     : "";
-  const pageRow = lead.page_url ? row("From page", escapeHtml(lead.page_url)) : "";
+  const pageRow = lead.page_url
+    ? row("Submitted from", escapeHtml(friendlyPageUrl(lead.page_url)))
+    : "";
 
   const messageBlock = lead.message
     ? `
@@ -353,7 +433,7 @@ function renderAdminLeadHtml(lead: AdminLeadEmailOptions): string {
       ${escapeHtml(lead.name)}
     </h1>
     <p style="margin:0 0 24px 0; font-size:13px; color:#64748B;">
-      Source: ${escapeHtml(lead.lead_source)}
+      From: ${escapeHtml(friendlyLeadSource(lead.lead_source))}
     </p>
 
     <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
@@ -385,9 +465,17 @@ export async function sendAdminLeadNotification(
     preheader: `${lead.name} · ${lead.email}${lead.phone ? " · " + lead.phone : ""}`,
     body,
   });
+  // Subject line: friendly + scannable. Shows the person's name first (what
+  // the admin actually cares about), then a short context tag so multiple
+  // leads in the inbox don't look identical. Examples:
+  //   "New lead — Nancy Eslam · Market Report"
+  //   "New lead — Sarah · Concierge chat widget"
+  const subjectTag = lead.magnet
+    ? friendlyMagnet(lead.magnet)
+    : friendlyLeadSource(lead.lead_source);
   return sendMail({
     to: "admin@places-egy.com",
-    subject: `New lead: ${lead.name}${lead.magnet ? ` (${lead.magnet})` : ""}`,
+    subject: `New lead — ${lead.name} · ${subjectTag}`,
     html,
     replyTo: lead.email,
   });

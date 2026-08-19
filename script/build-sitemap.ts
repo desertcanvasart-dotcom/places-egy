@@ -13,6 +13,8 @@ const SITE_ORIGIN = "https://places-egy.com";
 const SITEMAP_PATH = path.resolve("dist/public/sitemap.xml");
 const BLOG_CHANGEFREQ = "monthly";
 const BLOG_PRIORITY = "0.6";
+const GUIDE_CHANGEFREQ = "monthly";
+const GUIDE_PRIORITY = "0.8"; // evergreen SEO content — higher than blog
 
 type WpPost = {
   slug: string;
@@ -66,7 +68,73 @@ function buildPostEntries(posts: WpPost[]): string {
     .join("\n");
 }
 
+// Inject the /guides hub + every guide slug from lib/guides.ts into the
+// sitemap. Read the source file rather than importing it so this script
+// stays plain TS (no Vite aliases to resolve).
+async function readGuideSlugs(): Promise<{ slug: string; updatedAt: string }[]> {
+  try {
+    const src = await readFile(
+      path.resolve("client/src/lib/guides.ts"),
+      "utf-8",
+    );
+    // Very small parser — matches every { slug: "...", ..., updatedAt: "..." }
+    // block. Both are simple string literals in the source of truth.
+    const slugs = [...src.matchAll(/slug:\s*"([^"]+)"[\s\S]*?updatedAt:\s*"([^"]+)"/g)];
+    return slugs.map((m) => ({ slug: m[1], updatedAt: m[2] }));
+  } catch (err) {
+    console.warn("[sitemap] failed to read guides source:", err);
+    return [];
+  }
+}
+
+function buildGuideEntries(
+  hubDate: string,
+  guides: { slug: string; updatedAt: string }[],
+): string {
+  const hubEntry =
+    `  <url>\n` +
+    `    <loc>${SITE_ORIGIN}/guides</loc>\n` +
+    `    <lastmod>${hubDate}</lastmod>\n` +
+    `    <changefreq>${GUIDE_CHANGEFREQ}</changefreq>\n` +
+    `    <priority>0.9</priority>\n` +
+    `  </url>`;
+  const per = guides
+    .map(
+      (g) =>
+        `  <url>\n` +
+        `    <loc>${SITE_ORIGIN}/guides/${g.slug}</loc>\n` +
+        `    <lastmod>${g.updatedAt}</lastmod>\n` +
+        `    <changefreq>${GUIDE_CHANGEFREQ}</changefreq>\n` +
+        `    <priority>${GUIDE_PRIORITY}</priority>\n` +
+        `  </url>`,
+    )
+    .join("\n");
+  return hubEntry + (per ? "\n" + per : "");
+}
+
 export async function generateSitemap(): Promise<void> {
+  // ── /guides hub + individual guide URLs ────────────────────────────────
+  const guides = await readGuideSlugs();
+  if (guides.length > 0) {
+    try {
+      let xml = await readFile(SITEMAP_PATH, "utf-8");
+      if (xml.includes("</urlset>") && !xml.includes(`${SITE_ORIGIN}/guides<`)) {
+        const latest = guides
+          .map((g) => g.updatedAt)
+          .sort()
+          .pop() as string;
+        const insertion = "\n" + buildGuideEntries(latest, guides) + "\n";
+        xml = xml.replace("</urlset>", insertion + "</urlset>");
+        await writeFile(SITEMAP_PATH, xml, "utf-8");
+        console.log(
+          `[sitemap] injected /guides hub + ${guides.length} guide URLs`,
+        );
+      }
+    } catch (err) {
+      console.warn("[sitemap] failed to inject guides:", err);
+    }
+  }
+
   console.log("[sitemap] fetching posts from WordPress...");
 
   let posts: WpPost[];

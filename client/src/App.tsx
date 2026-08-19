@@ -29,6 +29,12 @@ const FAQSectionPage = lazy(() => import("@/pages/resources/faqs-section"));
 const BlogIndexPage = lazy(() => import("@/pages/resources/blog"));
 const BlogPostPage = lazy(() => import("@/pages/resources/blog-post"));
 const MarketReportPage = lazy(() => import("@/pages/resources/market-report"));
+const GuidesIndexPage = lazy(() => import("@/pages/guides/index"));
+const GuideRentalPricesPage = lazy(() => import("@/pages/guides/office-rental-prices-cairo-2026"));
+const GuideHowToRentPage = lazy(() => import("@/pages/guides/how-to-rent-office-cairo"));
+const GuideBuyVsRentPage = lazy(() => import("@/pages/guides/buy-vs-rent-office-cairo"));
+const GuideSizePage = lazy(() => import("@/pages/guides/office-size-guide"));
+const GuideFitOutPage = lazy(() => import("@/pages/guides/office-fit-out-costs-cairo"));
 const SavedListingsPage = lazy(() => import("@/pages/saved"));
 const LeasingPage = lazy(() => import("@/pages/services/leasing"));
 const PrimaryProperty = lazy(() => import("@/pages/services/primary-property"));
@@ -227,6 +233,15 @@ function Router() {
       <Route path="/faqs" component={FAQIndexPage} />
       <Route path="/faqs/:slug" component={FAQSectionPage} />
       <Route path="/resources/market-report" component={MarketReportPage} />
+      {/* Guides — long-form evergreen SEO content. Hub + 5 initial guides.
+          Note: index route must be listed AFTER specific /guides/:slug
+          routes so wouter matches the specific ones first. */}
+      <Route path="/guides/office-rental-prices-cairo-2026" component={GuideRentalPricesPage} />
+      <Route path="/guides/how-to-rent-office-cairo" component={GuideHowToRentPage} />
+      <Route path="/guides/buy-vs-rent-office-cairo" component={GuideBuyVsRentPage} />
+      <Route path="/guides/office-size-guide" component={GuideSizePage} />
+      <Route path="/guides/office-fit-out-costs-cairo" component={GuideFitOutPage} />
+      <Route path="/guides" component={GuidesIndexPage} />
       <Route path="/saved" component={SavedListingsPage} />
       <Route path="/blog">{() => <BlogIndexPage />}</Route>
       {/* Category filter — must come BEFORE /blog/:slug so wouter doesn't

@@ -381,6 +381,83 @@ export function blogPostingSchema(post: {
   };
 }
 
+// JSON-LD for the /guides/* long-form pages. Distinct from blogPostingSchema
+// (which is BlogPosting) — guides are timeless reference content, so we use
+// Article + inLanguage + educationalLevel so AI answer engines (ChatGPT,
+// Perplexity, Google AI Overviews, Claude) treat them as authoritative
+// evergreen resources rather than dated blog posts.
+export function articleSchema(opts: {
+  headline: string;
+  description: string;
+  slug: string;
+  wordCount?: number;
+  datePublished: string;
+  dateModified: string;
+  imageUrl?: string;
+  section?: string; // e.g. "Renting", "Costs"
+  readMinutes?: number;
+}) {
+  const url = `${BASE_URL}/guides/${opts.slug}`;
+  const image = opts.imageUrl
+    ? opts.imageUrl.startsWith("http")
+      ? opts.imageUrl
+      : `${BASE_URL}${opts.imageUrl}`
+    : `${BASE_URL}/images/offices-hero.jpg`;
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "@id": `${url}#article`,
+    headline: opts.headline,
+    description: opts.description,
+    url,
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+    datePublished: opts.datePublished,
+    dateModified: opts.dateModified,
+    inLanguage: "en",
+    ...(opts.wordCount && { wordCount: opts.wordCount }),
+    ...(opts.readMinutes && { timeRequired: `PT${opts.readMinutes}M` }),
+    ...(opts.section && { articleSection: opts.section }),
+    author: {
+      "@type": "Organization",
+      "@id": `${BASE_URL}/#organization`,
+      name: "PLACES",
+    },
+    publisher: { "@id": `${BASE_URL}/#organization` },
+    image: {
+      "@type": "ImageObject",
+      url: image,
+    },
+  };
+}
+
+// JSON-LD for the /guides hub index page. Combines CollectionPage (Google
+// understands "this is a curated collection") with an inline ItemList of
+// every guide so crawlers get all URLs from one JSON-LD block.
+export function guidesCollectionSchema(items: {
+  name: string;
+  url: string;
+  description: string;
+}[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "@id": `${BASE_URL}/guides#collection`,
+    name: "PLACES Cairo Office Guides",
+    description:
+      "Practical, data-backed guides on renting, buying, sizing, and fitting out an office in Cairo. Written by PLACES, Egypt's admin-office specialists.",
+    url: `${BASE_URL}/guides`,
+    inLanguage: "en",
+    isPartOf: { "@id": `${BASE_URL}/#website` },
+    publisher: { "@id": `${BASE_URL}/#organization` },
+    hasPart: items.map((item) => ({
+      "@type": "Article",
+      name: item.name,
+      description: item.description,
+      url: item.url.startsWith("http") ? item.url : `${BASE_URL}${item.url}`,
+    })),
+  };
+}
+
 export function itemListSchema(opts: {
   name: string;
   url: string;

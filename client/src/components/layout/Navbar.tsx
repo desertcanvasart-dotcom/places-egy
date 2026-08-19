@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Menu, X, Building2, TrendingUp, Handshake, Repeat, Coins, MessageCircle, ChevronDown, ArrowRight, Newspaper, HelpCircle, BookOpen } from "lucide-react";
+import { Menu, X, Building2, TrendingUp, Handshake, Repeat, Coins, MessageCircle, ChevronDown, ArrowRight, Newspaper, HelpCircle, BookOpen, Compass } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { trackEvent } from "@/lib/analytics";
@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { NavbarFavoriteButton } from "@/components/NavbarFavoriteButton";
 
 const RESOURCES = [
+  { title: "Guides", href: "/guides", icon: Compass },
   { title: "Blog", href: "/blog", icon: Newspaper },
   { title: "FAQs", href: "/faqs", icon: HelpCircle },
   { title: "Glossary", href: "/glossary", icon: BookOpen },
