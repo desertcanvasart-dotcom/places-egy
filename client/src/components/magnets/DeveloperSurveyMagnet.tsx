@@ -513,22 +513,33 @@ export function DeveloperSurveyMagnet({ variant, guideSlug }: Props) {
     return (
       <aside
         dir={isRtl ? "rtl" : "ltr"}
-        className="my-10 not-prose"
+        // Dark charcoal promotional block — deliberately distinct visual
+        // language from the KeyInsight editorial callout (which lives on
+        // cream/white with a top accent stripe). Stacked one after the
+        // other now reads as "editorial note" → "promotional CTA", not
+        // as two similar cards.
+        className="my-6 md:my-8 not-prose"
       >
-        <div className="relative overflow-hidden rounded-2xl border border-accent/20 bg-gradient-to-br from-[#FDFBF8] via-white to-[#FDFBF8] shadow-sm">
-          {/* Accent bar down the side */}
-          <div className={`absolute inset-y-0 ${isRtl ? "right-0" : "left-0"} w-1 bg-accent`} />
+        <div
+          className="relative overflow-hidden rounded-2xl bg-primary text-white shadow-lg shadow-primary/20"
+        >
+          {/* Subtle accent glow in the far corner — brand identity without
+              competing with the KeyInsight's top-stripe treatment. */}
+          <div
+            className={`pointer-events-none absolute -top-24 ${isRtl ? "-left-24" : "-right-24"} h-52 w-52 rounded-full bg-accent/25 blur-3xl`}
+            aria-hidden="true"
+          />
 
-          <div className="grid md:grid-cols-[1fr_auto] items-center gap-4 sm:gap-5 md:gap-8 p-5 sm:p-6 md:p-8 pl-6 sm:pl-8 md:pl-10">
+          <div className="relative grid md:grid-cols-[1fr_auto] items-center gap-4 md:gap-8 p-5 sm:p-6 md:px-7 md:py-6">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-accent mb-2 inline-flex items-center gap-2">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-accent mb-1.5 inline-flex items-center gap-1.5">
                 <FileText className="w-3 h-3" />
                 {isRtl ? "استطلاع PLACES 2026" : "PLACES 2026 Survey"}
               </p>
-              <h3 className="font-serif text-lg md:text-xl font-bold text-primary leading-snug mb-2">
+              <h3 className="font-serif text-lg md:text-xl font-bold text-white leading-snug mb-1.5">
                 {t.hookHeadline}
               </h3>
-              <p className="text-sm text-primary/70 leading-relaxed max-w-xl">
+              <p className="text-sm text-white/70 leading-relaxed max-w-xl">
                 {isRtl
                   ? "أرقام فعلية من صفقات ميدانية عبر التجمع الخامس، الشيخ زايد، و6 أكتوبر."
                   : "Real transaction numbers from ground-level deals across New Cairo, Sheikh Zayed, and 6th October."}
@@ -542,18 +553,13 @@ export function DeveloperSurveyMagnet({ variant, guideSlug }: Props) {
                   variant: "inline",
                   guide_slug: guideSlug ?? null,
                 });
-                // Scroll to the popup (which will already be visible bottom-
-                // left after 15s) OR open it now via a coord flag. Since the
-                // popup is a separate component instance, we can't directly
-                // trigger it — instead we emit a custom event the popup
-                // instance can listen to and expand.
                 window.dispatchEvent(
                   new CustomEvent("places-open-developer-survey", {
                     detail: { source: "inline", guide_slug: guideSlug ?? null },
                   }),
                 );
               }}
-              className="group inline-flex items-center justify-center gap-2 whitespace-nowrap w-full md:w-auto bg-primary hover:bg-primary/90 text-white text-sm font-medium px-6 py-3 rounded-full transition-all shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5"
+              className="group inline-flex items-center justify-center gap-2 whitespace-nowrap w-full md:w-auto bg-accent hover:bg-accent/90 text-white text-sm font-semibold px-5 py-2.5 md:py-3 rounded-full transition-all shadow-md shadow-accent/30 hover:shadow-lg hover:shadow-accent/40 hover:-translate-y-0.5"
             >
               {isRtl ? "احصل على PDF مجاناً" : "Get the free PDF"}
               <ArrowRight

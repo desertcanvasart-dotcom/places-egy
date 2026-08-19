@@ -82,12 +82,27 @@ export function KeyInsight({
   label?: string;
 }) {
   return (
-    <aside className="not-prose my-6 md:my-8 rounded-2xl bg-[#FDFBF8] border border-accent/15 p-5 sm:p-6 pl-6 sm:pl-7 relative overflow-hidden">
-      <div className="absolute inset-y-0 left-0 w-1 bg-accent" />
-      <p className="text-[10px] font-bold uppercase tracking-widest text-accent mb-2">
-        {label}
-      </p>
-      <div className="text-primary text-sm sm:text-base leading-relaxed">{children}</div>
+    // Editorial aside — no left accent bar (that language belongs to the
+    // promotional magnet CTA now). Instead: subtle top border in accent,
+    // slightly warmer background so it reads as a "note in the margin"
+    // moment rather than a promotional block.
+    <aside className="not-prose my-6 md:my-8 rounded-2xl bg-white border border-primary/10 p-5 sm:p-6 md:p-7 shadow-sm relative overflow-hidden">
+      <div className="absolute top-0 inset-x-0 h-1 bg-linear-to-r from-accent via-accent/70 to-accent/30" />
+      <div className="flex items-start gap-2.5 mb-2">
+        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-accent/10 text-accent shrink-0 mt-0.5">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3">
+            <path d="M12 9v4" />
+            <path d="M12 17h.01" />
+            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+          </svg>
+        </span>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-accent leading-none pt-1">
+          {label}
+        </p>
+      </div>
+      <div className="text-primary text-sm sm:text-base leading-relaxed pl-7 sm:pl-8">
+        {children}
+      </div>
     </aside>
   );
 }
