@@ -15,8 +15,8 @@ import { cn } from "@/lib/utils";
 import { NavbarFavoriteButton } from "@/components/NavbarFavoriteButton";
 
 const RESOURCES = [
-  { title: "Guides", href: "/guides", icon: Compass },
   { title: "Blog", href: "/blog", icon: Newspaper },
+  { title: "Guides", href: "/guides", icon: Compass },
   { title: "FAQs", href: "/faqs", icon: HelpCircle },
   { title: "Glossary", href: "/glossary", icon: BookOpen },
 ];
