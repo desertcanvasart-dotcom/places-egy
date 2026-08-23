@@ -26,9 +26,13 @@ export function FavoriteButton({
 }: Props) {
   const { isFavorited, toggle } = useFavorite(listingId);
 
+  // Mobile gets a larger tap target (44×44 min per iOS/Android guidelines).
+  // Desktop keeps the tighter visual for the smaller/lg presets.
   const dimensions =
-    size === "lg" ? "w-11 h-11" : "w-9 h-9";
-  const iconSize = size === "lg" ? "w-5 h-5" : "w-4 h-4";
+    size === "lg"
+      ? "w-11 h-11"
+      : "w-11 h-11 md:w-9 md:h-9";
+  const iconSize = size === "lg" ? "w-5 h-5" : "w-5 h-5 md:w-4 md:h-4";
 
   const positioning = overlay
     ? "absolute top-3 right-3 z-30"

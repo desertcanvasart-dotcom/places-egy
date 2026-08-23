@@ -405,11 +405,21 @@ export default function ListingsPage() {
           </div>
         </div>
 
-        {/* Mobile Filter */}
+        {/* Mobile Filter — inline trigger with a live count badge so
+            visitors can see how many filters they've applied at a glance
+            without opening the drawer. */}
         <div className="lg:hidden mb-6">
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" className="w-full bg-white"><SlidersHorizontal className="h-4 w-4 mr-2" /> Filters</Button>
+              <Button variant="outline" className="w-full bg-white relative">
+                <SlidersHorizontal className="h-4 w-4 mr-2" />
+                Filters
+                {activeFilterChips.length > 0 && (
+                  <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-accent text-white text-[11px] font-bold">
+                    {activeFilterChips.length}
+                  </span>
+                )}
+              </Button>
             </SheetTrigger>
             <SheetContent side="left" className="overflow-y-auto">
               <FilterSidebar filters={filters} setFilters={setFilters} listings={listings} className="mt-6" />
