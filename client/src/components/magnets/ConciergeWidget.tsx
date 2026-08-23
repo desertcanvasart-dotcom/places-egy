@@ -273,8 +273,18 @@ export function ConciergeWidget() {
     >
       {expanded ? (
         // ── Expanded form card ──────────────────────────────────────────
-        <div className="w-[min(24rem,calc(100vw-2rem))] bg-white rounded-2xl shadow-2xl border border-primary/10 overflow-hidden">
-          <div className="bg-primary px-5 py-4 relative">
+        // Height is capped so the whole card never exceeds the viewport.
+        // 100dvh - top offset (top-20 on mobile = 80px, +16px breathing
+        // room) - a couple rem for below-card breathing = generous but
+        // bounded. Card becomes a flex column: header + scrollable body
+        // + sticky submit footer. Guarantees the CTA is always visible.
+        <div
+          className="w-[min(24rem,calc(100vw-2rem))] bg-white rounded-2xl shadow-2xl border border-primary/10 overflow-hidden flex flex-col"
+          style={{
+            maxHeight: "calc(100dvh - 6rem)",
+          }}
+        >
+          <div className="bg-primary px-5 py-4 relative shrink-0">
             <button
               type="button"
               onClick={dismiss}
@@ -297,7 +307,7 @@ export function ConciergeWidget() {
               <p className="text-sm font-medium text-primary">{t.success}</p>
             </div>
           ) : (
-            <div className="p-5 space-y-4">
+            <div className="p-5 pb-4 space-y-4 overflow-y-auto flex-1 min-h-0">
               {/* Intent picker — big obvious buttons */}
               <div>
                 <label className="block text-xs font-medium text-primary mb-2">
@@ -486,13 +496,21 @@ export function ConciergeWidget() {
                 );
               })()}
 
+            </div>
+          )}
+          {/* Sticky footer — errors + submit button live OUTSIDE the
+              scrollable body so the CTA is always visible on mobile even
+              when the qualifier fields push the form taller than the
+              viewport. Only rendered while the form is active (not on
+              success), matches the previous behavior. */}
+          {status !== "sent" && (
+            <div className="shrink-0 border-t border-primary/5 bg-white px-5 py-3 space-y-2">
               {errorText && (
                 <p className="text-xs text-accent">{errorText}</p>
               )}
               {status === "error" && (
                 <p className="text-xs text-accent">{t.error}</p>
               )}
-
               <button
                 type="button"
                 onClick={submit}
@@ -523,7 +541,7 @@ export function ConciergeWidget() {
           // the site's cream backgrounds without hijacking the whole
           // viewport. The white card + text layout is kept intact for
           // md+ so desktop reads exactly as before.
-          className="group relative flex items-center gap-2.5 md:gap-4 bg-accent md:bg-white text-white md:text-primary rounded-full md:rounded-2xl shadow-2xl shadow-accent/40 md:shadow-primary/25 ring-2 ring-white md:ring-1 md:ring-primary/10 pl-2 md:pl-4 pr-3 md:pr-7 py-2 md:py-4 max-w-md hover:shadow-accent/50 md:hover:shadow-primary/35 hover:ring-white md:hover:ring-accent/40 transition-all duration-300 hover:-translate-y-0.5"
+          className="group relative flex items-center gap-2.5 md:gap-4 bg-accent md:bg-white text-white md:text-primary rounded-full md:rounded-2xl shadow-2xl shadow-accent/40 md:shadow-primary/25 ring-2 ring-primary md:ring-1 md:ring-primary/10 pl-2 md:pl-4 pr-3 md:pr-7 py-2 md:py-4 max-w-md hover:shadow-accent/50 md:hover:shadow-primary/35 hover:ring-primary md:hover:ring-accent/40 transition-all duration-300 hover:-translate-y-0.5"
         >
           <span className="relative flex h-12 w-12 md:h-12 md:w-12 items-center justify-center shrink-0">
             <span
