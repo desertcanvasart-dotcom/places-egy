@@ -152,9 +152,11 @@ export function Navbar() {
           <NavbarFavoriteButton />
         </div>
 
-        {/* Mobile Menu Toggle */}
+        {/* Mobile Menu Toggle — p-3 pushes tap target to 48×48 (well above
+            iOS/Android 44×44 minimum) so users don't miss the hamburger
+            when they mean to tap it. */}
         <button
-          className="lg:hidden p-2 text-white"
+          className="lg:hidden p-3 -mr-2 text-white"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
         >
