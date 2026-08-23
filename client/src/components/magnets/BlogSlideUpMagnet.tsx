@@ -23,7 +23,14 @@ import { isConciergeActive } from "@/lib/magnet-coord";
 // See CornerSlideMagnet.tsx for the rationale.
 const DISMISS_KEY = "blog_magnet_dismissed_this_session";
 const SUBMITTED_KEY = "market_report_submitted_at";
-const SHOW_AFTER_MS = 15000; // 15s — matches homepage corner cadence; concierge widget fires first at 3s
+const SHOW_AFTER_MS_DESKTOP = 15000;
+const SHOW_AFTER_MS_MOBILE = 30000;
+const SHOW_AFTER_MS =
+  typeof window !== "undefined" &&
+  window.matchMedia &&
+  window.matchMedia("(max-width: 767px)").matches
+    ? SHOW_AFTER_MS_MOBILE
+    : SHOW_AFTER_MS_DESKTOP;
 
 function isSuppressed(): boolean {
   try {

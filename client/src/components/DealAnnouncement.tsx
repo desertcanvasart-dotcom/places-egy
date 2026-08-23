@@ -83,10 +83,12 @@ export function DealAnnouncement({
         }}
       />
 
-      {/* Ghost SQM figure, bleeding off the right edge. */}
+      {/* Ghost SQM figure, bleeding off the right edge. HIDDEN on mobile —
+          it adds visual noise, competes with the tags at small sizes, and
+          the card is more legible without it. Kept on md+. */}
       <span
         aria-hidden
-        className="pointer-events-none absolute -right-4 top-1/2 -translate-y-1/2 select-none font-serif font-bold leading-none text-[#ECE7D8]/[0.045] text-[40vw] md:text-[15rem]"
+        className="pointer-events-none absolute -right-4 top-1/2 -translate-y-1/2 select-none font-serif font-bold leading-none text-[#ECE7D8]/[0.045] hidden md:block md:text-[15rem]"
       >
         {sqmLabel}
       </span>
@@ -113,12 +115,13 @@ export function DealAnnouncement({
         </button>
       )}
 
-      {/* Content row — kept compact so the card stays a slim announcement, not
-          a tall slab. */}
-      <div className="relative z-20 flex flex-col gap-4 p-5 md:flex-row md:items-center md:gap-7 md:p-6">
+      {/* Content row — tighter on mobile (gap-3, p-4) to keep the card
+          from dominating small viewports. Desktop keeps the roomier
+          layout it was already using. */}
+      <div className="relative z-20 flex flex-col gap-3 p-4 md:flex-row md:items-center md:gap-7 md:p-6">
         {/* Eyebrow + hero metric */}
-        <div className="flex items-center gap-4 shrink-0">
-          <span className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-accent">
+        <div className="flex items-center gap-3 md:gap-4 shrink-0">
+          <span className="inline-flex items-center gap-2 text-[10px] md:text-[11px] font-bold uppercase tracking-[0.2em] text-accent">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-75 motion-safe:animate-ping" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
@@ -126,13 +129,12 @@ export function DealAnnouncement({
             New Deal
           </span>
           <div className="flex items-baseline gap-2">
-            {/* Static number with a gentle zoom pulse to draw the eye, instead
-                of a count-up. inline-block so the scale transform applies; gated
-                by motion-safe for reduced-motion users. */}
-            <span className="font-serif text-4xl font-bold leading-none tracking-tight text-[#ECE7D8] md:text-5xl">
+            {/* Hero number — smaller on mobile so it doesn't overrun the
+                narrow viewport. Was text-4xl, now text-3xl on mobile. */}
+            <span className="font-serif text-3xl md:text-5xl font-bold leading-none tracking-tight text-[#ECE7D8]">
               {sqmLabel}
             </span>
-            <span className="text-[10px] font-bold uppercase leading-tight tracking-[0.2em] text-[#ECE7D8]/55">
+            <span className="text-[9px] md:text-[10px] font-bold uppercase leading-tight tracking-[0.2em] text-[#ECE7D8]/55">
               SQM
               <br />
               Leased
@@ -145,26 +147,19 @@ export function DealAnnouncement({
 
         {/* Category-encoded tags in two rows: Space Type + Term on top (equal
             width), Location spanning the full width below them. */}
-        <div className="flex flex-col gap-2.5">
-          <div className="flex gap-2.5">
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-2">
             <DealTag category="Space Type" value={spaceType} variant="filled" className="flex-1" />
             <DealTag category="Term" value={leaseFormat} variant="outline" className="flex-1" />
           </div>
           <DealTag category="Location" value={location} variant="outline" icon={<MapPin className="h-3 w-3" />} className="w-full" />
         </div>
 
-        {/* Client logo — sign-off, sits close to the tags. Right padding keeps
-            it clear of the diagonal JUST CLOSED ribbon in the top-right corner.
-            The inner box has a fixed size so every logo occupies the same
-            footprint regardless of the source PNG's aspect ratio. We give the
-            img w-full h-full so it scales to the box, then object-contain
-            preserves the logo's own aspect inside those bounds — this makes
-            compact icons visually the same size as wide wordmarks, which the
-            previous max-h/max-w-only rules did not achieve (small source PNGs
-            with transparent padding stayed tiny). */}
+        {/* Client logo — smaller on mobile so the card doesn't need extra
+            vertical space just to fit the logo. */}
         {clientLogo && (
           <div className="flex shrink-0 items-center md:border-l md:border-[#ECE7D8]/15 md:pl-4 md:pr-10">
-            <div className="flex h-16 w-44 items-center justify-center md:h-20 md:w-56">
+            <div className="flex h-11 w-32 md:h-20 md:w-56 items-center justify-center mx-auto md:mx-0">
               <img
                 src={clientLogo}
                 alt={`${clientName} logo`}

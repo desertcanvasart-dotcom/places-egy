@@ -26,7 +26,16 @@ import { markConciergeActive, markConciergeInactive } from "@/lib/magnet-coord";
 
 const DISMISS_KEY = "concierge_widget_dismissed_this_session";
 const SUBMITTED_KEY = "concierge_widget_submitted_at";
-const SHOW_AFTER_MS = 3_000;
+// Mobile viewports get a longer delay so the visitor sees the hero before
+// a popup competes with it. Desktop keeps the current 3s.
+const SHOW_AFTER_MS_DESKTOP = 3_000;
+const SHOW_AFTER_MS_MOBILE = 8_000;
+function computeShowAfterMs(): number {
+  if (typeof window === "undefined") return SHOW_AFTER_MS_DESKTOP;
+  return window.matchMedia("(max-width: 767px)").matches
+    ? SHOW_AFTER_MS_MOBILE
+    : SHOW_AFTER_MS_DESKTOP;
+}
 
 type Intent = "buy" | "rent" | "browsing" | "other";
 type AreaRange = "under-100" | "100-300" | "300-500" | "500-plus";
@@ -152,7 +161,7 @@ export function ConciergeWidget() {
       markConciergeActive();
       requestAnimationFrame(() => setVisible(true));
       trackEvent("concierge_shown", {});
-    }, SHOW_AFTER_MS);
+    }, computeShowAfterMs());
     return () => clearTimeout(t);
   }, []);
 
@@ -509,19 +518,21 @@ export function ConciergeWidget() {
         <button
           type="button"
           onClick={openForm}
-          className="group relative flex items-center gap-4 bg-white text-primary rounded-2xl shadow-2xl shadow-primary/25 ring-1 ring-primary/10 pl-4 pr-7 py-4 max-w-md hover:shadow-primary/35 hover:ring-accent/40 transition-all duration-300 hover:-translate-y-0.5"
+          className="group relative flex items-center gap-2.5 md:gap-4 bg-white text-primary rounded-full md:rounded-2xl shadow-2xl shadow-primary/25 ring-1 ring-primary/10 pl-2 md:pl-4 pr-2 md:pr-7 py-2 md:py-4 max-w-md hover:shadow-primary/35 hover:ring-accent/40 transition-all duration-300 hover:-translate-y-0.5"
         >
-          <span className="relative flex h-12 w-12 items-center justify-center shrink-0">
+          <span className="relative flex h-9 w-9 md:h-12 md:w-12 items-center justify-center shrink-0">
             <span
               className="absolute inline-flex h-full w-full rounded-full bg-accent/30 animate-ping"
               aria-hidden="true"
             />
-            <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-full bg-accent text-white shadow-md">
-              <MessageCircle className="w-6 h-6" />
+            <span className="relative inline-flex h-9 w-9 md:h-12 md:w-12 items-center justify-center rounded-full bg-accent text-white shadow-md">
+              <MessageCircle className="w-4 h-4 md:w-6 md:h-6" />
             </span>
           </span>
 
-          <div className={`text-${isRtl ? "right" : "left"} min-w-0 pr-6`}>
+          {/* Text is HIDDEN on mobile — collapses to just the icon so it
+              doesn't compete with the hero. Tap opens the full card. */}
+          <div className={`hidden md:block text-${isRtl ? "right" : "left"} min-w-0 pr-6`}>
             <p className="text-base md:text-lg font-serif font-bold leading-tight">
               {t.bubblePrompt}
             </p>
@@ -530,6 +541,8 @@ export function ConciergeWidget() {
             </p>
           </div>
 
+          {/* Close X — hidden on mobile (icon-only bubble handles both
+              actions on tap: open form. Dismiss is on the expanded card.) */}
           <span
             role="button"
             tabIndex={0}
@@ -544,7 +557,7 @@ export function ConciergeWidget() {
                 dismiss();
               }
             }}
-            className={`absolute top-2 ${isRtl ? "left-2" : "right-2"} flex items-center justify-center w-6 h-6 rounded-full text-muted-foreground hover:text-accent hover:bg-accent/10 cursor-pointer transition-colors`}
+            className={`hidden md:flex absolute top-2 ${isRtl ? "left-2" : "right-2"} items-center justify-center w-6 h-6 rounded-full text-muted-foreground hover:text-accent hover:bg-accent/10 cursor-pointer transition-colors`}
           >
             <X className="w-3.5 h-3.5" />
           </span>

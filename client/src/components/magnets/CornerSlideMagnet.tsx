@@ -20,7 +20,17 @@ import { isConciergeActive } from "@/lib/magnet-coord";
 // in localStorage) — that persists forever across visits.
 const DISMISS_KEY = "corner_magnet_dismissed_this_session";
 const SUBMITTED_KEY = "market_report_submitted_at";
-const SHOW_AFTER_MS = 15000; // 15s — let the concierge widget (3s) fire first; PDF magnet is the follow-up offer
+// Mobile viewports get a longer delay — the concierge appears at 8s on
+// mobile (see ConciergeWidget), so pushing this one further out avoids
+// two popups landing back-to-back on phones.
+const SHOW_AFTER_MS_DESKTOP = 15000;
+const SHOW_AFTER_MS_MOBILE = 30000;
+const SHOW_AFTER_MS =
+  typeof window !== "undefined" &&
+  window.matchMedia &&
+  window.matchMedia("(max-width: 767px)").matches
+    ? SHOW_AFTER_MS_MOBILE
+    : SHOW_AFTER_MS_DESKTOP;
 
 function isSuppressed(): boolean {
   try {

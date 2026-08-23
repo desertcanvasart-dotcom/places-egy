@@ -20,7 +20,14 @@ import { markConciergeActive, isConciergeActive } from "@/lib/magnet-coord";
 
 const DISMISS_KEY = "developer_survey_dismissed_this_session";
 const SUBMITTED_KEY = "developer_survey_submitted_at";
-const SHOW_AFTER_MS = 15_000;
+const SHOW_AFTER_MS_DESKTOP = 15_000;
+const SHOW_AFTER_MS_MOBILE = 30_000;
+const SHOW_AFTER_MS =
+  typeof window !== "undefined" &&
+  window.matchMedia &&
+  window.matchMedia("(max-width: 767px)").matches
+    ? SHOW_AFTER_MS_MOBILE
+    : SHOW_AFTER_MS_DESKTOP;
 
 type Intent = "buy" | "rent" | "browsing" | "other";
 type AreaRange = "under-100" | "100-300" | "300-500" | "500-plus";

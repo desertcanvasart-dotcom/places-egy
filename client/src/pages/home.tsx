@@ -89,11 +89,16 @@ export default function Home() {
 
         <div className="relative z-10 container mx-auto px-6 md:px-10 max-w-7xl text-center text-white">
           <div className="animate-in fade-in zoom-in duration-1000 slide-in-from-bottom-10">
-            <h1 className="font-serif text-5xl md:text-7xl font-bold mb-6 tracking-tight leading-tight text-white">
+            <h1 className="font-serif text-4xl sm:text-5xl md:text-7xl font-bold mb-4 md:mb-6 tracking-tight leading-tight text-white">
               Find <span className="text-accent">Your Office</span> in Egypt
             </h1>
-            <p className="text-lg md:text-xl text-white mb-10 max-w-2xl mx-auto font-medium">
-              Browse offices across Egypt's top business districts and get expert market guidance before you commit to anything.
+            {/* Mobile gets the tight one-line subtitle; sm+ gets the fuller
+                statement. Prevents 3-line wrap on phones. */}
+            <p className="text-base md:text-xl text-white mb-6 md:mb-10 max-w-2xl mx-auto font-medium leading-relaxed">
+              <span className="sm:hidden">Cairo offices, real advice, no pressure.</span>
+              <span className="hidden sm:inline">
+                Browse offices across Egypt's top business districts and get expert market guidance before you commit to anything.
+              </span>
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">

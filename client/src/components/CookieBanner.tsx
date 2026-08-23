@@ -57,8 +57,37 @@ export function CookieBanner() {
   if (!hydrated || consent !== null) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:bottom-6 md:max-w-md z-50">
-      <div className="bg-white rounded-2xl shadow-2xl border border-border/40 p-5 relative">
+    <div className="fixed bottom-3 left-3 right-3 md:left-auto md:right-6 md:bottom-6 md:max-w-md z-50">
+      {/* Mobile — compact single-row layout. Copy is the minimum viable
+          consent text, buttons sit inline with the message. Icon removed
+          on mobile (adds no info, costs space). Whole thing is ~1/3 the
+          height of the previous mobile banner. */}
+      <div className="md:hidden bg-white rounded-2xl shadow-2xl border border-border/40 px-3.5 py-3 relative">
+        <p className="text-[11px] text-muted-foreground leading-snug pr-2 mb-2.5">
+          We use cookies to improve your experience.{" "}
+          <Link href="/privacy-policy" className="text-accent hover:underline">
+            Privacy Policy
+          </Link>
+        </p>
+        <div className="flex gap-2">
+          <button
+            onClick={reject}
+            className="flex-1 h-8 text-[11px] font-medium rounded-full border border-border/60 text-primary hover:bg-muted/50 transition-colors"
+          >
+            Reject
+          </button>
+          <button
+            onClick={accept}
+            className="flex-1 h-8 text-[11px] font-medium rounded-full bg-primary text-white hover:bg-primary/90 transition-colors"
+          >
+            Accept all
+          </button>
+        </div>
+      </div>
+
+      {/* Desktop / tablet — the fuller banner. Icon + h3 + paragraph +
+          two big buttons. Same as before. */}
+      <div className="hidden md:block bg-white rounded-2xl shadow-2xl border border-border/40 p-5 relative">
         <button
           onClick={reject}
           aria-label="Dismiss and reject non-essential cookies"
