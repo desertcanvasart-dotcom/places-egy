@@ -84,8 +84,28 @@
   .cursor-pointer {
     cursor: pointer !important;
   }
-  input, textarea {
+  input, textarea, select {
     cursor: text;
+  }
+  /* iOS Safari auto-zooms when a focused input has font-size < 16px.
+     Every input we render uses text-sm (14px) or smaller for tighter
+     desktop UI. Force 16px minimum ONLY on iOS-sized viewports so the
+     zoom doesn't fire; desktop styling is unaffected. */
+  @media (max-width: 767px) {
+    input, textarea, select {
+      font-size: 16px !important;
+    }
+  }
+  /* MobileBottomBar (LayoutGrid / WhatsApp / Book) is fixed to the
+     bottom of the viewport on mobile. Push page body content up by the
+     bar's height so the last row of content isn't hidden underneath it.
+     Bar is ~72px (2rem + safe-area-inset-bottom); we add 5rem to be
+     generous. Only applies below the lg breakpoint where the bar
+     actually renders. */
+  @media (max-width: 1023px) {
+    main {
+      padding-bottom: max(5rem, calc(4rem + env(safe-area-inset-bottom)));
+    }
   }
   body {
     @apply font-sans antialiased bg-background text-foreground;
