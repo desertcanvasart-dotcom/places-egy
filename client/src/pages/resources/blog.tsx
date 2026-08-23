@@ -190,7 +190,7 @@ export default function BlogIndexPage({ lang = "en" }: { lang?: BlogLang }) {
       <SchemaMarkup schema={blogIndexSchema({ posts: schemaPosts })} />
       <Navbar />
 
-      <section className="pt-32 pb-6">
+      <section className="pt-24 md:pt-32 pb-6">
         <div className="container mx-auto px-6 md:px-10">
           <div className="flex items-start justify-between gap-4 mb-6">
             <nav className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">

@@ -227,6 +227,111 @@
   border-top: 1px solid rgba(0,0,0,0.1);
   margin: 2rem 0;
 }
+/* WP tables — often pasted from Excel or plugin-generated. Wrap in a
+   horizontal scroll container so wide tables don't blow past the mobile
+   viewport, and give the table itself basic structure so it stays
+   readable at the smaller size. */
+.blog-content table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  margin: 1.5rem 0;
+}
+.blog-content th,
+.blog-content td {
+  border: 1px solid rgba(0,0,0,0.08);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+.blog-content th {
+  background: rgba(0,0,0,0.03);
+  font-weight: 600;
+  color: var(--color-primary);
+}
+/* WP iframes (YouTube embeds, Vimeo, Google Maps) — force responsive
+   16:9 so they don't overflow narrow phone screens. */
+.blog-content iframe,
+.blog-content embed,
+.blog-content video {
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  border-radius: 0.75rem;
+  border: 0;
+  margin: 1.25rem 0;
+}
+/* WP figure blocks — center + constrain width, add editorial caption
+   styling. */
+.blog-content figure {
+  margin: 1.5rem 0;
+}
+.blog-content figure img {
+  width: 100%;
+}
+.blog-content figcaption {
+  font-size: 0.85rem;
+  color: rgba(17, 17, 17, 0.55);
+  text-align: center;
+  margin-top: 0.5rem;
+  font-style: italic;
+}
+/* WP code blocks — often pasted from external tools with wide lines. */
+.blog-content pre {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  background: #F8F5F1;
+  border: 1px solid rgba(0,0,0,0.05);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  margin: 1.25rem 0;
+}
+.blog-content pre code {
+  background: transparent;
+  padding: 0;
+  font-size: inherit;
+}
+/* Mobile: shrink typographic scale and side gutters to give the reader
+   maximum content width without touching the container. */
+@media (max-width: 767px) {
+  .blog-content {
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+  .blog-content > * + * {
+    margin-top: 1rem;
+  }
+  .blog-content h2 {
+    font-size: 1.35rem;
+    margin-top: 2rem;
+    line-height: 1.3;
+  }
+  .blog-content h3 {
+    font-size: 1.1rem;
+    margin-top: 1.5rem;
+  }
+  .blog-content blockquote {
+    padding-left: 1rem;
+    font-size: 1rem;
+  }
+  .blog-content-ar blockquote {
+    padding-left: 0;
+    padding-right: 1rem;
+  }
+  .blog-content ul,
+  .blog-content ol {
+    padding-left: 1.25rem;
+  }
+  .blog-content-ar ul,
+  .blog-content-ar ol {
+    padding-left: 0;
+    padding-right: 1rem;
+  }
+}
 
 /* Arabic blog content variant. Applied on top of .blog-content when the post
    is Arabic — swaps the font family, forces RTL text direction on the WP

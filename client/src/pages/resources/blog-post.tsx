@@ -205,8 +205,8 @@ export default function BlogPostPage({ lang = "en" }: { lang?: BlogLang }) {
       <SchemaMarkup schema={blogPostingSchema(post)} />
       <Navbar />
 
-      <section className="pt-32 pb-8">
-        <div className="container mx-auto px-6 md:px-10 max-w-3xl">
+      <section className="pt-24 md:pt-32 pb-6 md:pb-8">
+        <div className="container mx-auto px-5 md:px-10 max-w-3xl">
           <div className="flex items-start justify-between gap-4 mb-6">
             <nav className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground flex-wrap">
               <Link href="/" className="hover:text-primary transition-colors">
@@ -234,7 +234,7 @@ export default function BlogPostPage({ lang = "en" }: { lang?: BlogLang }) {
           </div>
 
           <h1
-            className={`text-3xl md:text-5xl font-bold text-primary leading-tight mb-6 ${
+            className={`text-3xl md:text-5xl font-bold text-primary leading-tight mb-4 md:mb-6 ${
               isAr ? "font-serif-ar" : "font-serif"
             }`}
           >
@@ -271,8 +271,8 @@ export default function BlogPostPage({ lang = "en" }: { lang?: BlogLang }) {
         </section>
       )}
 
-      <article className="pb-12">
-        <div className="container mx-auto px-6 md:px-10 max-w-3xl">
+      <article className="pb-10 md:pb-12">
+        <div className="container mx-auto px-5 md:px-10 max-w-3xl">
           <div
             className={`blog-content ${isAr ? "blog-content-ar" : ""}`}
             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
