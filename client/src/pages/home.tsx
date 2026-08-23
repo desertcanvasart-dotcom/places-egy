@@ -220,7 +220,7 @@ export default function Home() {
         <section className="py-8 md:py-12">
           <div className="container mx-auto px-6 md:px-10 max-w-7xl">
             <div className="mb-16">
-              <h2 className="text-4xl md:text-5xl font-serif font-bold text-primary mb-4">Comprehensive real estate services</h2>
+              <h2 className="text-4xl md:text-5xl font-serif font-bold text-primary mb-4">Real estate services</h2>
             </div>
 
             <ServicesExplorer />
