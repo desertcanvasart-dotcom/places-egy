@@ -3,11 +3,10 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { CornerSlideMagnet } from "@/components/magnets/CornerSlideMagnet";
 import { Button } from "@/components/ui/button";
-import { Phone, MessageCircle, CalendarDays } from "lucide-react";
+import { Phone, MessageCircle, Mail } from "lucide-react";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema, contactPageSchema } from "@/lib/schema";
 import { trackEvent } from "@/lib/analytics";
-import { openCalendly } from "@/lib/calendly";
 import { useDocumentMeta } from "@/lib/use-document-meta";
 
 const PHONE = "01063618217";
@@ -23,6 +22,8 @@ export default function Contact() {
   const whatsappMessage = encodeURIComponent("Hi, I'd like to learn more about PLACES and your available properties.");
   const handleCallClick = () => trackEvent("call_click", { source: "contact_page" });
   const handleWhatsappClick = () => trackEvent("whatsapp_click", { source: "contact_page" });
+  const handleEmailClick = () =>
+    trackEvent("outbound_click", { channel: "email", source: "contact_page" });
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-background">
@@ -35,22 +36,22 @@ export default function Contact() {
       <SchemaMarkup schema={contactPageSchema()} />
       <Navbar />
 
-      <main className="flex-1 pt-32 pb-32 lg:pb-20 px-4">
+      <main className="flex-1 pt-24 md:pt-32 px-4">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-16">
-            <h1 className="text-4xl md:text-5xl font-serif font-bold text-primary mb-4">
+          <div className="text-center mb-8 md:mb-16">
+            <h1 className="text-3xl md:text-5xl font-serif font-bold text-primary mb-3 md:mb-4 leading-tight">
               How can we help?
             </h1>
-            <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+            <p className="text-muted-foreground text-base md:text-lg max-w-xl mx-auto leading-relaxed">
               Whether you're looking for a specific unit or just exploring — pick the option that fits.
             </p>
           </div>
 
           {/* Two main paths */}
-          <div className="grid md:grid-cols-2 gap-6 mb-16">
+          <div className="grid md:grid-cols-2 gap-4 md:gap-6 mb-10 md:mb-16">
             {/* Path 1 — Talk to us */}
-            <div className="bg-white rounded-2xl border border-border/40 p-8 flex flex-col text-center">
+            <div className="bg-white rounded-2xl border border-border/40 p-6 md:p-8 flex flex-col text-center">
               <h2 className="text-xl font-serif font-bold text-primary mb-2">
                 Speak with an advisor
               </h2>
@@ -74,17 +75,23 @@ export default function Contact() {
                     <MessageCircle className="w-4 h-4 mr-2" /> WhatsApp
                   </Button>
                 </a>
-                <Button
-                  onClick={() => openCalendly("contact_page")}
-                  className="w-full h-12 bg-accent hover:bg-accent/90 text-accent-foreground"
+                {/* Calendly booking button removed 2026-08-23 — calendar
+                    bookings paused. Direct visitors to WhatsApp instead
+                    (already the primary contact channel PLACES uses). */}
+                <a
+                  href={`mailto:admin@places-egy.com`}
+                  onClick={handleEmailClick}
+                  className="block"
                 >
-                  <CalendarDays className="w-4 h-4 mr-2" /> Talk to Us
-                </Button>
+                  <Button className="w-full h-12 bg-accent hover:bg-accent/90 text-accent-foreground">
+                    <Mail className="w-4 h-4 mr-2" /> Email Us
+                  </Button>
+                </a>
               </div>
             </div>
 
             {/* Path 2 — Self-serve */}
-            <div className="bg-white rounded-2xl border border-border/40 p-8 flex flex-col text-center">
+            <div className="bg-white rounded-2xl border border-border/40 p-6 md:p-8 flex flex-col text-center">
               <h2 className="text-xl font-serif font-bold text-primary mb-2">
                 Browse on your own
               </h2>

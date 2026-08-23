@@ -303,7 +303,7 @@ export default function ListingsPage() {
       {/* Hero — taller image-forward header with a soft fade into the
           results section. Lighter overlay so the photo reads clearly,
           gradient that begins in the lower third for a smooth handoff. */}
-      <div className="relative text-white pt-24 pb-12 md:pt-28 md:pb-16 overflow-hidden">
+      <div className="relative text-white pt-20 pb-8 md:pt-28 md:pb-16 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img src="/images/offices-hero.jpg" alt="Office" fetchPriority="high" decoding="async" className="w-full h-full object-cover" />
           {/* Light uniform tint for text contrast, plus a single bottom-half
@@ -313,7 +313,7 @@ export default function ListingsPage() {
         </div>
         <div className="relative z-10 container mx-auto px-6 md:px-10">
           <div className="inline-flex flex-col w-fit max-w-full">
-            <h1 className="text-4xl md:text-6xl font-serif font-bold mb-6 text-white drop-shadow-md">Find your perfect workspace</h1>
+            <h1 className="text-3xl md:text-6xl font-serif font-bold mb-4 md:mb-6 text-white drop-shadow-md leading-tight">Find your perfect workspace</h1>
             <div className="relative w-full">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
               <Input

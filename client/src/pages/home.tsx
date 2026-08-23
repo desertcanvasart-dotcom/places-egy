@@ -219,8 +219,8 @@ export default function Home() {
       <FadeInSection>
         <section className="py-8 md:py-12">
           <div className="container mx-auto px-6 md:px-10 max-w-7xl">
-            <div className="mb-16">
-              <h2 className="text-4xl md:text-5xl font-serif font-bold text-primary mb-4">
+            <div className="mb-8 md:mb-16">
+              <h2 className="text-3xl md:text-5xl font-serif font-bold text-primary mb-4 leading-tight">
                 <span className="md:hidden">Real estate services</span>
                 <span className="hidden md:inline">Comprehensive real estate services</span>
               </h2>
