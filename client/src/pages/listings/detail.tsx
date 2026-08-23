@@ -271,7 +271,7 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
       <Navbar />
 
       {/* Header: breadcrumb + title + price */}
-      <section className="pt-32 pb-6">
+      <section className="pt-24 md:pt-32 pb-6">
         <div className="container mx-auto px-6 md:px-10">
           <nav className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground mb-6">
             <Link href="/" className="hover:text-primary transition-colors">Home</Link>
@@ -294,16 +294,18 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
                 </h1>
                 <FavoriteButton listingId={listing.id} size="lg" className="shrink-0 mt-1" />
               </div>
-              <div className="flex items-center gap-3 mt-3 text-muted-foreground">
-                <MapPin className="w-4 h-4" />
-                <span>
-                  {formatLabel(listing.location)}
-                  {listing.location_area && (
-                    <span className="text-muted-foreground/70"> · {listing.location_area}</span>
-                  )}
-                </span>
+              <div className="flex items-center gap-2 md:gap-3 mt-3 text-muted-foreground flex-wrap">
+                <div className="flex items-center gap-2 shrink-0">
+                  <MapPin className="w-4 h-4" />
+                  <span>
+                    {formatLabel(listing.location)}
+                    {listing.location_area && (
+                      <span className="text-muted-foreground/70"> · {listing.location_area}</span>
+                    )}
+                  </span>
+                </div>
                 {listing.developer && (
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-accent bg-accent/10 px-2.5 py-1 rounded-full">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-accent bg-accent/10 px-2.5 py-1 rounded-full shrink-0">
                     {getEnumLabel(DEVELOPER_OPTIONS, listing.developer)}
                   </span>
                 )}

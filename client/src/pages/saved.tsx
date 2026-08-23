@@ -123,7 +123,7 @@ export default function SavedListingsPage() {
   return (
     <div className="min-h-screen flex flex-col font-sans bg-background">
       <Navbar />
-      <main className="flex-1 pt-32 pb-20 px-4">
+      <main className="flex-1 pt-24 md:pt-32 pb-8 md:pb-20 px-4">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-10">
@@ -176,13 +176,13 @@ export default function SavedListingsPage() {
                       details, availability, and next steps.
                     </p>
                   </div>
-                  <div className="flex flex-wrap gap-3">
+                  <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
                     <a
                       href={whatsappUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={handleWhatsappClick}
-                      className="inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#1fb855] text-white font-medium px-5 py-3 rounded-full text-sm shrink-0"
+                      className="inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1fb855] text-white font-medium px-5 py-3 rounded-full text-sm sm:shrink-0"
                     >
                       <MessageCircle className="w-4 h-4" />
                       Send on WhatsApp
@@ -192,7 +192,7 @@ export default function SavedListingsPage() {
                         type="button"
                         onClick={handleEmailMeClick}
                         disabled={emailState === "sending"}
-                        className="inline-flex items-center gap-2 bg-accent hover:bg-accent/90 text-white font-medium px-5 py-3 rounded-full text-sm shrink-0 disabled:opacity-60"
+                        className="inline-flex items-center justify-center gap-2 bg-accent hover:bg-accent/90 text-white font-medium px-5 py-3 rounded-full text-sm sm:shrink-0 disabled:opacity-60"
                       >
                         {emailState === "sending" ? (
                           <>

@@ -79,21 +79,24 @@ export function DealAnnouncementCarousel() {
       {multiple && (
         <>
           {/* Prev / next — pinned to the screen edges of the full-bleed strip. */}
+          {/* Prev/next — 44×44 on mobile for reliable thumb-taps, 32×32
+              on md+ where mouse click precision makes the smaller size
+              fine. */}
           <button
             type="button"
             onClick={() => go(index - 1)}
             aria-label="Previous deal"
-            className="absolute left-2 top-1/2 -translate-y-1/2 z-30 flex h-8 w-8 items-center justify-center rounded-full bg-[#ECE7D8]/10 text-[#ECE7D8] backdrop-blur-sm transition-colors hover:bg-[#ECE7D8]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-30 flex h-11 w-11 md:h-8 md:w-8 items-center justify-center rounded-full bg-[#ECE7D8]/10 text-[#ECE7D8] backdrop-blur-sm transition-colors hover:bg-[#ECE7D8]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-5 w-5 md:h-4 md:w-4" />
           </button>
           <button
             type="button"
             onClick={() => go(index + 1)}
             aria-label="Next deal"
-            className="absolute right-2 top-1/2 -translate-y-1/2 z-30 flex h-8 w-8 items-center justify-center rounded-full bg-[#ECE7D8]/10 text-[#ECE7D8] backdrop-blur-sm transition-colors hover:bg-[#ECE7D8]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-30 flex h-11 w-11 md:h-8 md:w-8 items-center justify-center rounded-full bg-[#ECE7D8]/10 text-[#ECE7D8] backdrop-blur-sm transition-colors hover:bg-[#ECE7D8]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-5 w-5 md:h-4 md:w-4" />
           </button>
 
           {/* Position indicator — bottom-center. For a handful of deals it's a
