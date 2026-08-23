@@ -43,7 +43,7 @@ export default function InvestmentConsultation() {
       <Navbar />
 
       {/* Section 1 — Hero (centered, faded image, contained so it doesn't bleed into next section) */}
-      <section className="relative pt-32 pb-12 overflow-hidden">
+      <section className="relative pt-24 md:pt-32 pb-8 md:pb-12 overflow-hidden">
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
           <img
             src="/images/investment-consultation.jpg"

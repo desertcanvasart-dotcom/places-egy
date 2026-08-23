@@ -59,7 +59,7 @@ export default function WhyPlaces() {
       <Navbar />
 
       {/* Hero */}
-      <section className="relative bg-secondary/30 pt-32 pb-8 md:pb-10 overflow-hidden">
+      <section className="relative bg-secondary/30 pt-24 md:pt-32 pb-8 md:pb-10 overflow-hidden">
         <div className="relative z-10 container mx-auto px-4 text-center max-w-5xl">
           <span className="inline-block text-xs font-bold uppercase tracking-widest text-accent mb-5">
             About PLACES
