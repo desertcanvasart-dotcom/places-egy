@@ -1,5 +1,4 @@
 import { Link } from "wouter";
-import { Fragment } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -186,29 +185,34 @@ export default function BusinessBuilding() {
               "Floor plates are usually fixed. If you grow fast, you'll outgrow your floor before your lease ends.",
             ];
             return (
-              <div className="grid md:grid-cols-2 gap-x-8 gap-y-4 mb-12 items-start">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-accent mb-2">Who business buildings work for</h3>
-                <h3 className="text-sm font-bold uppercase tracking-wider text-accent mb-2">Before you sign</h3>
-                {worksFor.map((item, i) => (
-                  <Fragment key={i}>
-                    <div className="flex items-start gap-3">
+              <div className="grid md:grid-cols-2 gap-8 md:gap-x-8 md:gap-y-4 mb-12 items-start">
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-accent">
+                    Who business buildings work for
+                  </h3>
+                  {worksFor.map((item, i) => (
+                    <div key={i} className="flex items-start gap-3">
                       <div className="w-9 h-9 bg-primary/5 rounded-full flex items-center justify-center shrink-0 text-primary">
                         <item.icon className="w-4 h-4" />
                       </div>
                       <p className="text-sm text-muted-foreground leading-relaxed pt-1.5">{item.text}</p>
                     </div>
-                    {beforeCommit[i] ? (
-                      <div className="flex items-start gap-3">
-                        <div className="w-9 h-9 bg-accent/5 rounded-full flex items-center justify-center shrink-0 text-accent">
-                          <AlertTriangle className="w-4 h-4" />
-                        </div>
-                        <p className="text-sm text-muted-foreground leading-relaxed pt-1.5">{beforeCommit[i]}</p>
+                  ))}
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-accent">
+                    Before you sign
+                  </h3>
+                  {beforeCommit.map((text, i) => (
+                    <div key={i} className="flex items-start gap-3">
+                      <div className="w-9 h-9 bg-accent/5 rounded-full flex items-center justify-center shrink-0 text-accent">
+                        <AlertTriangle className="w-4 h-4" />
                       </div>
-                    ) : (
-                      <div />
-                    )}
-                  </Fragment>
-                ))}
+                      <p className="text-sm text-muted-foreground leading-relaxed pt-1.5">{text}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             );
           })()}
