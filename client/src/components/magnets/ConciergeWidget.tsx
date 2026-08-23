@@ -26,10 +26,11 @@ import { markConciergeActive, markConciergeInactive } from "@/lib/magnet-coord";
 
 const DISMISS_KEY = "concierge_widget_dismissed_this_session";
 const SUBMITTED_KEY = "concierge_widget_submitted_at";
-// Mobile viewports get a longer delay so the visitor sees the hero before
-// a popup competes with it. Desktop keeps the current 3s.
+// Mobile visitors see the concierge immediately on landing — small enough
+// that it doesn't compete with the hero, but present from the start so
+// the "we can help" moment is up-front. Desktop keeps the 3s soft entrance.
 const SHOW_AFTER_MS_DESKTOP = 3_000;
-const SHOW_AFTER_MS_MOBILE = 8_000;
+const SHOW_AFTER_MS_MOBILE = 0;
 function computeShowAfterMs(): number {
   if (typeof window === "undefined") return SHOW_AFTER_MS_DESKTOP;
   return window.matchMedia("(max-width: 767px)").matches
@@ -518,20 +519,29 @@ export function ConciergeWidget() {
         <button
           type="button"
           onClick={openForm}
-          className="group relative flex items-center gap-2.5 md:gap-4 bg-white text-primary rounded-full md:rounded-2xl shadow-2xl shadow-primary/25 ring-1 ring-primary/10 pl-2 md:pl-4 pr-2 md:pr-7 py-2 md:py-4 max-w-md hover:shadow-primary/35 hover:ring-accent/40 transition-all duration-300 hover:-translate-y-0.5"
+          // Mobile: chunky round accent-red pill — eye-catchy against
+          // the site's cream backgrounds without hijacking the whole
+          // viewport. The white card + text layout is kept intact for
+          // md+ so desktop reads exactly as before.
+          className="group relative flex items-center gap-2.5 md:gap-4 bg-accent md:bg-white text-white md:text-primary rounded-full md:rounded-2xl shadow-2xl shadow-accent/40 md:shadow-primary/25 ring-2 ring-white md:ring-1 md:ring-primary/10 pl-2 md:pl-4 pr-3 md:pr-7 py-2 md:py-4 max-w-md hover:shadow-accent/50 md:hover:shadow-primary/35 hover:ring-white md:hover:ring-accent/40 transition-all duration-300 hover:-translate-y-0.5"
         >
-          <span className="relative flex h-9 w-9 md:h-12 md:w-12 items-center justify-center shrink-0">
+          <span className="relative flex h-12 w-12 md:h-12 md:w-12 items-center justify-center shrink-0">
             <span
-              className="absolute inline-flex h-full w-full rounded-full bg-accent/30 animate-ping"
+              className="absolute inline-flex h-full w-full rounded-full bg-white/40 md:bg-accent/30 animate-ping"
               aria-hidden="true"
             />
-            <span className="relative inline-flex h-9 w-9 md:h-12 md:w-12 items-center justify-center rounded-full bg-accent text-white shadow-md">
-              <MessageCircle className="w-4 h-4 md:w-6 md:h-6" />
+            <span className="relative inline-flex h-12 w-12 md:h-12 md:w-12 items-center justify-center rounded-full bg-white md:bg-accent text-accent md:text-white shadow-md">
+              <MessageCircle className="w-6 h-6" />
             </span>
           </span>
 
-          {/* Text is HIDDEN on mobile — collapses to just the icon so it
-              doesn't compete with the hero. Tap opens the full card. */}
+          {/* Mobile: shows a short label next to the icon so the icon has
+              a "handle" without feeling like a full text card. Desktop keeps
+              the fuller two-line pitch. */}
+          <span className={`md:hidden text-sm font-semibold whitespace-nowrap pr-1 ${isRtl ? "text-right" : "text-left"}`}>
+            {isRtl ? "نساعدك؟" : "How can we help?"}
+          </span>
+
           <div className={`hidden md:block text-${isRtl ? "right" : "left"} min-w-0 pr-6`}>
             <p className="text-base md:text-lg font-serif font-bold leading-tight">
               {t.bubblePrompt}
