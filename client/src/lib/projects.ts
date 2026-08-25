@@ -93,7 +93,7 @@ export const DEVELOPER_DISPLAY_NAMES: Record<string, string> = {
   eloia: "Eloia",
   "living-in": "Living In",
   regents: "Regents",
-  milcon: "Milcon",
+  mercon: "Mercon",
 };
 
 // Human-readable display labels for each ProjectType — used as card badges.
@@ -292,8 +292,8 @@ export const PROJECTS: Project[] = [
   { name: "Address 1", type: "business-building", location: "New Cairo · South 90 Street", developer: "regents", image: "/images/business-complex.jpg" },
   { name: "Regents Park", type: "strip-mall", location: "New Cairo · Gamal Abdelnaser Axis", developer: "regents", image: "/images/mixed-use.jpg" },
 
-  // ─── Milcon ──────────────────────────────────────────────────────
-  { name: "G7", type: "strip-mall", location: "New Cairo · North 90 Street", developer: "milcon", image: "/images/mixed-use.jpg" },
+  // ─── Mercon ──────────────────────────────────────────────────────
+  { name: "G7", type: "strip-mall", location: "New Cairo · North 90 Street", developer: "mercon", image: "/images/mixed-use.jpg" },
 ];
 
 export function getProjectsByDeveloper(developerSlug: string): Project[] {

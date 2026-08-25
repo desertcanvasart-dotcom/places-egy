@@ -27,6 +27,9 @@ const PERMANENT_REDIRECTS: Record<string, string> = {
   "/commercial/strip-malls": "/",
   "/commercial/drive-through": "/",
   "/commercial/drive-thru": "/",
+  // Developer rename: Milcon → Mercon (2026-08-25). Preserves link equity
+  // from any external references to the old /developers/milcon URL.
+  "/developers/milcon": "/developers/mercon",
 };
 
 // Prefix redirects for path roots that have moved. Anything matching the

@@ -24,7 +24,7 @@ export default function RegentsPage() {
           { name: "Concord Group", slug: "concord-group" },
           { name: "Living In", slug: "living-in" },
           { name: "Eloia", slug: "eloia" },
-          { name: "Milcon", slug: "milcon" },
+          { name: "Mercon", slug: "mercon" },
         ],
       }}
     />

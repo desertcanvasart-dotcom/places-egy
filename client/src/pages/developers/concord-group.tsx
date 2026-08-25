@@ -24,7 +24,7 @@ export default function ConcordGroupPage() {
           { name: "Living In", slug: "living-in" },
           { name: "Regents", slug: "regents" },
           { name: "Eloia", slug: "eloia" },
-          { name: "Milcon", slug: "milcon" },
+          { name: "Mercon", slug: "mercon" },
         ],
       }}
     />

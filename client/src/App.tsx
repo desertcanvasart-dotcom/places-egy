@@ -89,7 +89,7 @@ const ConcordGroupPage = lazy(() => import("@/pages/developers/concord-group"));
 const EloiaPage = lazy(() => import("@/pages/developers/eloia"));
 const LivingInPage = lazy(() => import("@/pages/developers/living-in"));
 const RegentsPage = lazy(() => import("@/pages/developers/regents"));
-const MilconPage = lazy(() => import("@/pages/developers/milcon"));
+const MerconPage = lazy(() => import("@/pages/developers/mercon"));
 const Locations = lazy(() => import("@/pages/locations"));
 const ProjectsPage = lazy(() => import("@/pages/projects"));
 const LocationDetail = lazy(() => import("@/pages/locations/detail"));
@@ -300,7 +300,7 @@ function Router() {
       <Route path="/developers/eloia" component={EloiaPage} />
       <Route path="/developers/living-in" component={LivingInPage} />
       <Route path="/developers/regents" component={RegentsPage} />
-      <Route path="/developers/milcon" component={MilconPage} />
+      <Route path="/developers/mercon" component={MerconPage} />
 
       {/* Location detail pages — dynamic template */}
       <Route path="/locations/:slug" component={LocationDetail} />

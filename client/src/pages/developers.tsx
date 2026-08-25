@@ -261,10 +261,10 @@ const DEVELOPERS: { name: string; logo: string; desc: string; slug?: string; log
     slug: "regents",
   },
   {
-    name: "Milcon",
+    name: "Mercon",
     logo: "",
     desc: "New Cairo strip-mall developer with the G7 project on North 90 Street — a retail-anchored commercial development.",
-    slug: "milcon",
+    slug: "mercon",
   },
 ];
 

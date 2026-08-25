@@ -24,7 +24,7 @@ export default function LivingInPage() {
           { name: "Concord Group", slug: "concord-group" },
           { name: "Regents", slug: "regents" },
           { name: "Eloia", slug: "eloia" },
-          { name: "Milcon", slug: "milcon" },
+          { name: "Mercon", slug: "mercon" },
         ],
       }}
     />

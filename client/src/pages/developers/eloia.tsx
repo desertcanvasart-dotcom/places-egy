@@ -24,7 +24,7 @@ export default function EloiaPage() {
           { name: "Concord Group", slug: "concord-group" },
           { name: "Living In", slug: "living-in" },
           { name: "Regents", slug: "regents" },
-          { name: "Milcon", slug: "milcon" },
+          { name: "Mercon", slug: "mercon" },
         ],
       }}
     />

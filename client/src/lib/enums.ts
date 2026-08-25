@@ -111,7 +111,7 @@ export const DEVELOPER_OPTIONS: EnumOption[] = [
   { value: "eloia", label: "Eloia" },
   { value: "living-in", label: "Living In" },
   { value: "regents", label: "Regents" },
-  { value: "milcon", label: "Milcon" },
+  { value: "mercon", label: "Mercon" },
 ];
 
 export const LOCATION_OPTIONS: EnumOption[] = [
