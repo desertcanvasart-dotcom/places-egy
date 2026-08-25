@@ -183,7 +183,43 @@ const INDEX_ROUTES: RouteMeta[] = [
       "PLACES works with 50+ verified office developers across Egypt — Emaar, Marakez, SODIC, Palm Hills, ORA, and more. Browse developer portfolios, projects, and available units.",
     url: `${SITE}/developers`,
   },
+  {
+    route: "/guides",
+    title: "Cairo Office Guides — Renting, Buying & Fit-Out | PLACES",
+    description:
+      "Practical, data-backed guides on renting, buying, sizing, and fitting out an office in Cairo. Written by PLACES, Egypt's admin-office specialists.",
+    url: `${SITE}/guides`,
+  },
 ];
+
+// Parse client/src/lib/guides.ts for guide slugs + titles + descriptions and
+// bake per-guide static HTML files. Same TS-AST pattern as extractMeta so
+// the source is single-truth: what's in the guides.ts array is what gets
+// prerendered.
+async function collectGuideMeta(): Promise<RouteMeta[]> {
+  const guidesPath = path.resolve(process.cwd(), "client/src/lib/guides.ts");
+  let src: string;
+  try {
+    src = await readFile(guidesPath, "utf8");
+  } catch {
+    return [];
+  }
+  const out: RouteMeta[] = [];
+  // Match every { slug: "...", title: "...", description: "...", ... } block.
+  const re = /slug:\s*"([^"]+)"[\s\S]*?title:\s*"([^"]+)"[\s\S]*?description:\s*"([^"]+)"[\s\S]*?imageUrl:\s*"([^"]+)"/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(src)) !== null) {
+    const [, slug, title, description, imageUrl] = m;
+    out.push({
+      route: `/guides/${slug}`,
+      title: `${title} | PLACES`,
+      description,
+      url: `${SITE}/guides/${slug}`,
+      image: imageUrl.startsWith("http") ? imageUrl : `${SITE}${imageUrl}`,
+    });
+  }
+  return out;
+}
 
 export async function prerender() {
   const shellPath = path.join(DIST, "index.html");
@@ -203,9 +239,10 @@ export async function prerender() {
     developerWritten++;
   }
 
-  // Also write dist/public/{listings,developers}/index.html so the Cloudflare
-  // rewrite serves proper per-page meta instead of the raw SPA shell (which
-  // has the homepage canonical hardcoded).
+  // Also write dist/public/{listings,developers,guides}/index.html so the
+  // Cloudflare rewrite (and Express's own extensions:["html"] resolver)
+  // serves proper per-page meta instead of the raw SPA shell (which has
+  // the homepage canonical hardcoded).
   for (const meta of INDEX_ROUTES) {
     const html = injectMeta(shell, meta);
     const outPath = path.join(DIST, meta.route, "index.html");
@@ -214,7 +251,24 @@ export async function prerender() {
     indexWritten++;
   }
 
+  // Per-guide static HTML shells — every /guides/{slug} URL now gets its
+  // own real title + meta description + canonical + og:image on the first
+  // HTTP response. Critical for AI answer engines (Perplexity, ChatGPT,
+  // Claude bots) which don't execute JavaScript before reading meta.
+  const guideMetas = await collectGuideMeta();
+  let guideWritten = 0;
+  for (const meta of guideMetas) {
+    const html = injectMeta(shell, meta);
+    // Write dist/public/guides/<slug>.html — express.static resolves
+    // /guides/<slug> to this file before the SPA catch-all thanks to
+    // the extensions:["html"] option on express.static.
+    const outPath = path.join(DIST, `${meta.route}.html`);
+    await mkdir(path.dirname(outPath), { recursive: true });
+    await writeFile(outPath, html, "utf8");
+    guideWritten++;
+  }
+
   console.log(
-    `prerendered ${developerWritten} developer pages + ${indexWritten} index shells (meta-only)`,
+    `prerendered ${developerWritten} developer pages + ${indexWritten} index shells + ${guideWritten} guides (meta-only)`,
   );
 }
