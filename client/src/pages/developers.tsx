@@ -297,13 +297,13 @@ export default function Developers() {
       <Navbar />
 
       {/* Hero */}
-      <section className="pt-32 pb-12">
+      <section className="pt-24 md:pt-32 pb-8 md:pb-12">
         <div className="container mx-auto px-6 md:px-10">
-          <h1 className="text-3xl md:text-5xl font-serif font-bold text-primary mb-4 leading-tight flex items-center gap-3">
+          <h1 className="text-3xl md:text-5xl font-serif font-bold text-primary mb-3 md:mb-4 leading-tight flex flex-wrap items-center gap-3">
             <span>Developers we work with</span>
-            <Users className="w-7 h-7 md:w-9 md:h-9 text-accent shrink-0" />
+            <Users className="w-6 h-6 md:w-9 md:h-9 text-accent shrink-0" />
           </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl">
+          <p className="text-base md:text-lg text-muted-foreground max-w-2xl leading-relaxed">
             PLACES partners with Egypt's most active developers — giving you direct access to inventory, pricing, and market knowledge that isn't available elsewhere.
           </p>
         </div>
@@ -319,8 +319,8 @@ export default function Developers() {
                 href={dev.slug ? `/developers/${dev.slug}` : `/listings?developer=${encodeURIComponent(dev.name)}`}
                 className="group relative flex flex-col h-full bg-white rounded-2xl border border-border/40 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
               >
-                <div className="p-8">
-                  <div className="h-14 w-40 flex items-center justify-start mb-6">
+                <div className="p-6 md:p-8">
+                  <div className="h-12 md:h-14 w-40 flex items-center justify-start mb-4 md:mb-6">
                     {dev.logo ? (
                       <img
                         src={dev.logo}
@@ -333,15 +333,15 @@ export default function Developers() {
                       // Text-only fallback for developers whose logo file
                       // hasn't been uploaded yet. Rendered in the site's
                       // serif so it visually stands in for a wordmark.
-                      <span className="font-serif text-xl font-bold text-primary/80 group-hover:text-primary transition-colors">
+                      <span className="font-serif text-lg md:text-xl font-bold text-primary/80 group-hover:text-primary transition-colors">
                         {dev.name}
                       </span>
                     )}
                   </div>
-                  <h3 className="text-xl font-serif font-bold text-primary mb-2">{dev.name}</h3>
+                  <h3 className="text-lg md:text-xl font-serif font-bold text-primary mb-2">{dev.name}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">{dev.desc}</p>
                 </div>
-                <div className="mt-auto px-8 pb-6">
+                <div className="mt-auto px-6 md:px-8 pb-5 md:pb-6">
                   <span className="inline-flex items-center text-accent text-sm font-medium group-hover:text-primary transition-colors">
                     Explore developer <ArrowRight className="ml-1.5 w-3.5 h-3.5" />
                   </span>
