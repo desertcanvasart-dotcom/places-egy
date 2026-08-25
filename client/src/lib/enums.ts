@@ -105,6 +105,13 @@ export const DEVELOPER_OPTIONS: EnumOption[] = [
   { value: "inertia-egypt", label: "Inertia Egypt" },
   { value: "orascom-development", label: "Orascom Development" },
   { value: "saudi-egyptian-developers", label: "Saudi Egyptian Developers" },
+  // ─ Added 2026-08-25 — new developers with active New Cairo portfolios ─
+  { value: "makateb-offices", label: "Makateb Offices" },
+  { value: "concord-group", label: "Concord Group" },
+  { value: "eloia", label: "Eloia" },
+  { value: "living-in", label: "Living In" },
+  { value: "regents", label: "Regents" },
+  { value: "milcon", label: "Milcon" },
 ];
 
 export const LOCATION_OPTIONS: EnumOption[] = [

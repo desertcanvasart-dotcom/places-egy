@@ -229,6 +229,43 @@ const DEVELOPERS: { name: string; logo: string; desc: string; slug?: string; log
     desc: "Creator of New Cairo's Amorada community brand — a three-project ecosystem combining ultra-luxurious residences, family compounds, and the Amorada Hub strip mall on the Middle Ring Road, designed by Copenhagen-based Norm Architects.",
     slug: "afaaq",
   },
+  // ─ Added 2026-08-25 — text logo fallback until logo files ship ─
+  {
+    name: "Makateb Offices",
+    logo: "",
+    desc: "New Cairo developer focused on administrative office buildings along the South 90 Street commercial corridor — one of Fifth Settlement's highest-traffic office spines.",
+    slug: "makateb-offices",
+  },
+  {
+    name: "Concord Group",
+    logo: "",
+    desc: "New Cairo developer whose Concord El Abd building sits on South 90 Street — one of Fifth Settlement's densest office corridors.",
+    slug: "concord-group",
+  },
+  {
+    name: "Eloia",
+    logo: "",
+    desc: "New Cairo strip-mall developer on North 90 Street — Fifth Settlement's F&B and retail-anchored commercial corridor.",
+    slug: "eloia",
+  },
+  {
+    name: "Living In",
+    logo: "",
+    desc: "Multi-project New Cairo developer with three administrative buildings across North 90 Street and 70 Street — one of Fifth Settlement's most active mid-market office portfolios.",
+    slug: "living-in",
+  },
+  {
+    name: "Regents",
+    logo: "",
+    desc: "New Cairo developer with three projects across both office corridors and the Gamal Abdelnaser Axis — Address 1, Address 2, and Regents Park.",
+    slug: "regents",
+  },
+  {
+    name: "Milcon",
+    logo: "",
+    desc: "New Cairo strip-mall developer with the G7 project on North 90 Street — a retail-anchored commercial development.",
+    slug: "milcon",
+  },
 ];
 
 export default function Developers() {
@@ -284,13 +321,22 @@ export default function Developers() {
               >
                 <div className="p-8">
                   <div className="h-14 w-40 flex items-center justify-start mb-6">
-                    <img
-                      src={dev.logo}
-                      alt={`${dev.name} logo`}
-                      loading="lazy"
-                      decoding="async"
-                      className={`max-h-full max-w-full object-contain object-left grayscale group-hover:grayscale-0 transition-all duration-300 ${dev.logoClass ?? ""}`}
-                    />
+                    {dev.logo ? (
+                      <img
+                        src={dev.logo}
+                        alt={`${dev.name} logo`}
+                        loading="lazy"
+                        decoding="async"
+                        className={`max-h-full max-w-full object-contain object-left grayscale group-hover:grayscale-0 transition-all duration-300 ${dev.logoClass ?? ""}`}
+                      />
+                    ) : (
+                      // Text-only fallback for developers whose logo file
+                      // hasn't been uploaded yet. Rendered in the site's
+                      // serif so it visually stands in for a wordmark.
+                      <span className="font-serif text-xl font-bold text-primary/80 group-hover:text-primary transition-colors">
+                        {dev.name}
+                      </span>
+                    )}
                   </div>
                   <h3 className="text-xl font-serif font-bold text-primary mb-2">{dev.name}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">{dev.desc}</p>
