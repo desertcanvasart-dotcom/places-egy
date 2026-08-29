@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, Mail, Phone, ExternalLink, ChevronDown } from "lucide-react";
+import { Trash2, Mail, Phone, ExternalLink, ChevronDown, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { adminFetch } from "@/lib/admin-fetch";
 import { type Lead, type LeadStatus } from "@/lib/leads";
 
@@ -74,6 +74,95 @@ export function LeadsManager() {
     ? allLeads
     : allLeads.filter((l) => utmSourceLabel(l.utm_source) === sourceFilter);
 
+  // Summary metrics for the four-card row at the top of the dashboard.
+  // Week is defined as the last 7 rolling days ending now (not calendar
+  // weeks starting on Monday) — matches how a merchant thinks about
+  // pipeline: "leads I got in the last 7 days" vs "the 7 days before that".
+  const summary = (() => {
+    const now = Date.now();
+    const DAY = 24 * 60 * 60 * 1000;
+    const thisWeekCutoff = now - 7 * DAY;
+    const lastWeekCutoff = now - 14 * DAY;
+
+    const thisWeek: Lead[] = [];
+    const lastWeek: Lead[] = [];
+    for (const l of allLeads) {
+      const ts = new Date(l.created_at).getTime();
+      if (ts >= thisWeekCutoff) thisWeek.push(l);
+      else if (ts >= lastWeekCutoff) lastWeek.push(l);
+    }
+
+    // % change vs previous 7 days. If last week was zero, we can't compute
+    // a percentage — show a plain arrow instead. If this week is zero too,
+    // it's a flat "no change" state.
+    const thisCount = thisWeek.length;
+    const lastCount = lastWeek.length;
+    let deltaLabel: string;
+    let deltaDirection: "up" | "down" | "flat";
+    if (lastCount === 0 && thisCount === 0) {
+      deltaLabel = "—";
+      deltaDirection = "flat";
+    } else if (lastCount === 0) {
+      deltaLabel = `+${thisCount}`;
+      deltaDirection = "up";
+    } else {
+      const pct = Math.round(((thisCount - lastCount) / lastCount) * 100);
+      if (pct > 0) {
+        deltaLabel = `+${pct}%`;
+        deltaDirection = "up";
+      } else if (pct < 0) {
+        deltaLabel = `${pct}%`;
+        deltaDirection = "down";
+      } else {
+        deltaLabel = "0%";
+        deltaDirection = "flat";
+      }
+    }
+
+    // Top source among this-week leads. Ties broken by insertion order.
+    const sourceTallies = new Map<string, number>();
+    for (const l of thisWeek) {
+      const key = utmSourceLabel(l.utm_source);
+      sourceTallies.set(key, (sourceTallies.get(key) ?? 0) + 1);
+    }
+    let topSource = "—";
+    let topSourceCount = 0;
+    for (const [k, v] of sourceTallies.entries()) {
+      if (v > topSourceCount) {
+        topSource = k;
+        topSourceCount = v;
+      }
+    }
+
+    // Top converting page — from lead_source column (which stores the
+    // page path or form context). If none of the leads have it populated,
+    // fall back to an em-dash.
+    const pageTallies = new Map<string, number>();
+    for (const l of thisWeek) {
+      const key = l.lead_source ?? "(unknown)";
+      pageTallies.set(key, (pageTallies.get(key) ?? 0) + 1);
+    }
+    let topPage = "—";
+    let topPageCount = 0;
+    for (const [k, v] of pageTallies.entries()) {
+      if (v > topPageCount) {
+        topPage = k;
+        topPageCount = v;
+      }
+    }
+
+    return {
+      thisCount,
+      lastCount,
+      deltaLabel,
+      deltaDirection,
+      topSource,
+      topSourceCount,
+      topPage,
+      topPageCount,
+    };
+  })();
+
   const updateMutation = useMutation({
     mutationFn: async ({ id, patch }: { id: number; patch: Partial<Lead> }) => {
       return adminFetch(`/api/admin/leads/${id}`, {
@@ -111,6 +200,88 @@ export function LeadsManager() {
 
   return (
     <div>
+      {/* Summary row — four rolling-7-day metrics at a glance. Renders
+          before any lead rows so the admin sees the pulse of the site
+          before scanning the queue. Hides on empty state to avoid a row
+          of zeros scaring off a new install. */}
+      {allLeads.length > 0 && (
+        <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-3">
+          {/* Leads this week + delta vs previous 7 days */}
+          <div className="bg-white rounded-xl border border-border/40 p-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
+              Leads · Last 7 Days
+            </p>
+            <div className="flex items-baseline gap-2">
+              <p className="font-serif text-3xl font-bold text-primary leading-none">
+                {summary.thisCount}
+              </p>
+              <span
+                className={`inline-flex items-center gap-0.5 text-xs font-semibold ${
+                  summary.deltaDirection === "up"
+                    ? "text-emerald-600"
+                    : summary.deltaDirection === "down"
+                      ? "text-rose-600"
+                      : "text-muted-foreground"
+                }`}
+              >
+                {summary.deltaDirection === "up" ? (
+                  <TrendingUp className="w-3 h-3" />
+                ) : summary.deltaDirection === "down" ? (
+                  <TrendingDown className="w-3 h-3" />
+                ) : (
+                  <Minus className="w-3 h-3" />
+                )}
+                {summary.deltaLabel}
+              </span>
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-1.5">
+              vs {summary.lastCount} previous 7d
+            </p>
+          </div>
+
+          {/* All-time lead count — grows monotonically, easy morale metric */}
+          <div className="bg-white rounded-xl border border-border/40 p-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
+              All-Time Leads
+            </p>
+            <p className="font-serif text-3xl font-bold text-primary leading-none">
+              {allLeads.length}
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-1.5">
+              across every channel
+            </p>
+          </div>
+
+          {/* Top source this week — where to double down on marketing */}
+          <div className="bg-white rounded-xl border border-border/40 p-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
+              Top Source · 7d
+            </p>
+            <p className="font-serif text-xl font-bold text-primary leading-tight truncate">
+              {summary.topSource}
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-1.5">
+              {summary.topSourceCount} lead
+              {summary.topSourceCount === 1 ? "" : "s"}
+            </p>
+          </div>
+
+          {/* Top converting page/form — where the leads actually come from */}
+          <div className="bg-white rounded-xl border border-border/40 p-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
+              Top Page · 7d
+            </p>
+            <p className="font-serif text-xl font-bold text-primary leading-tight truncate" title={summary.topPage}>
+              {summary.topPage}
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-1.5">
+              {summary.topPageCount} lead
+              {summary.topPageCount === 1 ? "" : "s"}
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="mb-5 flex flex-col md:flex-row md:items-end md:justify-between gap-3">
         <p className="text-sm text-muted-foreground">
           Every form submission from the website. Click a row to expand for the
