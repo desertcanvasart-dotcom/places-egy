@@ -121,47 +121,52 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Stats Trust Bar */}
+      {/* Stats Trust Bar — slimmed to a light inline strip so it reads as
+          part of the hero-close, not as a floating card competing with
+          the deals section below. Card treatment stripped (no shadow, no
+          heavy background), just hairline dividers between numbers. */}
       <FadeInSection>
-        <section className="pt-12 pb-10 -mt-32 relative z-20">
+        <section className="pt-8 md:pt-10 pb-6 md:pb-8 relative z-20 bg-white/60 backdrop-blur-sm">
           <div className="container mx-auto px-6 md:px-10 max-w-7xl">
-            <div className="bg-white rounded-2xl shadow-md shadow-primary/5 p-7 md:p-10">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-7 text-center">
-                <div>
-                  <p className="text-3xl md:text-[2.75rem] font-serif font-bold text-primary hover:text-accent transition-colors cursor-default mb-1">
-                    <CountUp end={50} duration={3500} suffix="+" />
-                  </p>
-                  <p className="text-xs text-muted-foreground uppercase tracking-widest">Developers</p>
-                </div>
-                <div>
-                  <p className="text-3xl md:text-[2.75rem] font-serif font-bold text-primary hover:text-accent transition-colors cursor-default mb-1">
-                    <CountUp end={1000} duration={3500} suffix="+" />
-                  </p>
-                  <p className="text-xs text-muted-foreground uppercase tracking-widest">Listings</p>
-                </div>
-                <div>
-                  <p className="text-3xl md:text-[2.75rem] font-serif font-bold text-primary hover:text-accent transition-colors cursor-default mb-1">
-                    <CountUp end={6} duration={3500} />
-                  </p>
-                  <p className="text-xs text-muted-foreground uppercase tracking-widest">Key Locations</p>
-                </div>
-                <div>
-                  <p className="text-3xl md:text-[2.75rem] font-serif font-bold text-primary hover:text-accent transition-colors cursor-default mb-1">
-                    <CountUp end={500} duration={3500} suffix="+" />
-                  </p>
-                  <p className="text-xs text-muted-foreground uppercase tracking-widest">Businesses Helped</p>
-                </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-y-6 text-center md:divide-x md:divide-primary/10">
+              <div className="md:px-4">
+                <p className="text-2xl md:text-4xl font-serif font-bold text-primary hover:text-accent transition-colors cursor-default mb-1">
+                  <CountUp end={50} duration={3500} suffix="+" />
+                </p>
+                <p className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-widest">Developers</p>
+              </div>
+              <div className="md:px-4">
+                <p className="text-2xl md:text-4xl font-serif font-bold text-primary hover:text-accent transition-colors cursor-default mb-1">
+                  <CountUp end={1000} duration={3500} suffix="+" />
+                </p>
+                <p className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-widest">Listings</p>
+              </div>
+              <div className="md:px-4">
+                <p className="text-2xl md:text-4xl font-serif font-bold text-primary hover:text-accent transition-colors cursor-default mb-1">
+                  <CountUp end={6} duration={3500} />
+                </p>
+                <p className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-widest">Key Locations</p>
+              </div>
+              <div className="md:px-4">
+                <p className="text-2xl md:text-4xl font-serif font-bold text-primary hover:text-accent transition-colors cursor-default mb-1">
+                  <CountUp end={500} duration={3500} suffix="+" />
+                </p>
+                <p className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-widest">Businesses Helped</p>
               </div>
             </div>
           </div>
         </section>
       </FadeInSection>
 
-      {/* Latest closed deals — a contained dark announcement card. Managed from
-          the admin dashboard; renders nothing when there are no active deals. */}
+      {/* Latest closed deals — extra top margin + a small section eyebrow
+          so it reads as its own moment on the page instead of a second
+          card stacked on the stats above. */}
       <FadeInSection>
-        <section className="py-4">
+        <section className="pt-14 md:pt-20 pb-6">
           <div className="container mx-auto px-6 md:px-10 max-w-7xl">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-accent mb-4 text-center md:text-left">
+              Recently Closed
+            </p>
             <DealAnnouncementCarousel />
           </div>
         </section>
