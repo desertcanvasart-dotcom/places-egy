@@ -188,69 +188,52 @@ export function GuideLayout({ guide, wordCount, children }: Props) {
             boxes. Right side of the divider is the CTA, left side is the
             next-guide pointer, which visually chains readers into the next
             piece of content without a second physical box. */}
+        {/* Read next — light editorial pointer, no dark box. */}
         <div className="container mx-auto px-4 md:px-8 max-w-4xl mt-16">
-          <div className="relative overflow-hidden rounded-2xl bg-primary text-white shadow-lg shadow-primary/20">
-            {/* Ambient accent glow, top-right corner */}
-            <div
-              className="pointer-events-none absolute -top-24 -right-24 h-52 w-52 rounded-full bg-accent/25 blur-3xl"
-              aria-hidden="true"
-            />
+          <Link
+            href={`/guides/${next.slug}`}
+            onClick={() =>
+              trackEvent("guide_next_click", {
+                from_slug: guide.slug,
+                to_slug: next.slug,
+              })
+            }
+            className="group block border-t border-b border-primary/10 py-6 hover:border-accent/40 transition-colors"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-accent mb-1">
+                  Read next
+                </p>
+                <p className="font-serif text-lg md:text-xl font-bold text-primary leading-snug group-hover:text-accent transition-colors">
+                  {next.title}
+                </p>
+              </div>
+              <ArrowRight className="w-5 h-5 text-primary/40 group-hover:text-accent group-hover:translate-x-1 transition-all shrink-0" />
+            </div>
+          </Link>
+        </div>
 
-            {/* Read-next strip at the TOP — thin horizontal band, tinted
-                slightly lighter than the main CTA below. Acts as an
-                editorial "here's where to go after this" pointer without
-                being its own box. */}
+        {/* Single, calmer CTA — one line + one button. */}
+        <div className="container mx-auto px-4 md:px-8 max-w-4xl mt-12">
+          <div className="text-center py-10">
+            <h3 className="font-serif text-2xl md:text-3xl font-bold text-primary leading-tight mb-6">
+              Ready to find your office?
+            </h3>
             <Link
-              href={`/guides/${next.slug}`}
+              href="/contact"
               onClick={() =>
-                trackEvent("guide_next_click", {
-                  from_slug: guide.slug,
-                  to_slug: next.slug,
+                trackEvent("guide_cta_click", {
+                  guide_slug: guide.slug,
+                  cta: "contact",
                 })
               }
-              className="group relative block border-b border-white/10 px-6 md:px-10 py-4 md:py-5 hover:bg-white/5 transition-colors"
+              className="inline-flex items-center gap-2 bg-accent hover:bg-accent/90 text-white text-sm font-semibold px-6 py-3 rounded-full transition-all shadow-md shadow-accent/30 hover:-translate-y-0.5"
             >
-              <div className="flex items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-accent mb-0.5">
-                    Read next
-                  </p>
-                  <p className="font-serif text-base md:text-lg font-bold text-white leading-snug truncate group-hover:text-accent transition-colors">
-                    {next.title}
-                  </p>
-                </div>
-                <ArrowRight className="w-4 h-4 md:w-5 md:h-5 text-white/60 group-hover:text-accent group-hover:translate-x-0.5 transition-all shrink-0" />
-              </div>
+              <MessageCircle className="w-4 h-4" />
+              Talk to an advisor
+              <ArrowRight className="w-4 h-4" />
             </Link>
-
-            {/* Talk-to-PLACES CTA in the main body of the container */}
-            <div className="relative px-6 md:px-10 py-8 md:py-10">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-accent mb-2">
-                Talk to PLACES
-              </p>
-              <h3 className="font-serif text-2xl md:text-3xl font-bold mb-3 text-white leading-tight">
-                Ready to find your office?
-              </h3>
-              <p className="text-white/75 mb-6 max-w-2xl leading-relaxed">
-                Every situation is different. Share what you're looking for
-                and a PLACES advisor will send you a short-list of buildings
-                that fit your budget, team size, and timeline.
-              </p>
-              <Link
-                href="/contact"
-                onClick={() =>
-                  trackEvent("guide_cta_click", {
-                    guide_slug: guide.slug,
-                    cta: "contact",
-                  })
-                }
-                className="inline-flex items-center gap-2 bg-accent hover:bg-accent/90 text-white text-sm font-semibold px-6 py-3 rounded-full transition-all shadow-md shadow-accent/30 hover:-translate-y-0.5"
-              >
-                <MessageCircle className="w-4 h-4" />
-                Talk to an advisor
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
           </div>
         </div>
 
