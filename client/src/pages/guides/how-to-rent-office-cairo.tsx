@@ -1,6 +1,5 @@
 import { Link } from "wouter";
 import { GuideLayout } from "@/components/guides/GuideLayout";
-import { DeveloperSurveyMagnet } from "@/components/magnets/DeveloperSurveyMagnet";
 import {
   HighlightNumber,
   StatCallout,
@@ -112,7 +111,6 @@ export default function HowToRentOfficeCairoGuide() {
         districts that were never a real fit.
       </p>
 
-      <DeveloperSurveyMagnet variant="inline" guideSlug={guide.slug} />
 
       <h2 id="step-3-shortlist-buildings">Step 3: Build a proper shortlist</h2>
 

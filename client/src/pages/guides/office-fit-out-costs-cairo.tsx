@@ -1,6 +1,5 @@
 import { Link } from "wouter";
 import { GuideLayout } from "@/components/guides/GuideLayout";
-import { DeveloperSurveyMagnet } from "@/components/magnets/DeveloperSurveyMagnet";
 import {
   HighlightNumber,
   StatCallout,
@@ -223,7 +222,6 @@ export default function OfficeFitOutCostsCairoGuide() {
         perception matters to your business.
       </p>
 
-      <DeveloperSurveyMagnet variant="inline" guideSlug={guide.slug} />
 
       <h2 id="hidden-costs">The four categories most tenants underestimate</h2>
 

@@ -1,6 +1,5 @@
 import { Link } from "wouter";
 import { GuideLayout } from "@/components/guides/GuideLayout";
-import { DeveloperSurveyMagnet } from "@/components/magnets/DeveloperSurveyMagnet";
 import {
   HighlightNumber,
   StatCallout,
@@ -171,8 +170,6 @@ export default function OfficeRentalPricesCairo2026Guide() {
         confirm the split before signing. PLACES generally negotiates a
         service-charge cap into new leases at this price point.
       </KeyInsight>
-
-      <DeveloperSurveyMagnet variant="inline" guideSlug={guide.slug} />
 
       <h2 id="sheikh-zayed">Sheikh Zayed & West Cairo</h2>
 

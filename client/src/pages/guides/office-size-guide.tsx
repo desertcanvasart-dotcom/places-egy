@@ -1,6 +1,5 @@
 import { Link } from "wouter";
 import { GuideLayout } from "@/components/guides/GuideLayout";
-import { DeveloperSurveyMagnet } from "@/components/magnets/DeveloperSurveyMagnet";
 import {
   HighlightNumber,
   StatCallout,
@@ -114,7 +113,6 @@ export default function OfficeSizeGuidePage() {
         or reception, which come next.
       </p>
 
-      <DeveloperSurveyMagnet variant="inline" guideSlug={guide.slug} />
 
       <GuideImage
         src="/images/general-office.jpg"

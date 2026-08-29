@@ -1,6 +1,5 @@
 import { Link } from "wouter";
 import { GuideLayout } from "@/components/guides/GuideLayout";
-import { DeveloperSurveyMagnet } from "@/components/magnets/DeveloperSurveyMagnet";
 import {
   HighlightNumber,
   StatCallout,
@@ -122,7 +121,6 @@ export default function BuyVsRentOfficeCairoGuide() {
         around <strong>year 4</strong> in a stable market.
       </p>
 
-      <DeveloperSurveyMagnet variant="inline" guideSlug={guide.slug} />
 
       <KeyInsight label="The 5-year gap">
         The buy scenario ends year 5 roughly{" "}
