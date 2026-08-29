@@ -6,6 +6,7 @@ import { useDocumentMeta } from "@/lib/use-document-meta";
 import { breadcrumbSchema, guidesCollectionSchema } from "@/lib/schema";
 import { GUIDES } from "@/lib/guides";
 import { ArrowRight, Clock } from "lucide-react";
+import { DeveloperSurveyMagnet } from "@/components/magnets/DeveloperSurveyMagnet";
 
 // /guides — hub index page. One card per guide. Auto-populates from the
 // GUIDES array in lib/guides.ts. Also emits a CollectionPage JSON-LD block
@@ -127,6 +128,8 @@ export default function GuidesIndexPage() {
       </main>
 
       <Footer />
+
+      <DeveloperSurveyMagnet variant="popup" />
     </div>
   );
 }
