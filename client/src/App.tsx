@@ -83,13 +83,6 @@ const OraPage = lazy(() => import("@/pages/developers/ora"));
 const AkoyaPage = lazy(() => import("@/pages/developers/akoya"));
 const ElHazekPage = lazy(() => import("@/pages/developers/el-hazek"));
 const WealthPage = lazy(() => import("@/pages/developers/wealth"));
-// Added 2026-08-25 — new developers with active New Cairo portfolios.
-const MakatebOfficesPage = lazy(() => import("@/pages/developers/makateb-offices"));
-const ConcordGroupPage = lazy(() => import("@/pages/developers/concord-group"));
-const EloiaPage = lazy(() => import("@/pages/developers/eloia"));
-const LivingInPage = lazy(() => import("@/pages/developers/living-in"));
-const RegentsPage = lazy(() => import("@/pages/developers/regents"));
-const MerconPage = lazy(() => import("@/pages/developers/mercon"));
 const Locations = lazy(() => import("@/pages/locations"));
 const ProjectsPage = lazy(() => import("@/pages/projects"));
 const LocationDetail = lazy(() => import("@/pages/locations/detail"));
@@ -295,12 +288,6 @@ function Router() {
       <Route path="/developers/el-hazek" component={ElHazekPage} />
       <Route path="/developers/wealth" component={WealthPage} />
       {/* Added 2026-08-25 */}
-      <Route path="/developers/makateb-offices" component={MakatebOfficesPage} />
-      <Route path="/developers/concord-group" component={ConcordGroupPage} />
-      <Route path="/developers/eloia" component={EloiaPage} />
-      <Route path="/developers/living-in" component={LivingInPage} />
-      <Route path="/developers/regents" component={RegentsPage} />
-      <Route path="/developers/mercon" component={MerconPage} />
 
       {/* Location detail pages — dynamic template */}
       <Route path="/locations/:slug" component={LocationDetail} />

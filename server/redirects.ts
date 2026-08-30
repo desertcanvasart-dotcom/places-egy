@@ -27,9 +27,20 @@ const PERMANENT_REDIRECTS: Record<string, string> = {
   "/commercial/strip-malls": "/",
   "/commercial/drive-through": "/",
   "/commercial/drive-thru": "/",
-  // Developer rename: Milcon → Mercon (2026-08-25). Preserves link equity
-  // from any external references to the old /developers/milcon URL.
-  "/developers/milcon": "/developers/mercon",
+  // Six developer pages retired 2026-08-30 — pages were built with
+  // placeholder content on 2026-08-25 and never completed. All 6 now
+  // 301 to the main /developers hub so any external bookmarks, indexed
+  // Google results, or old links land somewhere useful. /developers/milcon
+  // was itself a 301 to /developers/mercon (renamed 2026-08-25); with
+  // mercon retired we point milcon directly at the hub too so users
+  // don't hop through a chain of redirects.
+  "/developers/milcon": "/developers",
+  "/developers/makateb-offices": "/developers",
+  "/developers/concord-group": "/developers",
+  "/developers/eloia": "/developers",
+  "/developers/living-in": "/developers",
+  "/developers/regents": "/developers",
+  "/developers/mercon": "/developers",
 };
 
 // Prefix redirects for path roots that have moved. Anything matching the

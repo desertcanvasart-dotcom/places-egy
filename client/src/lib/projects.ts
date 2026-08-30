@@ -87,13 +87,6 @@ export const DEVELOPER_DISPLAY_NAMES: Record<string, string> = {
   "inertia-egypt": "Inertia Egypt",
   "orascom-development": "Orascom Development",
   "saudi-egyptian-developers": "Saudi Egyptian Developers",
-  // ─ Added 2026-08-25 — new developers with active New Cairo portfolios ─
-  "makateb-offices": "Makateb Offices",
-  "concord-group": "Concord Group",
-  eloia: "Eloia",
-  "living-in": "Living In",
-  regents: "Regents",
-  mercon: "Mercon",
 };
 
 // Human-readable display labels for each ProjectType — used as card badges.
@@ -268,32 +261,6 @@ export const PROJECTS: Project[] = [
   // ─── Modad ───────────────────────────────────────────────────────
   { name: "Brackets Mall", type: "mixed-use", location: "New Cairo · North 90 Street", developer: "modad", image: "/images/Brackets-mall-new-cairo.webp" },
 
-  // ─── Added 2026-08-25 — new developers with active New Cairo portfolios ─
-  // Generic project images (business-complex.jpg / strip mall / general-office)
-  // used until specific project photography is uploaded. Update the `image`
-  // field on each row once real photos are available.
-
-  // ─── Makateb Offices ─────────────────────────────────────────────
-  { name: "Makateb", type: "business-building", location: "New Cairo · South 90 Street", developer: "makateb-offices", image: "/images/business-complex.jpg" },
-
-  // ─── Concord Group ───────────────────────────────────────────────
-  { name: "Concord El Abd", type: "business-building", location: "New Cairo · South 90 Street", developer: "concord-group", image: "/images/business-complex.jpg" },
-
-  // ─── Eloia ───────────────────────────────────────────────────────
-  { name: "Eloia", type: "strip-mall", location: "New Cairo · North 90 Street", developer: "eloia", image: "/images/mixed-use.jpg" },
-
-  // ─── Living In ───────────────────────────────────────────────────
-  { name: "ARC", type: "business-building", location: "New Cairo · North 90 Street", developer: "living-in", image: "/images/business-complex.jpg" },
-  { name: "Living in 237", type: "business-building", location: "New Cairo · 70 Street", developer: "living-in", image: "/images/general-office.jpg" },
-  { name: "Living in", type: "business-building", location: "New Cairo · North 90 Street", developer: "living-in", image: "/images/business-complex.jpg" },
-
-  // ─── Regents ─────────────────────────────────────────────────────
-  { name: "Address 2", type: "business-building", location: "New Cairo · North 90 Street", developer: "regents", image: "/images/business-complex.jpg" },
-  { name: "Address 1", type: "business-building", location: "New Cairo · South 90 Street", developer: "regents", image: "/images/business-complex.jpg" },
-  { name: "Regents Park", type: "strip-mall", location: "New Cairo · Gamal Abdelnaser Axis", developer: "regents", image: "/images/mixed-use.jpg" },
-
-  // ─── Mercon ──────────────────────────────────────────────────────
-  { name: "G7", type: "strip-mall", location: "New Cairo · North 90 Street", developer: "mercon", image: "/images/mixed-use.jpg" },
 ];
 
 export function getProjectsByDeveloper(developerSlug: string): Project[] {
