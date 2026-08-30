@@ -546,12 +546,24 @@ export async function registerRoutes(
         return res.json({ ok: true });
       }
 
-      // If this email already has an account, log them back in instead of
-      // erroring (this is a lead-capture form; the person wanting to save
-      // favorites shouldn't be blocked by a "you already exist" wall).
+      // SECURITY (2026-08-30 audit finding): if this email already has an
+      // account, do NOT log the requester in. The previous behavior rotated
+      // the existing account's session_token and issued the requester a
+      // cookie for that account — a trivial account-takeover primitive
+      // (attacker submits {email: victim@...} and receives victim's session).
+      //
+      // New behavior: return the same generic 200 whether the email is new
+      // or already exists. No token rotation, no cookie issued, no enumeration
+      // signal in the response body. The genuine returning user experience
+      // (they still have their cookie from the original signup) is unchanged
+      // because we never touched the existing row.
+      //
+      // A future real "log me back in on a new device" flow needs an out-of-
+      // band verification step (magic link to the email) — deliberately not
+      // built here; too easy to get wrong.
       const existing = await supabaseAdmin
         .from("accounts")
-        .select("id,name,email,phone,session_token")
+        .select("id")
         .eq("email", body.email.toLowerCase())
         .maybeSingle();
 
@@ -559,29 +571,10 @@ export async function registerRoutes(
       const now = new Date().toISOString();
 
       if (existing.data) {
-        // Rotate session token + refresh any updated contact info the visitor
-        // typed. We prefer their latest name/phone in case they changed number.
-        // Only overwrite preferred_language if we captured one this time —
-        // otherwise keep whatever we recorded on their original signup.
-        const update: Record<string, unknown> = {
-          name: body.name,
-          phone: body.phone,
-          session_token: token,
-          last_active_at: now,
-        };
-        if (body.preferred_language) {
-          update.preferred_language = body.preferred_language;
-        }
-        await supabaseAdmin
-          .from("accounts")
-          .update(update)
-          .eq("id", existing.data.id);
-        setSessionCookie(res, token);
-        return res.json({
-          ok: true,
-          id: existing.data.id,
-          existed: true,
-        });
+        // Silently 200 without side effects. Deliberately mimic the fresh-
+        // signup response shape (no `existed` flag) so an attacker can't
+        // enumerate registered emails by comparing responses.
+        return res.json({ ok: true });
       }
 
       const { data: inserted, error } = await supabaseAdmin
