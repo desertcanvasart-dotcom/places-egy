@@ -15,6 +15,7 @@ import { listingUrl, parseListingId } from "@/lib/listings";
 import { listingCurrency } from "@/lib/currency";
 import { supabaseImage, supabaseImageOnError } from "@/lib/image-url";
 import { trackEvent } from "@/lib/analytics";
+import { openCalendly } from "@/lib/calendly";
 import { useScrollDepth } from "@/lib/use-scroll-depth";
 import DOMPurify from "dompurify";
 import { marked } from "marked";
@@ -498,6 +499,18 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
                     </Button>
                   </a>
                 </div>
+                {/* Tertiary CTA — self-serve booking. Deliberately styled
+                    as a low-key link, not a third full-width button, so
+                    Call/WhatsApp stay the primary paths for hot leads. */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    openCalendly("listing_detail", `listing_${listing.id}`)
+                  }
+                  className="mt-3 w-full text-center text-xs text-muted-foreground hover:text-accent transition-colors underline decoration-dotted underline-offset-4"
+                >
+                  Or book a 30-min call
+                </button>
               </div>
 
               <Link

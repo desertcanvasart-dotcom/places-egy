@@ -8,6 +8,7 @@ import { articleSchema, breadcrumbSchema } from "@/lib/schema";
 import { ArrowRight, ArrowLeft, Clock, ChevronRight, MessageCircle } from "lucide-react";
 import { nextGuide, type Guide } from "@/lib/guides";
 import { trackEvent } from "@/lib/analytics";
+import { openCalendly } from "@/lib/calendly";
 import { DeveloperSurveyMagnet } from "@/components/magnets/DeveloperSurveyMagnet";
 
 // Shared layout for every /guides/* page. Handles:
@@ -234,6 +235,17 @@ export function GuideLayout({ guide, wordCount, children }: Props) {
               Talk to an advisor
               <ArrowRight className="w-4 h-4" />
             </Link>
+            {/* Secondary self-serve path — dotted underline link so it
+                reads as an "or" alternative, not a competing button. */}
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={() => openCalendly("guide_footer", `guide_${guide.slug}`)}
+                className="text-xs text-muted-foreground hover:text-accent transition-colors underline decoration-dotted underline-offset-4"
+              >
+                Or book a 30-min call directly
+              </button>
+            </div>
           </div>
         </div>
 
