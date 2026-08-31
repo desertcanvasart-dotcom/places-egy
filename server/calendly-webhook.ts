@@ -4,17 +4,42 @@ import { supabaseAdmin } from "./supabase";
 import { sendMail } from "./mailer";
 
 // Calendly webhooks: invitee.created (booking confirmed) and invitee.canceled
-// (booking canceled). Signed by Calendly with an HMAC-SHA256 over the raw
-// body using a shared signing key from Calendly's webhook subscription config.
+// (booking canceled). Two auth paths supported (either satisfies the check):
 //
-// Setup in Calendly (account owner: info@places-egy.com):
-//   1. Calendly → Integrations → Webhooks → Create webhook subscription
-//   2. URL: https://places-egy.com/api/webhooks/calendly
-//   3. Events: invitee.created, invitee.canceled
-//   4. Scope: user (or organization if PLACES has multi-user)
-//   5. Copy the signing key into Railway env: CALENDLY_WEBHOOK_SIGNING_KEY
+//   1. NATIVE CALENDLY (Teams+ plans only): Calendly signs each request with
+//      HMAC-SHA256 over the raw body. Header:
+//        Calendly-Webhook-Signature: t=<unix_ts>,v1=<hex_signature>
+//      Verified against CALENDLY_WEBHOOK_SIGNING_KEY.
+//      Setup: Calendly → Integrations → Webhooks → Create webhook subscription.
+//      URL: https://places-egy.com/api/webhooks/calendly, events:
+//      invitee.created + invitee.canceled, copy signing key into Railway.
+//
+//   2. ZAPIER PASSTHROUGH (works on Free/Standard Calendly plans): Zapier's
+//      Calendly trigger fires a Zap on every booking; the Zap's Webhook step
+//      POSTs the Calendly payload here with a shared-secret header:
+//        x-webhook-secret: <ZAPIER_WEBHOOK_SECRET value>
+//      Verified with timing-safe equality against ZAPIER_WEBHOOK_SECRET.
+//      Setup: Zapier → New Zap → Trigger: Calendly (New Invitee) → Action:
+//      Webhooks by Zapier → POST → URL + Headers + JSON body (raw payload
+//      from the trigger). Copy the secret into BOTH Zapier's header field
+//      AND Railway env ZAPIER_WEBHOOK_SECRET.
+//
+// Either check passing accepts the request. Both env vars empty in prod
+// still rejects everything (defense-in-depth against misconfig).
 
 const SIGNING_KEY = process.env.CALENDLY_WEBHOOK_SIGNING_KEY ?? "";
+const ZAPIER_SECRET = process.env.ZAPIER_WEBHOOK_SECRET ?? "";
+
+// Timing-safe equality that tolerates length differences without leaking
+// info (short-circuits on length, then compares padded buffers).
+function safeEqualStr(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  try {
+    return timingSafeEqual(Buffer.from(a), Buffer.from(b));
+  } catch {
+    return false;
+  }
+}
 
 // Verify Calendly's HMAC. Header format:
 //   Calendly-Webhook-Signature: t=<unix_ts>,v1=<hex_signature>
@@ -23,17 +48,7 @@ export function verifyCalendlySignature(
   rawBody: string,
   headerValue: string,
 ): boolean {
-  if (!SIGNING_KEY) {
-    // In dev with no key configured, accept everything so we can iterate.
-    // In prod without a key we log a warning and REJECT (safer than accepting).
-    if (process.env.NODE_ENV === "production") {
-      console.warn(
-        "[calendly-webhook] CALENDLY_WEBHOOK_SIGNING_KEY not set — rejecting.",
-      );
-      return false;
-    }
-    return true;
-  }
+  if (!SIGNING_KEY) return false;
   const parts = headerValue.split(",").reduce<Record<string, string>>((acc, kv) => {
     const [k, v] = kv.split("=");
     if (k && v) acc[k.trim()] = v.trim();
@@ -51,6 +66,42 @@ export function verifyCalendlySignature(
   } catch {
     return false;
   }
+}
+
+// Verify a Zapier-style shared-secret header. Zapier POSTs from its cloud
+// with a static header value we compare against the env-configured secret.
+// Timing-safe compare so an attacker can't binary-search the secret via
+// response-time differences.
+export function verifyZapierSecret(headerValue: string | undefined): boolean {
+  if (!ZAPIER_SECRET) return false;
+  if (!headerValue) return false;
+  return safeEqualStr(headerValue, ZAPIER_SECRET);
+}
+
+// Accept the request if EITHER auth path succeeds. Both empty in prod = reject.
+export function verifyCalendlyRequest(
+  rawBody: string,
+  calendlySigHeader: string,
+  zapierSecretHeader: string | undefined,
+): boolean {
+  // Dev-only escape hatch: with neither env var set outside production,
+  // accept everything so we can iterate on the handler locally.
+  if (!SIGNING_KEY && !ZAPIER_SECRET) {
+    if (process.env.NODE_ENV === "production") {
+      console.warn(
+        "[calendly-webhook] Neither CALENDLY_WEBHOOK_SIGNING_KEY nor ZAPIER_WEBHOOK_SECRET set — rejecting.",
+      );
+      return false;
+    }
+    return true;
+  }
+  if (SIGNING_KEY && calendlySigHeader && verifyCalendlySignature(rawBody, calendlySigHeader)) {
+    return true;
+  }
+  if (ZAPIER_SECRET && verifyZapierSecret(zapierSecretHeader)) {
+    return true;
+  }
+  return false;
 }
 
 // Extract UTM params from Calendly tracking payload. Calendly passes through
@@ -94,7 +145,8 @@ export async function handleCalendlyWebhook(
 ): Promise<void> {
   const raw = (req as Request & { rawBody?: string }).rawBody ?? "";
   const sigHeader = req.header("Calendly-Webhook-Signature") ?? "";
-  if (!verifyCalendlySignature(raw, sigHeader)) {
+  const zapierHeader = req.header("x-webhook-secret");
+  if (!verifyCalendlyRequest(raw, sigHeader, zapierHeader)) {
     res.status(401).json({ message: "Bad signature" });
     return;
   }
