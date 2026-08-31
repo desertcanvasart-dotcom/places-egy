@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema, faqSchema } from "@/lib/schema";
+import { useDocumentMeta } from "@/lib/use-document-meta";
 import {
   FAQ_SECTIONS,
   getFAQSectionBySlug,
@@ -83,6 +84,20 @@ export default function FAQSectionPage() {
 
 // Separated so the Hooks below run after the section guard above.
 function SectionView({ section }: { section: FAQSection }) {
+  // Per-section <title> + meta description so each /faqs/{slug} page ranks
+  // for its own topic instead of being consolidated into the homepage.
+  // Description dynamically composed from the section's real substance so
+  // Google sees a unique snippet on each URL.
+  const questionCount = section.subsections.reduce(
+    (n, sub) => n + sub.items.length,
+    0,
+  );
+  useDocumentMeta({
+    title: `${section.title} — Egypt Office FAQs | PLACES`,
+    description: `${questionCount} answered questions about ${section.title.toLowerCase()} for buying, renting, or investing in admin offices in Egypt. Written by PLACES advisors.`,
+    url: `https://places-egy.com/faqs/${section.id}`,
+  });
+
   const [search, setSearch] = useState("");
   const [activeSubsectionId, setActiveSubsectionId] = useState<string>(
     section.subsections[0]?.id ?? "",

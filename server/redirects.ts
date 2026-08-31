@@ -41,6 +41,18 @@ const PERMANENT_REDIRECTS: Record<string, string> = {
   "/developers/living-in": "/developers",
   "/developers/regents": "/developers",
   "/developers/mercon": "/developers",
+  // Phantom /admin/{location} URLs Google indexed (probably from old internal
+  // links or a stale sitemap). These match the generic /admin/:type SPA route
+  // which shows the ListingsPage — but with wrong meta (homepage title +
+  // canonical to /), causing GSC "Alternate page with proper canonical" +
+  // "Crawled - currently not indexed" reports. Redirect each to the real
+  // /locations/{slug} page which has its own meta + content.
+  "/admin/new-cairo": "/locations/new-cairo",
+  "/admin/sheikh-zayed": "/locations/sheikh-zayed",
+  "/admin/6th-october": "/locations/6th-october",
+  "/admin/downtown-cairo": "/locations/downtown-cairo",
+  "/admin/sheraton": "/locations/sheraton",
+  "/admin/maadi": "/locations/maadi",
 };
 
 // Prefix redirects for path roots that have moved. Anything matching the

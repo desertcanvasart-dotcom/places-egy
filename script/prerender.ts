@@ -192,6 +192,53 @@ const INDEX_ROUTES: RouteMeta[] = [
   },
 ];
 
+// Parse client/src/lib/faq.ts for FAQ section slugs + titles and bake per-
+// section static HTML. Descriptions are composed the same way the runtime
+// SectionView composes them, so what Google sees on first HTTP matches what
+// React would render post-hydration.
+//
+// The faq.ts file is ~2000 lines with deeply nested subsections; we don't
+// need to parse the whole tree. Just grep the top-level FAQ_SECTIONS entries
+// (each starts with `id: "..."`, `number: N`, `title: "..."`) and count the
+// items across their subsections for the questionCount in the description.
+async function collectFaqSectionMeta(): Promise<RouteMeta[]> {
+  const faqPath = path.resolve(process.cwd(), "client/src/lib/faq.ts");
+  let src: string;
+  try {
+    src = await readFile(faqPath, "utf8");
+  } catch {
+    return [];
+  }
+  const out: RouteMeta[] = [];
+  // Top-level section entries follow: id: "slug", number: N, title: "Title"
+  // We scan for the id/number/title triple. The `number:` field only exists
+  // on top-level sections (not nested subsections), so it's the right filter
+  // to distinguish sections from subsections in one regex.
+  const sectionRe = /id:\s*"([^"]+)",\s*number:\s*\d+,\s*title:\s*"([^"]+)"/g;
+  let m: RegExpExecArray | null;
+  while ((m = sectionRe.exec(src)) !== null) {
+    const [, slug, title] = m;
+    // Cheap question count: match every `q: "..."` under this section by
+    // slicing from this section's start to the next section's start.
+    const startIdx = m.index;
+    sectionRe.lastIndex = m.index + m[0].length;
+    const nextMatch = sectionRe.exec(src);
+    const endIdx = nextMatch ? nextMatch.index : src.length;
+    // Reset lastIndex so we don't skip the next section on the outer loop.
+    sectionRe.lastIndex = m.index + m[0].length;
+    const sectionBody = src.slice(startIdx, endIdx);
+    const questionCount = (sectionBody.match(/^\s*q:\s*"/gm) ?? []).length;
+
+    out.push({
+      route: `/faqs/${slug}`,
+      title: `${title} — Egypt Office FAQs | PLACES`,
+      description: `${questionCount} answered questions about ${title.toLowerCase()} for buying, renting, or investing in admin offices in Egypt. Written by PLACES advisors.`,
+      url: `${SITE}/faqs/${slug}`,
+    });
+  }
+  return out;
+}
+
 // Parse client/src/lib/guides.ts for guide slugs + titles + descriptions and
 // bake per-guide static HTML files. Same TS-AST pattern as extractMeta so
 // the source is single-truth: what's in the guides.ts array is what gets
@@ -268,7 +315,22 @@ export async function prerender() {
     guideWritten++;
   }
 
+  // Per-FAQ-section static HTML shells. GSC was reporting these under
+  // "Crawled - currently not indexed" because the SPA shell they were
+  // served with had homepage <title>, meta description, AND canonical
+  // pointing at "/" — telling Google the pages were the homepage. Baking
+  // real per-section meta here fixes that at the wire-response level.
+  const faqSectionMetas = await collectFaqSectionMeta();
+  let faqWritten = 0;
+  for (const meta of faqSectionMetas) {
+    const html = injectMeta(shell, meta);
+    const outPath = path.join(DIST, `${meta.route}.html`);
+    await mkdir(path.dirname(outPath), { recursive: true });
+    await writeFile(outPath, html, "utf8");
+    faqWritten++;
+  }
+
   console.log(
-    `prerendered ${developerWritten} developer pages + ${indexWritten} index shells + ${guideWritten} guides (meta-only)`,
+    `prerendered ${developerWritten} developer pages + ${indexWritten} index shells + ${guideWritten} guides + ${faqWritten} FAQ sections (meta-only)`,
   );
 }
