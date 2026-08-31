@@ -22,11 +22,19 @@ type Props = {
 
 // Inline project-coord picker for the listing edit form. Behavior:
 //   - Empty projectName → tell admin to enter one first (coord picker locked)
-//   - projectName already has coords saved → show "✅ Location set" summary
-//     with the current coords + an Edit button that reveals the picker
-//   - projectName is new → show the picker immediately so admin can drop a
-//     pin via Google Places search OR by clicking the map. Save happens
+//   - projectName already has coords saved → show a compact "✅ Location set"
+//     summary with the current coords + an Edit button that reveals the picker
+//   - projectName is new (or admin clicks Edit) → show the map + a Google
+//     Places search box so admin can find the location. Save happens
 //     automatically on any pin drop.
+//
+// IMPORTANT (2026-08-31 fix): the Google Places search box is decoupled from
+// the project name. Admin can type ANY project name — real, made-up, in Arabic,
+// with typos — and the Google search box starts empty every time. This
+// prevents the previous bug where typing a project name that didn't match
+// a Google Places result poisoned the dropdown (no results shown for
+// searches typed manually afterwards because the auto-fill was still stuck).
+// Project name = admin's label. Google Places search = independent map lookup.
 //
 // All units in this project (existing + future) share these coords on the
 // public map. Editing them updates the pin globally.
@@ -104,17 +112,30 @@ export function ProjectPinInput({ projectName }: Props) {
           north: CAIRO_BOUNDS.north,
         },
       });
+      // Nudge admin: the search box is for finding the place on the map,
+      // not for retyping the project name. Set once the inner <input> exists.
+      queueMicrotask(() => {
+        const inner = el.querySelector("input");
+        if (inner) {
+          inner.setAttribute(
+            "placeholder",
+            "Search a building, street, or landmark on Google Maps",
+          );
+        }
+      });
       // Style the injected element so it looks like our other inputs.
       el.style.width = "100%";
       autocompleteContainerRef.current.replaceChildren(el);
       autocompleteElementRef.current = el;
 
-      // Prefill with saved value when editing existing coords.
-      if (saved) {
-        const initialValue = saved.address_line ?? saved.project_name;
-        // The element exposes `.value` at runtime; TS types don't cover it.
-        (el as unknown as { value: string }).value = initialValue;
-      }
+      // Deliberately do NOT prefill the input with the project name or the
+      // saved address. Prefilling caused a broken UX: if the prefill string
+      // didn't match a real Google Places result (e.g. an admin-authored
+      // project name like "MG Tower Phase 2"), the dropdown would show
+      // "no results" and subsequent typing wouldn't recover. The search box
+      // is now purely a fresh place-lookup input every time the picker opens.
+      // The saved location is instead shown by the pinned marker on the map
+      // + the coordinate readout under the Edit button in the summary state.
 
       el.addEventListener("gmp-select", async (event: Event) => {
         // The event's placePrediction has a toPlace() that fetches full
@@ -244,8 +265,9 @@ export function ProjectPinInput({ projectName }: Props) {
   return (
     <div className="space-y-3">
       <p className="text-xs text-muted-foreground">
-        Set coordinates for <strong className="text-primary">"{trimmedName}"</strong>.
-        Every listing in this project will share this pin on the map.
+        Set the map location for{" "}
+        <strong className="text-primary">"{trimmedName}"</strong>. Search
+        below for the actual place — the project name doesn't have to match.
       </p>
 
       <div className="relative">
