@@ -226,7 +226,7 @@ export default function WhyPlaces() {
               { name: "Ahmed Eslam", title: "Co-Founder", image: "/images/optimized/why-places/Ahmed Eslam.JPG" },
               { name: "Mohamed Safwat", title: "Co-Founder", image: "/images/optimized/why-places/Mohamed Safwat .JPG", objectPosition: "center 25%" },
               // Senior leadership
-              { name: "Omar Gamal", title: "Business Development Manager", image: "/images/optimized/why-places/Omar Gamal.JPG", objectPosition: "center 25%" },
+              { name: "Omar Gamal", title: "Senior Corporate Consultant", image: "/images/optimized/why-places/Omar Gamal.JPG", objectPosition: "center 25%" },
               // Senior consultants
               { name: "Abdelrhman Younis", title: "Senior Corporate Consultant", image: "/images/optimized/why-places/Abdelrahman Younes.JPG" },
               { name: "Ahmed Ali", title: "Senior Corporate Consultant", image: "/images/optimized/why-places/Ahmed Ali.JPG" },
