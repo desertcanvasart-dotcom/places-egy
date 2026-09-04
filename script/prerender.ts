@@ -190,6 +190,20 @@ const INDEX_ROUTES: RouteMeta[] = [
       "Practical, data-backed guides on renting, buying, sizing, and fitting out an office in Cairo. Written by PLACES, Egypt's admin-office specialists.",
     url: `${SITE}/guides`,
   },
+  {
+    route: "/faqs",
+    title: "Cairo Office FAQs — Answered by PLACES Advisors",
+    description:
+      "Every question we get asked about renting, buying, and investing in admin offices in Egypt — organized by topic. Written by PLACES, Cairo's admin-office specialists.",
+    url: `${SITE}/faqs`,
+  },
+  {
+    route: "/locations",
+    title: "Office Locations Across Egypt — Cairo Business Districts | PLACES",
+    description:
+      "Browse admin office space in every major Cairo business district — New Cairo, Sheikh Zayed, 6th October, Downtown, Sheraton, and Maadi. Full district guides with rental data + available listings.",
+    url: `${SITE}/locations`,
+  },
 ];
 
 // Parse client/src/lib/location-content.ts for the 6 location slugs +
