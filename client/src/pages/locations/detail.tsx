@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema, placeSchema } from "@/lib/schema";
+import { useDocumentMeta } from "@/lib/use-document-meta";
 import NotFound from "@/pages/not-found";
 
 function formatLabel(value: string | null | undefined): string {
@@ -72,6 +73,22 @@ function propertyTypeIcon(_type: string): LucideIcon {
 export default function LocationDetail() {
   const { slug } = useParams<{ slug: string }>();
   const content = LOCATION_CONTENT[slug];
+
+  // Per-location <title> + meta description so each /locations/{slug} page
+  // ranks for its own district instead of being consolidated into the
+  // homepage. useDocumentMeta safely no-ops when content is undefined
+  // (invalid slug hits the NotFound fallback below).
+  useDocumentMeta({
+    title: content
+      ? `Offices in ${content.displayName} — Rent & Buy Admin Office Space | PLACES`
+      : "Location — PLACES",
+    description: content
+      ? content.subtitle
+      : "Browse admin offices across Egypt's top business districts.",
+    url: content
+      ? `https://places-egy.com/locations/${content.slug}`
+      : "https://places-egy.com/locations",
+  });
 
   // Newest listings for this location (ID DESC acts as "newest" since no created_at column)
   const { data: newestListings = [] } = useQuery<Listing[]>({

@@ -192,6 +192,45 @@ const INDEX_ROUTES: RouteMeta[] = [
   },
 ];
 
+// Parse client/src/lib/location-content.ts for the 6 location slugs +
+// displayNames + subtitles, and bake per-location static HTML. Locations
+// are the site's highest-intent commercial pages ("office for rent new
+// cairo" is the exact query a buyer types) — before this ran, every
+// /locations/{slug} URL served the homepage's <title>, description, and
+// canonical to /, effectively deindexing the money pages.
+//
+// The location file has 6 top-level entries in a Record<string, LocationContent>.
+// Each entry is fingerprinted by a `slug:` field that matches the object key,
+// a `displayName:` string, and a `subtitle:` string. We match all three in a
+// single regex — falls apart cleanly if the file's shape changes so the build
+// fails loudly rather than shipping wrong meta.
+async function collectLocationMeta(): Promise<RouteMeta[]> {
+  const locPath = path.resolve(process.cwd(), "client/src/lib/location-content.ts");
+  let src: string;
+  try {
+    src = await readFile(locPath, "utf8");
+  } catch {
+    return [];
+  }
+  const out: RouteMeta[] = [];
+  // Match `slug: "…"`, then look forward within the entry (any characters,
+  // dot-all mode via [\s\S]) for the displayName + subtitle strings. Subtitle
+  // spans a template-like multi-line quoted string, so match until the next
+  // `,\n` inside quotes.
+  const re = /slug:\s*"([^"]+)",\s*displayName:\s*"([^"]+)"[\s\S]*?subtitle:\s*\n?\s*"([^"]+)"/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(src)) !== null) {
+    const [, slug, displayName, subtitle] = m;
+    out.push({
+      route: `/locations/${slug}`,
+      title: `Offices in ${displayName} — Rent & Buy Admin Office Space | PLACES`,
+      description: subtitle,
+      url: `${SITE}/locations/${slug}`,
+    });
+  }
+  return out;
+}
+
 // Parse client/src/lib/faq.ts for FAQ section slugs + titles and bake per-
 // section static HTML. Descriptions are composed the same way the runtime
 // SectionView composes them, so what Google sees on first HTTP matches what
@@ -330,7 +369,21 @@ export async function prerender() {
     faqWritten++;
   }
 
+  // Per-location static HTML shells. Same fix as guides + FAQ sections
+  // for the 6 /locations/{slug} pages — the highest-intent commercial
+  // URLs on the site. SEO audit 2026-09-04 confirmed all 6 were serving
+  // homepage meta + canonical to /.
+  const locationMetas = await collectLocationMeta();
+  let locationWritten = 0;
+  for (const meta of locationMetas) {
+    const html = injectMeta(shell, meta);
+    const outPath = path.join(DIST, `${meta.route}.html`);
+    await mkdir(path.dirname(outPath), { recursive: true });
+    await writeFile(outPath, html, "utf8");
+    locationWritten++;
+  }
+
   console.log(
-    `prerendered ${developerWritten} developer pages + ${indexWritten} index shells + ${guideWritten} guides + ${faqWritten} FAQ sections (meta-only)`,
+    `prerendered ${developerWritten} developer pages + ${indexWritten} index shells + ${guideWritten} guides + ${faqWritten} FAQ sections + ${locationWritten} locations (meta-only)`,
   );
 }
