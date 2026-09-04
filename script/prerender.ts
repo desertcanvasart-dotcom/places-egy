@@ -292,11 +292,21 @@ async function collectFaqSectionMeta(): Promise<RouteMeta[]> {
   return out;
 }
 
+// Extended shape used only for guide prerender — we need the raw guide
+// title (without the " | PLACES" suffix that we add to <title>) for the
+// Article schema `headline` field, plus publishedAt + readMinutes for
+// datePublished + timeRequired. The base RouteMeta shape is preserved.
+export interface GuideRouteMeta extends RouteMeta {
+  rawTitle: string;
+  publishedAt: string;
+  readMinutes: number;
+}
+
 // Parse client/src/lib/guides.ts for guide slugs + titles + descriptions and
 // bake per-guide static HTML files. Same TS-AST pattern as extractMeta so
 // the source is single-truth: what's in the guides.ts array is what gets
 // prerendered.
-async function collectGuideMeta(): Promise<RouteMeta[]> {
+async function collectGuideMeta(): Promise<GuideRouteMeta[]> {
   const guidesPath = path.resolve(process.cwd(), "client/src/lib/guides.ts");
   let src: string;
   try {
@@ -304,21 +314,79 @@ async function collectGuideMeta(): Promise<RouteMeta[]> {
   } catch {
     return [];
   }
-  const out: RouteMeta[] = [];
-  // Match every { slug: "...", title: "...", description: "...", ... } block.
-  const re = /slug:\s*"([^"]+)"[\s\S]*?title:\s*"([^"]+)"[\s\S]*?description:\s*"([^"]+)"[\s\S]*?imageUrl:\s*"([^"]+)"/g;
+  const out: GuideRouteMeta[] = [];
+  // Match every full { slug, title, description, readMinutes, publishedAt, imageUrl }
+  // block. Fields kept in the order they appear in guides.ts. readMinutes is
+  // a number (no quotes); publishedAt is an ISO date string.
+  const re = /slug:\s*"([^"]+)"[\s\S]*?title:\s*"([^"]+)"[\s\S]*?description:\s*"([^"]+)"[\s\S]*?readMinutes:\s*(\d+)[\s\S]*?publishedAt:\s*"([^"]+)"[\s\S]*?imageUrl:\s*"([^"]+)"/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(src)) !== null) {
-    const [, slug, title, description, imageUrl] = m;
+    const [, slug, title, description, readMinutesStr, publishedAt, imageUrl] = m;
     out.push({
       route: `/guides/${slug}`,
       title: `${title} | PLACES`,
+      rawTitle: title,
       description,
       url: `${SITE}/guides/${slug}`,
       image: imageUrl.startsWith("http") ? imageUrl : `${SITE}${imageUrl}`,
+      publishedAt,
+      readMinutes: parseInt(readMinutesStr, 10),
     });
   }
   return out;
+}
+
+// Build Article + BreadcrumbList JSON-LD blocks for a guide and return them
+// as a single <script> tag string ready to inject into <head>. Google reads
+// these on the first crawl, no JS execution needed — unlocks Article rich
+// results (carousel, top-stories) and the breadcrumb line in the SERP
+// snippet. Matches the shape produced at runtime by client/src/lib/schema.ts's
+// articleSchema() + breadcrumbSchema() so pre- and post-hydration are
+// consistent (Google won't flag a schema mismatch).
+function buildGuideJsonLd(meta: GuideRouteMeta): string {
+  const article = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "@id": `${meta.url}#article`,
+    headline: meta.rawTitle,
+    description: meta.description,
+    url: meta.url,
+    mainEntityOfPage: { "@type": "WebPage", "@id": meta.url },
+    datePublished: meta.publishedAt,
+    dateModified: meta.publishedAt,
+    inLanguage: "en",
+    timeRequired: `PT${meta.readMinutes}M`,
+    author: {
+      "@type": "Organization",
+      "@id": `${SITE}/#organization`,
+      name: "PLACES",
+    },
+    publisher: { "@id": `${SITE}/#organization` },
+    image: { "@type": "ImageObject", url: meta.image ?? `${SITE}/images/offices-hero.jpg` },
+  };
+  const breadcrumb = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: `${SITE}/` },
+      { "@type": "ListItem", position: 2, name: "Guides", item: `${SITE}/guides` },
+      { "@type": "ListItem", position: 3, name: meta.rawTitle, item: meta.url },
+    ],
+  };
+  // JSON-encode + escape any `</script` sequences that would prematurely
+  // close the wrapping <script> tag. Standard defense for inlining JSON.
+  const encode = (obj: unknown) =>
+    JSON.stringify(obj).replace(/<\/script/gi, "<\\/script");
+  return (
+    `<script type="application/ld+json">${encode(article)}</script>` +
+    `<script type="application/ld+json">${encode(breadcrumb)}</script>`
+  );
+}
+
+// Inject the built JSON-LD block just before </head>. Idempotent — running
+// twice would inject twice, so we only call it once per prerender.
+function injectJsonLd(html: string, jsonLd: string): string {
+  return html.replace(/<\/head>/i, `${jsonLd}</head>`);
 }
 
 export async function prerender() {
@@ -355,10 +423,17 @@ export async function prerender() {
   // own real title + meta description + canonical + og:image on the first
   // HTTP response. Critical for AI answer engines (Perplexity, ChatGPT,
   // Claude bots) which don't execute JavaScript before reading meta.
+  //
+  // Guides also get Article + BreadcrumbList JSON-LD injected pre-hydration
+  // so Google can consider them for article-carousel + top-stories rich
+  // results and render breadcrumbs in the SERP snippet. The React runtime
+  // ALSO mounts the same schemas via SchemaMarkup — that duplication is
+  // safe (Google dedupes on @id) and gives us defense in depth.
   const guideMetas = await collectGuideMeta();
   let guideWritten = 0;
   for (const meta of guideMetas) {
-    const html = injectMeta(shell, meta);
+    let html = injectMeta(shell, meta);
+    html = injectJsonLd(html, buildGuideJsonLd(meta));
     // Write dist/public/guides/<slug>.html — express.static resolves
     // /guides/<slug> to this file before the SPA catch-all thanks to
     // the extensions:["html"] option on express.static.
