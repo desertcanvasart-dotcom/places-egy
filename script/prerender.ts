@@ -389,6 +389,126 @@ function injectJsonLd(html: string, jsonLd: string): string {
   return html.replace(/<\/head>/i, `${jsonLd}</head>`);
 }
 
+// AST-based extraction of Q/A pairs per FAQ section from client/src/lib/faq.ts.
+// Regex isn't safe here because Q + A strings routinely contain quotes,
+// apostrophes, and multi-line prose. Walking the TypeScript AST is the only
+// way to get the raw string values back verbatim regardless of quoting style.
+// Returns { sectionSlug -> [{q, a}] } so the FAQ loop can look up its own
+// items in O(1) when building the schema.
+interface FaqQAPair {
+  q: string;
+  a: string;
+}
+async function collectFaqItems(): Promise<Record<string, FaqQAPair[]>> {
+  const faqPath = path.resolve(process.cwd(), "client/src/lib/faq.ts");
+  const src = await readFile(faqPath, "utf8");
+  const sf = ts.createSourceFile("faq.ts", src, ts.ScriptTarget.Latest, true);
+
+  const out: Record<string, FaqQAPair[]> = {};
+
+  // Find the FAQ_SECTIONS array literal, then walk each top-level section
+  // object (id + number + title + subsections). For each section, walk each
+  // subsection's items array collecting q + a. The `number:` property is the
+  // unique fingerprint that identifies top-level sections vs nested ones.
+  const stringPropValue = (
+    obj: ts.ObjectLiteralExpression,
+    key: string,
+  ): string | undefined => {
+    for (const prop of obj.properties) {
+      if (
+        ts.isPropertyAssignment(prop) &&
+        ts.isIdentifier(prop.name) &&
+        prop.name.text === key
+      ) {
+        const init = prop.initializer;
+        if (
+          ts.isStringLiteral(init) ||
+          ts.isNoSubstitutionTemplateLiteral(init)
+        ) {
+          return init.text;
+        }
+      }
+    }
+    return undefined;
+  };
+  const arrayPropValue = (
+    obj: ts.ObjectLiteralExpression,
+    key: string,
+  ): ts.ArrayLiteralExpression | undefined => {
+    for (const prop of obj.properties) {
+      if (
+        ts.isPropertyAssignment(prop) &&
+        ts.isIdentifier(prop.name) &&
+        prop.name.text === key &&
+        ts.isArrayLiteralExpression(prop.initializer)
+      ) {
+        return prop.initializer;
+      }
+    }
+    return undefined;
+  };
+
+  const visit = (node: ts.Node) => {
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === "FAQ_SECTIONS" &&
+      node.initializer &&
+      ts.isArrayLiteralExpression(node.initializer)
+    ) {
+      for (const sectionNode of node.initializer.elements) {
+        if (!ts.isObjectLiteralExpression(sectionNode)) continue;
+        const slug = stringPropValue(sectionNode, "id");
+        if (!slug) continue;
+        const subs = arrayPropValue(sectionNode, "subsections");
+        if (!subs) continue;
+        const items: FaqQAPair[] = [];
+        for (const subNode of subs.elements) {
+          if (!ts.isObjectLiteralExpression(subNode)) continue;
+          const subItems = arrayPropValue(subNode, "items");
+          if (!subItems) continue;
+          for (const itemNode of subItems.elements) {
+            if (!ts.isObjectLiteralExpression(itemNode)) continue;
+            const q = stringPropValue(itemNode, "q");
+            const a = stringPropValue(itemNode, "a");
+            if (q && a) items.push({ q, a });
+          }
+        }
+        out[slug] = items;
+      }
+      return; // Don't descend further after finding the array
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sf);
+  return out;
+}
+
+// Build FAQPage JSON-LD for one section. Google renders this as an
+// expandable accordion in the SERP snippet when it likes the answers —
+// takes up 3-4x the vertical space of a plain result, huge CTR lift.
+// Matches the shape of client/src/lib/schema.ts's faqSchema() so the
+// pre-hydration and post-hydration copies dedupe cleanly by structure.
+function buildFaqJsonLd(items: FaqQAPair[]): string {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((it) => ({
+      "@type": "Question",
+      name: it.q,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: it.a,
+      },
+    })),
+  };
+  const encoded = JSON.stringify(schema).replace(
+    /<\/script/gi,
+    "<\\/script",
+  );
+  return `<script type="application/ld+json">${encoded}</script>`;
+}
+
 export async function prerender() {
   const shellPath = path.join(DIST, "index.html");
   const shell = await readFile(shellPath, "utf8");
@@ -448,10 +568,25 @@ export async function prerender() {
   // served with had homepage <title>, meta description, AND canonical
   // pointing at "/" — telling Google the pages were the homepage. Baking
   // real per-section meta here fixes that at the wire-response level.
+  //
+  // Each section also gets a FAQPage JSON-LD block covering every Q/A pair
+  // in that section (parsed via TS AST from client/src/lib/faq.ts). Google
+  // uses this to render the SERP accordion — a Q&A dropdown right in the
+  // search result — which takes 3-4x the vertical space of a plain result
+  // and lifts CTR meaningfully. The React runtime ALSO mounts faqSchema()
+  // via SchemaMarkup; identical structure so Google dedupes cleanly.
   const faqSectionMetas = await collectFaqSectionMeta();
+  const faqItemsBySlug = await collectFaqItems();
   let faqWritten = 0;
   for (const meta of faqSectionMetas) {
-    const html = injectMeta(shell, meta);
+    // meta.route is "/faqs/<slug>", strip the "/faqs/" prefix to get the slug
+    // for the items lookup.
+    const slug = meta.route.replace(/^\/faqs\//, "");
+    const items = faqItemsBySlug[slug] ?? [];
+    let html = injectMeta(shell, meta);
+    if (items.length > 0) {
+      html = injectJsonLd(html, buildFaqJsonLd(items));
+    }
     const outPath = path.join(DIST, `${meta.route}.html`);
     await mkdir(path.dirname(outPath), { recursive: true });
     await writeFile(outPath, html, "utf8");
