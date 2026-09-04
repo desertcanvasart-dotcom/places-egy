@@ -223,35 +223,71 @@ export function ProjectPinInput({ projectName }: Props) {
 
   if (saved && !editing) {
     return (
-      <div className="p-4 rounded-xl bg-white border border-border/40">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-2">
-            <Check className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
+      <div className="rounded-xl overflow-hidden border-2 border-emerald-500/40 bg-white">
+        {/* Emerald status header — makes "saved" unmistakable at a glance */}
+        <div className="px-4 py-3 bg-emerald-50 border-b border-emerald-500/20 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 shrink-0">
+              <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
+            </div>
             <div className="min-w-0">
-              <p className="text-sm font-medium text-primary">
-                Location set for "{trimmedName}"
+              <p className="text-sm font-semibold text-emerald-900">
+                Location saved
               </p>
-              <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
-                {saved.latitude.toFixed(6)}, {saved.longitude.toFixed(6)}
-              </p>
-              {saved.address_line && (
-                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                  {saved.address_line}
-                </p>
-              )}
-              <p className="text-[11px] text-muted-foreground mt-1.5">
-                All units in this project use this pin on the map. Edit only
-                if the whole building's coordinates are wrong.
+              <p className="text-[11px] text-emerald-700/80 truncate">
+                for "{trimmedName}"
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={() => setEditing(true)}
-            className="inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline shrink-0"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-800 hover:text-emerald-950 bg-white/70 hover:bg-white px-3 py-1.5 rounded-full border border-emerald-500/30 shrink-0 transition-colors"
           >
-            <Edit2 className="w-3 h-3" /> Edit
+            <Edit2 className="w-3 h-3" /> Edit pin
           </button>
+        </div>
+
+        {/* Preview map — non-interactive, just shows the pin so admin can
+            visually confirm the location is correct without scrolling to
+            the whole edit view. Height kept short so it doesn't dominate. */}
+        <div className="relative h-40 md:h-48">
+          <Map
+            viewport={{
+              center: [saved.longitude, saved.latitude],
+              zoom: 15,
+            }}
+            className="h-full w-full pointer-events-none"
+          >
+            <MapMarker longitude={saved.longitude} latitude={saved.latitude}>
+              <MarkerContent>
+                <MapPin
+                  className="w-8 h-8 fill-accent text-accent drop-shadow-md -translate-y-1/2"
+                />
+              </MarkerContent>
+            </MapMarker>
+          </Map>
+        </div>
+
+        {/* Address + coord readout — the truth backing up the pin above */}
+        <div className="px-4 py-3 bg-white border-t border-border/40 space-y-1">
+          {saved.address_line ? (
+            <p className="text-xs text-primary leading-snug line-clamp-2">
+              <MapPin className="w-3 h-3 inline-block text-emerald-600 -translate-y-0.5 mr-1" />
+              {saved.address_line}
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground italic">
+              No address label saved — only coordinates.
+            </p>
+          )}
+          <p className="text-[11px] text-muted-foreground font-mono">
+            {saved.latitude.toFixed(6)}, {saved.longitude.toFixed(6)}
+          </p>
+          <p className="text-[11px] text-muted-foreground pt-1">
+            All units in this project share this pin. Click "Edit pin" only
+            if the whole building's coordinates are wrong.
+          </p>
         </div>
       </div>
     );

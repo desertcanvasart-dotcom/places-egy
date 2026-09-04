@@ -598,24 +598,40 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
             </Button>
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-border/40 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border/40 bg-primary/5">
-                    <th className="text-left px-4 py-3 font-medium text-primary">Title</th>
-                    <th className="text-left px-4 py-3 font-medium text-primary">Subtype</th>
-                    <th className="text-left px-4 py-3 font-medium text-primary">Location</th>
-                    <th className="text-left px-4 py-3 font-medium text-primary">Developer</th>
-                    <th className="text-left px-4 py-3 font-medium text-primary">Price</th>
-                    <th className="text-left px-4 py-3 font-medium text-primary">Transaction</th>
-                    <th className="text-right px-4 py-3 font-medium text-primary">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {listings.map((listing) => (
-                    <tr key={listing.id} className="border-b border-border/20 hover:bg-primary/[0.02] transition-colors">
-                      <td className="px-4 py-3 font-medium text-primary max-w-[200px] truncate">{listing.title}</td>
+          <div>
+            {/* Total-count pill so admin sees "how many do I have" at a glance
+                without counting rows. Same rolling-metric pattern as the /leads
+                dashboard summary shipped 523c2d6. */}
+            <div className="mb-3 flex items-center gap-2 text-xs">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/5 border border-border/40 px-3 py-1 font-medium text-primary">
+                {listings.length}
+                <span className="text-muted-foreground font-normal">
+                  {listings.length === 1 ? "listing" : "listings"} total
+                </span>
+              </span>
+            </div>
+            <div className="bg-white rounded-xl border border-border/40 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border/40 bg-primary/5">
+                      <th className="text-left px-3 py-3 font-medium text-primary w-10">#</th>
+                      <th className="text-left px-4 py-3 font-medium text-primary">Title</th>
+                      <th className="text-left px-4 py-3 font-medium text-primary">Subtype</th>
+                      <th className="text-left px-4 py-3 font-medium text-primary">Location</th>
+                      <th className="text-left px-4 py-3 font-medium text-primary">Developer</th>
+                      <th className="text-left px-4 py-3 font-medium text-primary">Price</th>
+                      <th className="text-left px-4 py-3 font-medium text-primary">Transaction</th>
+                      <th className="text-right px-4 py-3 font-medium text-primary">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {listings.map((listing, idx) => (
+                      <tr key={listing.id} className="border-b border-border/20 hover:bg-primary/[0.02] transition-colors">
+                        <td className="px-3 py-3 text-[11px] font-mono text-muted-foreground tabular-nums">
+                          {idx + 1}
+                        </td>
+                        <td className="px-4 py-3 font-medium text-primary max-w-[200px] truncate">{listing.title}</td>
                       <td className="px-4 py-3 text-muted-foreground">{formatLabel(listing.subtype)}</td>
                       <td className="px-4 py-3 text-muted-foreground">{listing.location}</td>
                       <td className="px-4 py-3 text-muted-foreground">{getEnumLabel(DEVELOPER_OPTIONS, listing.developer)}</td>
@@ -639,8 +655,9 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                       </td>
                     </tr>
                   ))}
-                </tbody>
-              </table>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
