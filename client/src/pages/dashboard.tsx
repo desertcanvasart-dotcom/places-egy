@@ -5,7 +5,6 @@ import { DealsManager } from "@/components/admin/DealsManager";
 import { ClientLogosManager } from "@/components/admin/ClientLogosManager";
 import { LeadsManager } from "@/components/admin/LeadsManager";
 import { AccountsManager } from "@/components/admin/AccountsManager";
-import { BookingsManager } from "@/components/admin/BookingsManager";
 import { ProjectPinInput } from "@/components/admin/ProjectPinInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -482,7 +481,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
   const queryClient = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
   const [editListing, setEditListing] = useState<ListingForm | null>(null);
-  const [tab, setTab] = useState<"listings" | "deals" | "logos" | "leads" | "accounts" | "bookings">("listings");
+  const [tab, setTab] = useState<"listings" | "deals" | "logos" | "leads" | "accounts">("listings");
   const { data: listings = [], isLoading } = useQuery<Listing[]>({
     queryKey: ["admin-listings"],
     queryFn: async () => {
@@ -562,7 +561,6 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
             { key: "logos", label: "Clients" },
             { key: "leads", label: "Leads" },
             { key: "accounts", label: "Accounts" },
-            { key: "bookings", label: "Bookings" },
           ] as const).map(({ key, label }) => (
             <button
               key={key}
@@ -586,8 +584,6 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
           <LeadsManager />
         ) : tab === "accounts" ? (
           <AccountsManager />
-        ) : tab === "bookings" ? (
-          <BookingsManager />
         ) : isLoading ? (
           <p className="text-muted-foreground text-center py-8 md:py-12">Loading listings...</p>
         ) : listings.length === 0 ? (
