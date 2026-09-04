@@ -112,7 +112,37 @@ function buildGuideEntries(
   return hubEntry + (per ? "\n" + per : "");
 }
 
+// Refresh every stale <lastmod> in the built sitemap to today's build date.
+// The static client/public/sitemap.xml has hardcoded 2026-07-10 dates on
+// almost every URL, which Google reads as "nothing has changed since July"
+// and lowers recrawl priority. Since the site content actually changes
+// frequently (new listings, new copy, schema updates), we want Google to
+// see fresh timestamps on every deploy.
+//
+// Deliberately does NOT touch <lastmod> that already have a different date
+// — guide URLs get their real updatedAt from lib/guides.ts, blog URLs get
+// their WordPress modified date, and future PR-driven date updates on
+// specific URLs are preserved.
+async function refreshStaleLastmod(): Promise<void> {
+  try {
+    const today = new Date().toISOString().split("T")[0];
+    let xml = await readFile(SITEMAP_PATH, "utf-8");
+    const before = (xml.match(/<lastmod>2026-07-10<\/lastmod>/g) ?? []).length;
+    if (before === 0) return;
+    xml = xml.replace(/<lastmod>2026-07-10<\/lastmod>/g, `<lastmod>${today}</lastmod>`);
+    await writeFile(SITEMAP_PATH, xml, "utf-8");
+    console.log(
+      `[sitemap] refreshed ${before} stale 2026-07-10 lastmod entries to ${today}`,
+    );
+  } catch (err) {
+    console.warn("[sitemap] failed to refresh lastmod:", err);
+  }
+}
+
 export async function generateSitemap(): Promise<void> {
+  // ── Refresh stale lastmod dates on the static sitemap ─────────────────
+  await refreshStaleLastmod();
+
   // ── /guides hub + individual guide URLs ────────────────────────────────
   const guides = await readGuideSlugs();
   if (guides.length > 0) {
