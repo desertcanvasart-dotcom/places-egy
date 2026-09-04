@@ -165,6 +165,55 @@
     <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Cairo:wght@300..900&display=swap" rel="stylesheet">
   </head>
   <body>
+    <!--
+      Crawlable skip-nav — anchors to the site's key pages, present in the
+      raw pre-JS HTML so search engines and AI answer engines that don't
+      execute JavaScript (Perplexity, some ChatGPT/Claude bot passes, older
+      Bing crawls) can still discover the site's internal linking graph.
+
+      Rendered "sr-only" (screen-reader-only): positioned off-screen and
+      clipped so sighted users never see it, but crawlers + assistive tech
+      DO see it. This is the accessibility-approved pattern for skip-nav
+      links — Google explicitly does not treat sr-only content as cloaking.
+
+      React hydration renders the real Navbar + Footer on top; this stays
+      inert underneath. Not display:none (Google may downweight that).
+    -->
+    <nav
+      aria-label="Site navigation"
+      style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;"
+    >
+      <h2>PLACES — Cairo Office Real Estate</h2>
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/listings">Office listings across Egypt</a></li>
+        <li><a href="/developers">Office developers</a></li>
+        <li><a href="/locations">Locations</a>
+          <ul>
+            <li><a href="/locations/new-cairo">New Cairo offices</a></li>
+            <li><a href="/locations/sheikh-zayed">Sheikh Zayed offices</a></li>
+            <li><a href="/locations/6th-october">6th October offices</a></li>
+            <li><a href="/locations/downtown-cairo">Downtown Cairo offices</a></li>
+            <li><a href="/locations/sheraton">Sheraton offices</a></li>
+            <li><a href="/locations/maadi">Maadi offices</a></li>
+          </ul>
+        </li>
+        <li><a href="/guides">Cairo office guides</a>
+          <ul>
+            <li><a href="/guides/office-rental-prices-cairo-2026">Cairo office rental prices 2026</a></li>
+            <li><a href="/guides/how-to-rent-office-cairo">How to rent an office in Cairo</a></li>
+            <li><a href="/guides/buy-vs-rent-office-cairo">Buying vs renting an office</a></li>
+            <li><a href="/guides/office-size-guide">Office size guide</a></li>
+            <li><a href="/guides/office-fit-out-costs-cairo">Office fit-out costs</a></li>
+          </ul>
+        </li>
+        <li><a href="/faqs">FAQs</a></li>
+        <li><a href="/why-places">Why PLACES</a></li>
+        <li><a href="/services">Services</a></li>
+        <li><a href="/contact">Contact</a></li>
+        <li><a href="/blog">Blog</a></li>
+      </ul>
+    </nav>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
