@@ -14,12 +14,19 @@ const SUPABASE_RENDER_PATH = "/storage/v1/render/image/public/";
 
 // Toggle this to `true` once the Supabase project is on the Pro plan (Image
 // Transformations are gated behind Pro). On the Free plan the render endpoint
-// returns 403, which forces an onError → original-URL swap on every image and
-// also breaks carousels (the per-element "already fell back" guard sticks
+// returns 400/403, which forces an onError → original-URL swap on every image
+// and also breaks carousels (the per-element "already fell back" guard sticks
 // across src changes when React reuses the same <img> node). Until then we
 // just serve the original object URL directly — same outcome, one fewer
 // round-trip per image, and carousels work normally.
-const IMAGE_TRANSFORMS_ENABLED = true;
+//
+// TURNED OFF 2026-09-07 after user reported very slow image loads. Verified
+// the render endpoint returns HTTP 400 (Supabase still on Free) — every
+// image was doing a failed round-trip before falling back to the original,
+// which was adding 200-500ms per image × ~20 cards = multi-second delay.
+// Flip back to `true` the same day you activate Supabase Pro. See
+// memory: project_supabase_pro_image_transforms.md for full context.
+const IMAGE_TRANSFORMS_ENABLED = false;
 
 export type ImageVariant = "thumb" | "card" | "full";
 
