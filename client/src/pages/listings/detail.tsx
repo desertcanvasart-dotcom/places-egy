@@ -17,6 +17,9 @@ import { supabaseImage, supabaseImageOnError } from "@/lib/image-url";
 import { trackEvent } from "@/lib/analytics";
 import { openCalendly } from "@/lib/calendly";
 import { useScrollDepth } from "@/lib/use-scroll-depth";
+import { PriceGate, DerivedPriceLocked } from "@/components/PriceGate";
+import { UnlockPriceModal } from "@/components/UnlockPriceModal";
+import { usePriceUnlock } from "@/lib/price-unlock";
 import DOMPurify from "dompurify";
 import { marked } from "marked";
 import {
@@ -79,6 +82,12 @@ export default function ListingDetailPage() {
 function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
   const [, setLocation] = useLocation();
   const [imageIndex, setImageIndex] = useState(0);
+  // Price-unlock modal open/close state. usePriceUnlock also drives the
+  // <PriceGate /> reveal — once the visitor submits and markUnlocked() fires,
+  // every gate on the page (hero price + price_per_meter row) flips to real
+  // values automatically.
+  const [unlockOpen, setUnlockOpen] = useState(false);
+  const { unlocked } = usePriceUnlock();
 
   useScrollDepth(`/listings/${idSlug}`);
 
@@ -314,14 +323,14 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
             </div>
 
             {listing.price != null && (
-              <div className="text-left md:text-right shrink-0">
-                <span className="text-2xl md:text-4xl font-bold text-primary font-serif">
-                  {listing.price.toLocaleString()}
-                </span>
-                <p className="text-sm text-muted-foreground">
-                  {listingCurrency(listing)}{listing.transaction_type?.toLowerCase() === "rent" ? "/month" : ""}
-                </p>
-              </div>
+              <PriceGate
+                price={listing.price}
+                currency={listingCurrency(listing)}
+                transactionType={listing.transaction_type}
+                size="hero"
+                listingId={listing.id}
+                onUnlockClick={() => setUnlockOpen(true)}
+              />
             )}
           </div>
         </div>
@@ -433,7 +442,16 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
                     <DetailRow
                       icon={Building2}
                       label="Price per m²"
-                      value={`${listing.price_per_meter.toLocaleString()} ${listingCurrency(listing)}`}
+                      value={
+                        unlocked ? (
+                          `${listing.price_per_meter.toLocaleString()} ${listingCurrency(listing)}`
+                        ) : (
+                          <DerivedPriceLocked
+                            label="price per m²"
+                            onUnlockClick={() => setUnlockOpen(true)}
+                          />
+                        )
+                      }
                     />
                   )}
                   {listing.maintenance_fees != null && listing.maintenance_status !== "included" && (
@@ -586,6 +604,14 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
 
       <Footer />
       <CornerSlideMagnet />
+      {/* Price-unlock modal — opened by any <PriceGate onUnlockClick={...}>
+          or <DerivedPriceLocked> on this page. Renders nothing until open,
+          zero cost when locked visitor never interacts. */}
+      <UnlockPriceModal
+        listing={listing}
+        open={unlockOpen}
+        onClose={() => setUnlockOpen(false)}
+      />
     </div>
   );
 }
@@ -597,7 +623,9 @@ function DetailRow({
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
-  value: string | number | null | undefined;
+  // ReactNode allowed so callers can pass a locked-state fallback component
+  // (like <DerivedPriceLocked />) in place of a raw string/number.
+  value: React.ReactNode;
 }) {
   if (value == null || value === "") return null;
   return (
