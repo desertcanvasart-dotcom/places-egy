@@ -20,13 +20,12 @@ const SUPABASE_RENDER_PATH = "/storage/v1/render/image/public/";
 // just serve the original object URL directly — same outcome, one fewer
 // round-trip per image, and carousels work normally.
 //
-// TURNED OFF 2026-09-07 after user reported very slow image loads. Verified
-// the render endpoint returns HTTP 400 (Supabase still on Free) — every
-// image was doing a failed round-trip before falling back to the original,
-// which was adding 200-500ms per image × ~20 cards = multi-second delay.
-// Flip back to `true` the same day you activate Supabase Pro. See
-// memory: project_supabase_pro_image_transforms.md for full context.
-const IMAGE_TRANSFORMS_ENABLED = false;
+// TURNED BACK ON 2026-09-07 — user upgraded Supabase to Pro plan. Now the
+// render endpoint serves optimized WebP/AVIF at exact requested widths,
+// dropping 2-5MB phone photos to ~50-200KB per image. Real speed win over
+// serving originals. If the render endpoint ever starts returning 4xx
+// again, the onError fallback in components will still serve the raw file.
+const IMAGE_TRANSFORMS_ENABLED = true;
 
 export type ImageVariant = "thumb" | "card" | "full";
 
