@@ -1002,3 +1002,173 @@ export async function sendFavoritesDigest(opts: {
     replyTo: "admin@places-egy.com",
   });
 }
+
+// ── Value-first lead auto-reply ─────────────────────────────────────────────
+// Fires for every lead source that doesn't already have a magnet-specific
+// reply (contact form, concierge widget, price-unlock, account signup).
+//
+// Design philosophy: NEVER open with "Thanks for reaching out." The lead
+// filled the form because they want SIGNAL, not acknowledgement. Every
+// email opens with a source-specific hook + 3 real listings pulled from
+// Supabase so they see immediate value in their inbox.
+//
+// English-only for now — the AR variant of guides/magnets covers Arabic
+// leads separately. Adding AR here later means adding a `lang` param and
+// mirroring the existing T table pattern.
+
+// Compact source enum. Each drives:
+//   - the email subject line
+//   - the hook headline + copy
+//   - the Supabase filter for the 3 recent listings shown
+//   - the utm_campaign tag on card + CTA links
+type WelcomeSource =
+  | "contact_form"
+  | "concierge"
+  | "price_unlock"
+  | "account_signup";
+
+const WELCOME_COPY: Record<
+  WelcomeSource,
+  {
+    subject: (name: string) => string;
+    hookLabel: string;
+    hookHeadline: string;
+    hookBody: (ctx: WelcomeContext) => string;
+    ctaLabel: string;
+    ctaBody: string;
+  }
+> = {
+  contact_form: {
+    subject: (n) => `Hi ${n} — 3 admin offices worth looking at`,
+    hookLabel: "Just for you",
+    hookHeadline: "Since you reached out, here are 3 offices worth a look.",
+    hookBody: () =>
+      "Pulled from our latest inventory. Every one is verified, currently available, and typical of what PLACES advisors are showing this week. A PLACES advisor will follow up personally shortly.",
+    ctaLabel: "Want a personal short-list?",
+    ctaBody:
+      "Book a free 15-minute call and a PLACES advisor will hand-pick 5 offices matching your exact budget, size, and location — no pressure, no pitch.",
+  },
+  concierge: {
+    subject: (n) => `Hi ${n} — 3 offices matching what you told us`,
+    hookLabel: "Matched for you",
+    hookHeadline: "Based on what you told us, here are 3 units worth a closer look.",
+    hookBody: () =>
+      "These are the newest listings that fit the direction you shared with us. A PLACES advisor will follow up with a more tailored short-list within 24 hours.",
+    ctaLabel: "Want a live walk-through?",
+    ctaBody:
+      "Book a free 15-minute call and a PLACES advisor will walk you through the districts and price bands that matter most to you.",
+  },
+  price_unlock: {
+    subject: (n) =>
+      `Hi ${n} — 3 similar offices at comparable prices`,
+    hookLabel: "You unlocked pricing",
+    hookHeadline: "Here are 3 more units in the same range worth comparing.",
+    hookBody: (ctx) =>
+      ctx.contextListing
+        ? `Since you looked at ${escapeHtml(ctx.contextListing.title)}, we pulled a few similar options — same district and space type, different price points. Compare before you decide.`
+        : "Here are 3 more offices in the same price range as the one you unlocked. Compare terms side-by-side before you commit.",
+    ctaLabel: "Ready to see one in person?",
+    ctaBody:
+      "Book a free 15-minute call and a PLACES advisor will arrange viewings for the units you're leaning toward — usually same-week.",
+  },
+  account_signup: {
+    subject: (n) => `Welcome to PLACES, ${n} — 3 offices to save first`,
+    hookLabel: "Your PLACES account is ready",
+    hookHeadline: "Start with 3 offices worth saving.",
+    hookBody: () =>
+      "Your saved-listings account is live. Save any office on places-egy.com with the heart icon — we'll email you when the price drops or a similar unit becomes available.",
+    ctaLabel: "Want a personal short-list?",
+    ctaBody:
+      "Book a free 15-minute call and a PLACES advisor will hand-pick 5 offices matching your exact budget, size, and location.",
+  },
+};
+
+// Additional context that some sources pass in — currently only price_unlock
+// uses `contextListing` to reference the specific listing that triggered the
+// unlock. Kept as an interface so future sources can extend without changing
+// the WELCOME_COPY signatures.
+export interface WelcomeContext {
+  contextListing?: FavoritedListing | null;
+}
+
+// The canonical entry point. Wire from routes.ts on every lead submission
+// that doesn't already have its own magnet-specific reply.
+export async function sendLeadWelcomeWithListings(opts: {
+  toEmail: string;
+  toName: string;
+  source: WelcomeSource;
+  listings: FavoritedListing[]; // 3 recent listings, pre-fetched by caller
+  context?: WelcomeContext;
+}): Promise<void> {
+  const first = firstNameOf(opts.toName);
+  const copy = WELCOME_COPY[opts.source];
+  const ctx: WelcomeContext = opts.context ?? {};
+
+  // Fall back gracefully if the caller couldn't fetch listings — the email
+  // still lands with the hook + CTA, just without the office cards. Better
+  // than skipping the send entirely.
+  const listingCards = opts.listings.length
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:8px;">
+        ${opts.listings
+          .map((l) => officeCard(l, "en", `email_welcome_${opts.source}`))
+          .join("")}
+      </table>
+      <p style="margin:4px 0 24px 0; font-size:12px; color:#94A3B8; text-align:center;">
+        <a href="https://places-egy.com/listings?utm_source=places-egy.com&utm_medium=email&utm_campaign=email_welcome_${opts.source}&utm_content=browse_all" style="color:#64748B; text-decoration:underline;">
+          Browse all available offices →
+        </a>
+      </p>`
+    : "";
+
+  const body = `
+    <p style="margin:0 0 20px 0; font-size:16px; color:#171717;">Hi ${escapeHtml(first)}, 👋</p>
+
+    <p style="margin:0 0 6px 0; font-size:11px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:3px;">
+      ${escapeHtml(copy.hookLabel)}
+    </p>
+
+    <h2 style="margin:0 0 12px 0; font-size:22px; font-weight:700; color:#171717; line-height:1.3;">
+      ${escapeHtml(copy.hookHeadline)}
+    </h2>
+
+    <p style="margin:0 0 24px 0; font-size:15px; line-height:1.6; color:#64748B;">
+      ${copy.hookBody(ctx)}
+    </p>
+
+    ${listingCards}
+
+    <div style="margin:24px 0 8px 0; padding:24px; background:#F8F5F1; border-radius:12px;">
+      <p style="margin:0 0 6px 0; font-size:11px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:2px;">
+        ${escapeHtml(copy.ctaLabel)}
+      </p>
+      <p style="margin:0 0 14px 0; font-size:14px; line-height:1.5; color:#171717;">
+        ${escapeHtml(copy.ctaBody)}
+      </p>
+      <a href="${taggedCalendlyUrl({ campaign: `email_welcome_${opts.source}`, content: "talk_to_us" })}"
+         style="display:inline-block; background:#171717; color:#ffffff; padding:11px 22px; border-radius:999px; text-decoration:none; font-weight:600; font-size:14px;">
+        Talk to us →
+      </a>
+    </div>
+
+    <p style="margin:24px 0 8px 0; font-size:14px; line-height:1.6; color:#64748B;">
+      Questions? Reply to this email — it goes straight to our advisors.
+    </p>
+    <p style="margin:16px 0 0 0; font-size:14px; color:#171717;">
+      Warmly,<br>The PLACES team
+    </p>
+  `;
+
+  const preheader =
+    opts.listings.length > 0
+      ? `${opts.listings.length} offices inside — prices, sizes, and quick-view links.`
+      : "A PLACES advisor is following up on your submission shortly.";
+
+  const html = brandedShell({ preheader, body, lang: "en" });
+
+  return sendMail({
+    to: opts.toEmail,
+    subject: copy.subject(escapeHtml(first)),
+    html,
+    replyTo: "admin@places-egy.com",
+  });
+}

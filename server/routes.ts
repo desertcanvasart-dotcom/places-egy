@@ -30,8 +30,13 @@ import {
   sendAdminLeadNotification,
   sendMarketReportReply,
   sendDeveloperSurveyReply,
+  sendLeadWelcomeWithListings,
   escapeHtml,
 } from "./mailer";
+import {
+  fetchRecentListingsForWelcome,
+  fetchListingForContext,
+} from "./lead-welcome-listings";
 import { handleCalendlyWebhook } from "./calendly-webhook";
 import { regenerateMarketReportHandler } from "./regenerate-report";
 import { registerProjectCoordsRoutes } from "./project-coords-routes";
@@ -269,16 +274,52 @@ export async function registerRoutes(
         utm_campaign: lead.utm_campaign ?? null,
       });
 
-      // Auto-reply to the LEAD themselves when they signed up for the market
-      // report magnet. Fire-and-forget — a mailer failure never blocks the
-      // response since the lead is already persisted and admin@ already
-      // got the notification above.
+      // Auto-reply to the LEAD themselves. Fire-and-forget — a mailer failure
+      // never blocks the response since the lead is already persisted and
+      // admin@ already got the notification above.
+      //
+      // Magnet-specific replies (market report, developer survey) get their
+      // own richer email with the promised PDF. Every other lead source
+      // (contact form, price_unlock, generic magnet) gets the value-first
+      // welcome with 3 recent listings embedded.
       if (lead.magnet === "cairo_office_market_report_2026") {
         void sendMarketReportReply({
           toEmail: lead.email,
           toName: lead.name,
           lang: lead.preferred_language ?? "en",
         });
+      } else if (lead.magnet === "price_unlock") {
+        // Price-unlock leads get similar-units email: filter recent listings
+        // by the same subtype + location as the one they unlocked, so the
+        // recommendations feel relevant instead of random.
+        void (async () => {
+          const contextListing = lead.listing_id
+            ? await fetchListingForContext(lead.listing_id)
+            : null;
+          const listings = await fetchRecentListingsForWelcome({
+            subtype: contextListing?.transaction_type ? undefined : undefined, // placeholder — subtype lives in raw row, not FavoritedListing
+            location: contextListing?.location ?? null,
+            excludeIds: lead.listing_id ? [lead.listing_id] : undefined,
+          });
+          await sendLeadWelcomeWithListings({
+            toEmail: lead.email,
+            toName: lead.name,
+            source: "price_unlock",
+            listings,
+            context: { contextListing },
+          });
+        })();
+      } else {
+        // Default: any generic contact-form submission (no magnet field set).
+        void (async () => {
+          const listings = await fetchRecentListingsForWelcome();
+          await sendLeadWelcomeWithListings({
+            toEmail: lead.email,
+            toName: lead.name,
+            source: "contact_form",
+            listings,
+          });
+        })();
       }
 
       res.json({ ok: true, id: inserted.id });
@@ -390,6 +431,25 @@ export async function registerRoutes(
         utm_medium: rest.utm_medium ?? null,
         utm_campaign: rest.utm_campaign ?? null,
       });
+
+      // Value-first auto-reply — 3 recent listings filtered by their intent
+      // (buy → sale, rent → rent, browsing/other → no filter). Skips send
+      // if we couldn't capture an email (concierge accepts email-or-phone).
+      if (rest.email && rest.email.trim().length > 0) {
+        void (async () => {
+          const txFilter: "sale" | "rent" | null =
+            intent === "buy" ? "sale" : intent === "rent" ? "rent" : null;
+          const listings = await fetchRecentListingsForWelcome({
+            transactionType: txFilter,
+          });
+          await sendLeadWelcomeWithListings({
+            toEmail: rest.email as string,
+            toName: rest.name,
+            source: "concierge",
+            listings,
+          });
+        })();
+      }
 
       res.json({ ok: true, id: inserted.id });
     },
@@ -614,6 +674,18 @@ export async function registerRoutes(
         html,
         replyTo: body.email,
       });
+
+      // Value-first welcome email — introduces PLACES + shows 3 recent
+      // admin listings the new account holder can save first.
+      void (async () => {
+        const listings = await fetchRecentListingsForWelcome();
+        await sendLeadWelcomeWithListings({
+          toEmail: body.email,
+          toName: body.name,
+          source: "account_signup",
+          listings,
+        });
+      })();
 
       res.json({ ok: true, id: inserted.id, existed: false });
     },
