@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Menu, X, Building2, TrendingUp, Handshake, Repeat, Coins, MessageCircle, ChevronDown, ArrowRight, Newspaper, HelpCircle, BookOpen, Compass } from "lucide-react";
+import { Menu, X, Building2, TrendingUp, Handshake, Repeat, Coins, MessageCircle, ChevronDown, ArrowRight, Newspaper, HelpCircle, BookOpen, Compass, Sparkles, Key } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { trackEvent } from "@/lib/analytics";
@@ -187,11 +187,32 @@ export function Navbar() {
               <ChevronDown className={cn("w-4 h-4 transition-transform", openMobileSection === "properties" && "rotate-180")} />
             </button>
             {openMobileSection === "properties" && (
-              <div className="pb-3 pl-4 flex flex-col gap-2 border-l border-white/10">
-                <Link href="/admin/business-park" onClick={closeMobile} className="text-sm hover:text-accent pl-2">Business Park</Link>
-                <Link href="/admin/business-building" onClick={closeMobile} className="text-sm hover:text-accent pl-2">Business Building</Link>
-                <Link href="/admin/mixed-use" onClick={closeMobile} className="text-sm hover:text-accent pl-2">Mixed Use</Link>
-                <Link href="/admin" onClick={closeMobile} className="text-xs font-semibold text-accent hover:text-accent/80 pl-2 inline-flex items-center gap-1">View all admin offices <ArrowRight className="w-3 h-3" /></Link>
+              <div className="pb-3 pl-4 flex flex-col gap-1 border-l border-white/10">
+                {/* Mobile mirrors the desktop 2x2 card layout as a stacked
+                    list — each row has an icon + title + tagline so mobile
+                    users get the same context without needing the card
+                    treatment. Tap targets are py-3 = 48px vertical, well
+                    above the 44px iOS/Android minimum. */}
+                {ADMIN_SUBTYPES.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={closeMobile}
+                      className="flex items-center gap-3 py-3 px-2 rounded-md hover:bg-white/5 transition-colors"
+                    >
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/15 text-accent shrink-0">
+                        <Icon className="h-4 w-4" strokeWidth={2.2} />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-white">{item.title}</div>
+                        <p className="text-[11px] text-white/60 leading-tight mt-0.5">{item.tagline}</p>
+                      </div>
+                    </Link>
+                  );
+                })}
+                <Link href="/admin" onClick={closeMobile} className="text-xs font-semibold text-accent hover:text-accent/80 pl-2 mt-2 inline-flex items-center gap-1">View all admin offices <ArrowRight className="w-3 h-3" /></Link>
               </div>
             )}
           </div>
@@ -276,73 +297,87 @@ export function Navbar() {
   );
 }
 
+// Admin Offices dropdown — reoriented from "property TYPE" to "deal INTENT"
+// per user request 2026-09-07. Every visitor has one of these 4 questions on
+// their mind when they click Admin Offices; giving them a one-tap path to
+// the right filter cuts the number of clicks to the listing that fits them.
+//
+// Each item has a lucide icon (for visual scanning in a 2x2 grid), a bold
+// title, and a one-line clarifier that removes any ambiguity about the
+// deal type.
 const ADMIN_SUBTYPES = [
   {
-    href: "/admin/business-park",
-    title: "Business Park",
-    description: "Integrated corporate communities with campus-scale plots, parking, and shared amenities.",
-    image: "/images/business-park.jpg",
+    href: "/listings?transaction=rent&type=admin",
+    title: "Rent",
+    tagline: "Lease admin office space",
+    icon: Key,
   },
   {
-    href: "/admin/business-building",
-    title: "Business Building",
-    description: "Standalone corporate towers with premium addresses and turnkey office floors.",
-    image: "/images/Mindset.png",
+    href: "/listings?transaction=sale&type=admin",
+    title: "Sale",
+    tagline: "Buy admin office space",
+    icon: Handshake,
   },
   {
-    href: "/admin/mixed-use",
-    title: "Mixed Use",
-    description: "Office floors stacked above active retail and F&B — built-in foot traffic.",
-    image: "/images/mixed-use.jpg",
+    href: "/services/income-generating-property",
+    title: "Income Property",
+    tagline: "Rented units generating yields",
+    icon: TrendingUp,
+  },
+  {
+    href: "/services/primary-property",
+    title: "Primary",
+    tagline: "Off-plan direct from developers",
+    icon: Sparkles,
   },
 ] as const;
 
+// Intent-first 2x2 grid dropdown. Each cell is a fast-decision card: an
+// icon in an accent-tinted circle, a bold intent label, a one-line
+// clarifier. Cards get an accent border + subtle lift on hover so users
+// know they're clickable without needing an underline or explicit CTA.
+//
+// The bottom "View all admin offices →" row is preserved as a fifth
+// escape hatch for browsers who want to scan every listing rather than
+// commit to a specific deal type.
+//
+// Sizing: total width ~440px on desktop, comfortable click targets
+// (~140px wide × ~110px tall per card, well above the 44px minimum).
+// Mobile layout is handled separately in the hamburger menu below,
+// so this component only renders on lg: viewports.
 function AdminOfficesMenuContent() {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const active = ADMIN_SUBTYPES[activeIndex];
-
   return (
-    <div className="grid grid-cols-[200px_320px] gap-3 p-3">
-      <div className="flex flex-col">
-        <ul className="grid gap-0.5">
-          {ADMIN_SUBTYPES.map((item, i) => (
-            <li key={item.href} onMouseEnter={() => setActiveIndex(i)} onFocus={() => setActiveIndex(i)}>
-              <Link
-                href={item.href}
-                className={cn(
-                  "group flex items-center select-none rounded-md no-underline outline-none transition-all py-3.5 px-3 border-l-2",
-                  i === activeIndex
-                    ? "border-accent bg-accent/5 pl-4"
-                    : "border-transparent hover:border-accent hover:bg-accent/5 hover:pl-4",
-                )}
-              >
-                <span className={cn("text-base font-semibold tracking-tight transition-colors", i === activeIndex ? "text-accent" : "text-foreground group-hover:text-accent")}>
-                  {item.title}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-        <div className="mt-2 pt-2 border-t border-border/40">
-          <Link href="/admin" className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-accent hover:text-accent/80 transition-colors">
-            View all admin offices <ArrowRight className="w-3 h-3" />
-          </Link>
-        </div>
+    <div className="w-[440px] p-3">
+      <div className="grid grid-cols-2 gap-2">
+        {ADMIN_SUBTYPES.map((item) => {
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="group flex flex-col items-start select-none rounded-lg no-underline outline-none border border-border/40 p-3.5 transition-all hover:border-accent/60 hover:bg-accent/5 hover:-translate-y-0.5 focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent/10 text-accent transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
+                <Icon className="h-4 w-4" strokeWidth={2.2} />
+              </div>
+              <div className="mt-3 text-sm font-semibold text-foreground group-hover:text-accent transition-colors leading-tight">
+                {item.title}
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground leading-snug">
+                {item.tagline}
+              </p>
+            </Link>
+          );
+        })}
       </div>
-      <Link href={active.href} className="relative overflow-hidden rounded-md group no-underline">
-        <img
-          key={active.image}
-          src={active.image}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 animate-in fade-in"
-          loading="lazy"
-        />
-        <div className="absolute inset-0 bg-linear-to-t from-primary/95 via-primary/55 to-primary/10" />
-        <div className="absolute inset-x-0 bottom-0 p-3 text-white">
-          <div className="text-sm font-semibold leading-tight">{active.title}</div>
-          <p className="text-xs leading-snug mt-1.5 text-white/85">{active.description}</p>
-        </div>
-      </Link>
+      <div className="mt-3 pt-3 border-t border-border/40">
+        <Link
+          href="/admin"
+          className="flex items-center gap-1.5 px-1 py-1 text-xs font-semibold text-accent hover:text-accent/80 transition-colors"
+        >
+          View all admin offices <ArrowRight className="w-3 h-3" />
+        </Link>
+      </div>
     </div>
   );
 }
