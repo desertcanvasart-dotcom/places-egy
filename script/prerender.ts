@@ -204,6 +204,37 @@ const INDEX_ROUTES: RouteMeta[] = [
       "Browse admin office space in every major Cairo business district — New Cairo, Sheikh Zayed, 6th October, Downtown, Sheraton, and Maadi. Full district guides with rental data + available listings.",
     url: `${SITE}/locations`,
   },
+  // /admin — the "Admin Offices" hub. High-intent commercial page for
+  // anyone typing "admin office Egypt" into Google. Previously served
+  // homepage meta, causing the same 404 flash + no rankings.
+  {
+    route: "/admin",
+    title: "Admin Offices in Egypt — Rent or Buy Admin Office Space | PLACES",
+    description:
+      "Browse every admin office in Egypt across business parks, business buildings, and mixed-use developments. Verified inventory from PLACES, Cairo's admin-office specialists — rent, buy, or invest.",
+    url: `${SITE}/admin`,
+  },
+  {
+    route: "/admin/business-building",
+    title: "Business Buildings in Egypt — Corporate Office Towers | PLACES",
+    description:
+      "Standalone corporate towers with premium addresses and turnkey office floors across Cairo — New Cairo, Sheikh Zayed, 6th October, Downtown. Available for rent or purchase, verified by PLACES.",
+    url: `${SITE}/admin/business-building`,
+  },
+  {
+    route: "/admin/business-park",
+    title: "Business Parks in Egypt — Corporate Campuses | PLACES",
+    description:
+      "Integrated corporate communities across Cairo — campus-scale plots, parking, shared amenities. Rent or buy admin office units in Egypt's most established business parks.",
+    url: `${SITE}/admin/business-park`,
+  },
+  {
+    route: "/admin/mixed-use",
+    title: "Mixed-Use Office Developments in Egypt — Cairo Retail-Adjacent Offices | PLACES",
+    description:
+      "Office floors stacked above active retail and F&B — built-in foot traffic and premium branding. Browse mixed-use admin office listings across Cairo with PLACES.",
+    url: `${SITE}/admin/mixed-use`,
+  },
 ];
 
 // Parse client/src/lib/location-content.ts for the 6 location slugs +
