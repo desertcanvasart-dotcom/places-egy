@@ -290,7 +290,7 @@ export default function WhyPlaces() {
               rel="noopener noreferrer"
               className="shrink-0 inline-flex items-center justify-center h-11 px-6 rounded-full bg-accent text-white text-sm font-medium hover:bg-accent/90 transition-colors"
             >
-              Book on WhatsApp
+              Talk to us on WhatsApp
             </a>
           </div>
         </div>

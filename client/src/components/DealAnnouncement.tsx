@@ -155,11 +155,15 @@ export function DealAnnouncement({
           <DealTag category="Location" value={location} variant="outline" icon={<MapPin className="h-3 w-3" />} className="w-full" />
         </div>
 
-        {/* Client logo — smaller on mobile so the card doesn't need extra
-            vertical space just to fit the logo. */}
+        {/* Client logo — sized to hold real visual weight against the
+            large SQM number on the left. Bumped from h-20/w-56 to
+            h-32/w-80 on desktop (2026-09-07 per user feedback that the
+            old size felt tiny relative to the strip's overall footprint).
+            Mobile stays compact so the card doesn't need extra vertical
+            room to fit the logo. */}
         {clientLogo && (
-          <div className="flex shrink-0 items-center md:border-l md:border-[#ECE7D8]/15 md:pl-4 md:pr-10">
-            <div className="flex h-11 w-32 md:h-20 md:w-56 items-center justify-center mx-auto md:mx-0">
+          <div className="flex shrink-0 items-center md:border-l md:border-[#ECE7D8]/15 md:pl-6 md:pr-10">
+            <div className="flex h-12 w-36 md:h-32 md:w-80 items-center justify-center mx-auto md:mx-0">
               <img
                 src={clientLogo}
                 alt={`${clientName} logo`}

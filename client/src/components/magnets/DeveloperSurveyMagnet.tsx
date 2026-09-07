@@ -577,9 +577,12 @@ export function DeveloperSurveyMagnet({ variant, guideSlug }: Props) {
   return (
     <div
       dir={isRtl ? "rtl" : "ltr"}
-      // Bottom-LEFT so it doesn't collide with the corner PDF magnet
-      // (bottom-right) or the concierge widget (top-right).
-      className={`fixed bottom-4 left-4 md:bottom-6 md:left-6 z-40 max-w-[calc(100vw-2rem)] transition-all duration-400 ease-out ${
+      // Bottom-RIGHT per user request 2026-09-07 (was bottom-left).
+      // Safe here because this magnet only mounts on /guides/* pages,
+      // where the CornerSlideMagnet (also bottom-right on other pages)
+      // is not mounted. ConciergeWidget lives at top-right — no vertical
+      // overlap on any viewport since concierge starts at top-20/top-24.
+      className={`fixed bottom-4 right-4 md:bottom-6 md:right-6 z-40 max-w-[calc(100vw-2rem)] transition-all duration-400 ease-out ${
         visible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0 pointer-events-none"
       }`}
     >
