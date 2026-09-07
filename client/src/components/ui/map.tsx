@@ -14,6 +14,29 @@ import "maplibre-gl/dist/maplibre-gl.css";
 // worker crashes silently on load and every dynamic map subsystem
 // (Google Places dropdown, marker updates, style changes) stops working.
 MapLibreGL.setWorkerUrl(maplibreWorkerUrl);
+
+// Load the RTL text plugin so Arabic + Hebrew place-name labels on the map
+// render correctly (right-to-left with proper letter joining). Without this,
+// Arabic labels appear as disconnected reversed characters — every visitor
+// looking at a Cairo map sees garbled text since basically every place has
+// an Arabic label.
+//
+// The plugin is self-hosted at /assets/mapbox-gl-rtl-text.min.js (~200KB,
+// lazily fetched once per session, cached by Cloudflare forever). Copied
+// from the mapbox-gl-rtl-text v0.2.3 npm package so we don't depend on an
+// external CDN + don't need to punch a hole in CSP for unpkg.
+//
+// The `true` third argument makes it a hard requirement: MapLibre won't
+// render RTL text until the plugin loads. Safe to call multiple times —
+// MapLibre guards internally against re-loads.
+try {
+  MapLibreGL.setRTLTextPlugin(
+    "/assets/mapbox-gl-rtl-text.min.js",
+    true,
+  );
+} catch {
+  // Already registered from a hot-reload or prior mount — ignore.
+}
 import {
   createContext,
   forwardRef,
