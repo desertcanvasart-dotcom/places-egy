@@ -345,32 +345,43 @@ const ADMIN_SUBTYPES = [
 // (~140px wide × ~110px tall per card, well above the 44px minimum).
 // Mobile layout is handled separately in the hamburger menu below,
 // so this component only renders on lg: viewports.
+// Tightened 2026-09-07 per user feedback: icons now sit inline with the
+// title (was stacked above) and the whole dropdown shrunk from 440px to
+// 360px. Each card dropped from ~110px tall to ~68px tall — roughly 40%
+// smaller vertically. Still fully accessible: card is 168px wide × 68px
+// tall = well above the 44px minimum tap target.
+// Compact 2x2 intent-first dropdown. Sized tight to feel like a nav
+// menu, not a full-screen takeover: outer padding p-2, card padding
+// p-2.5, small 24px icons. Total ~340px wide, each card ~62px tall.
+// Well above 44px tap-target min.
 function AdminOfficesMenuContent() {
   return (
-    <div className="w-[440px] p-3">
-      <div className="grid grid-cols-2 gap-2">
+    <div className="w-85 p-2">
+      <div className="grid grid-cols-2 gap-1.5">
         {ADMIN_SUBTYPES.map((item) => {
           const Icon = item.icon;
           return (
             <Link
               key={item.href}
               href={item.href}
-              className="group flex flex-col items-start select-none rounded-lg no-underline outline-none border border-border/40 p-3.5 transition-all hover:border-accent/60 hover:bg-accent/5 hover:-translate-y-0.5 focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
+              className="group flex flex-col select-none rounded-lg no-underline outline-none border border-border/40 px-2.5 py-2 transition-all hover:border-accent/60 hover:bg-accent/5 focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
             >
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent/10 text-accent transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
-                <Icon className="h-4 w-4" strokeWidth={2.2} />
+              <div className="flex items-center gap-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-accent/10 text-accent shrink-0 transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
+                  <Icon className="h-3 w-3" strokeWidth={2.2} />
+                </div>
+                <div className="text-sm font-semibold text-foreground group-hover:text-accent transition-colors leading-none">
+                  {item.title}
+                </div>
               </div>
-              <div className="mt-3 text-sm font-semibold text-foreground group-hover:text-accent transition-colors leading-tight">
-                {item.title}
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground leading-snug">
+              <p className="mt-1 text-[11px] text-muted-foreground leading-tight">
                 {item.tagline}
               </p>
             </Link>
           );
         })}
       </div>
-      <div className="mt-3 pt-3 border-t border-border/40">
+      <div className="mt-1.5 pt-1.5 border-t border-border/40">
         <Link
           href="/admin"
           className="flex items-center gap-1.5 px-1 py-1 text-xs font-semibold text-accent hover:text-accent/80 transition-colors"
