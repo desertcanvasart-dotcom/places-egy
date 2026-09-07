@@ -36,61 +36,28 @@ function cn(...inputs: Array<string | false | null | undefined>) {
   return inputs.filter(Boolean).join(" ");
 }
 
-// Inline raster style built around CARTO's PNG tiles. Simple and bulletproof:
-// no external style.json fetch, no vector protobuf worker, no glyph fetch,
-// no sprite fetch — just raster PNG tiles rendered directly. Fixes the
-// blank-map bug where vector styles were resolving but tiles never appeared.
-// Trade-off: slightly heavier per pane (~40KB PNG vs ~5KB vector), no infinite
-// zoom smoothness. Fine for the admin pin-drop + public browse use cases.
+// Vector tile style via OpenFreeMap. Chosen 2026-09-07 to avoid CARTO's
+// new "API KEY REQUIRED" watermark on anonymous basemap tiles + CARTO's
+// paid API dashboard doesn't cover basemap access anyway.
 //
-// API key (2026-09-07): CARTO recently started overlaying an "API KEY
-// REQUIRED" watermark on anonymous tile requests. We append &api_key=…
-// from VITE_CARTO_API_KEY when set to remove the watermark. Falls back to
-// unauthenticated tiles (still work, just watermarked) if the env var
-// is missing — so a bad key never breaks the map entirely.
-const CARTO_API_KEY = import.meta.env.VITE_CARTO_API_KEY ?? "";
-const CARTO_QS = CARTO_API_KEY ? `?api_key=${encodeURIComponent(CARTO_API_KEY)}` : "";
-
-const RASTER_LIGHT_STYLE = {
-  version: 8 as const,
-  sources: {
-    "carto-light": {
-      type: "raster" as const,
-      tiles: [
-        `https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png${CARTO_QS}`,
-        `https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png${CARTO_QS}`,
-        `https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png${CARTO_QS}`,
-      ],
-      tileSize: 256,
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    },
-  },
-  layers: [
-    { id: "carto-light", type: "raster" as const, source: "carto-light" },
-  ],
-};
-
-const RASTER_DARK_STYLE = {
-  ...RASTER_LIGHT_STYLE,
-  sources: {
-    "carto-dark": {
-      ...RASTER_LIGHT_STYLE.sources["carto-light"],
-      tiles: [
-        `https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png${CARTO_QS}`,
-        `https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png${CARTO_QS}`,
-        `https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png${CARTO_QS}`,
-      ],
-    },
-  },
-  layers: [
-    { id: "carto-dark", type: "raster" as const, source: "carto-dark" },
-  ],
-};
+// OpenFreeMap is a genuinely free forever OSM-derived tile CDN (backed by
+// non-profit funding). Same underlying map data as CARTO's basemaps.
+// No API key. No signup. No watermark. No rate limits at our traffic level.
+//
+// We point maplibre-gl at OpenFreeMap's hosted style.json — maplibre
+// handles the vector tile fetching + glyph loading + sprite loading
+// itself from that entrypoint. Simpler than the previous raster-tile
+// approach and easier to swap styles later (positron/liberty/bright/dark
+// are all one-line changes).
+//
+// Attribution is required by ODbL — OpenFreeMap's own hosted style
+// bakes it into the map so no manual attribution string needed.
+const OPENFREEMAP_LIGHT_STYLE = "https://tiles.openfreemap.org/styles/positron";
+const OPENFREEMAP_DARK_STYLE = "https://tiles.openfreemap.org/styles/dark-matter";
 
 const defaultStyles = {
-  dark: RASTER_DARK_STYLE as unknown as string,
-  light: RASTER_LIGHT_STYLE as unknown as string,
+  dark: OPENFREEMAP_DARK_STYLE,
+  light: OPENFREEMAP_LIGHT_STYLE,
 };
 
 type Theme = "light" | "dark";
