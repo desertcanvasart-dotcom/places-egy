@@ -71,34 +71,44 @@ export function PriceGate({
   };
 
   if (size === "hero") {
+    // Hero locked state: stack the range price above a proper pill button.
+    // Range price gets a "+" suffix so it's obvious this is a floor, not
+    // an exact number. Pill button is a real interactive-looking element
+    // — accent border + lock icon + subtle background — so it clearly
+    // reads as clickable rather than as decorative caption text.
     return (
-      <button
-        type="button"
-        onClick={handleClick}
-        className="group text-left md:text-right shrink-0"
-      >
-        <span className="text-xl md:text-3xl font-bold text-primary font-serif">
-          {range}
-        </span>
-        <p className="text-xs md:text-sm text-accent font-semibold mt-1 inline-flex items-center gap-1 group-hover:underline">
-          <Lock className="w-3 h-3" /> Unlock exact price
-        </p>
-      </button>
+      <div className="flex flex-col items-start md:items-end shrink-0 gap-2.5">
+        <div>
+          <span className="text-2xl md:text-4xl font-bold text-primary font-serif leading-none">
+            {range}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={handleClick}
+          className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/30 text-accent text-xs md:text-sm font-semibold hover:bg-accent hover:text-white hover:border-accent transition-all"
+          aria-label="Unlock exact price"
+        >
+          <Lock className="w-3 h-3 md:w-3.5 md:h-3.5" />
+          <span>Unlock exact price</span>
+        </button>
+      </div>
     );
   }
 
+  // Card locked state: compact stack for grid layouts.
   return (
     <button
       type="button"
       onClick={handleClick}
       className="group text-left"
     >
-      <span className="text-lg font-bold text-primary font-serif block">
+      <span className="text-lg font-bold text-primary font-serif block leading-none">
         {range}
       </span>
-      <p className="text-[11px] text-accent font-semibold inline-flex items-center gap-1 group-hover:underline mt-0.5">
-        <Lock className="w-2.5 h-2.5" /> Unlock exact price
-      </p>
+      <span className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/10 border border-accent/30 text-accent text-[10px] font-semibold group-hover:bg-accent group-hover:text-white group-hover:border-accent transition-all">
+        <Lock className="w-2.5 h-2.5" /> Unlock
+      </span>
     </button>
   );
 }
