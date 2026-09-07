@@ -23,7 +23,11 @@ export const leadInsertSchema = z
     message: z.string().trim().max(2000).nullable().optional(),
 
     // Locations the visitor is interested in. Multi-select from the 6
-    // canonical Cairo districts we serve. At least one is required.
+    // canonical Cairo districts we serve. Optional — magnet flows that
+    // already carry listing_id (like price_unlock) don't need to ask
+    // for locations again because the listing itself pins the district.
+    // Contact-page LeadForm still enforces min-1 at the client level
+    // for the multi-select UX, so the DB still gets the signal there.
     locations: z
       .array(
         z.enum([
@@ -35,8 +39,8 @@ export const leadInsertSchema = z
           "maadi",
         ]),
       )
-      .min(1, "Pick at least one location")
-      .max(6),
+      .max(6)
+      .default([]),
 
     // Where the lead came from. Slug-y string set by the wrapper component
     // (e.g. "contact_page", "market_report", "listing_inquiry", "footer",

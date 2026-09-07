@@ -292,18 +292,15 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
           </nav>
 
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-            <div>
+            <div className="min-w-0">
               <Badge
                 className={`${listing.transaction_type?.toLowerCase() === "sale" ? "bg-emerald-600" : "bg-accent text-accent-foreground"} uppercase tracking-wider text-[10px] font-bold shadow-sm border-0 mb-3`}
               >
                 {formatLabel(listing.transaction_type)}
               </Badge>
-              <div className="flex items-start justify-between gap-4">
-                <h1 className="text-3xl md:text-5xl font-serif font-bold text-primary leading-tight flex-1">
-                  {listing.title}
-                </h1>
-                <FavoriteButton listingId={listing.id} size="lg" className="shrink-0 mt-1" />
-              </div>
+              <h1 className="text-3xl md:text-5xl font-serif font-bold text-primary leading-tight">
+                {listing.title}
+              </h1>
               <div className="flex items-center gap-2 md:gap-3 mt-3 text-muted-foreground flex-wrap">
                 <div className="flex items-center gap-2 shrink-0">
                   <MapPin className="w-4 h-4" />
@@ -322,16 +319,23 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
               </div>
             </div>
 
-            {listing.price != null && (
-              <PriceGate
-                price={listing.price}
-                currency={listingCurrency(listing)}
-                transactionType={listing.transaction_type}
-                size="hero"
-                listingId={listing.id}
-                onUnlockClick={() => setUnlockOpen(true)}
-              />
-            )}
+            {/* Right column — favorite + price + unlock CTA stacked as
+                one cohesive vertical group. Heart sits above the price
+                so the whole right side reads as one column instead of
+                a floating heart + a bottom-anchored price. */}
+            <div className="flex flex-col items-start md:items-end shrink-0 gap-3">
+              <FavoriteButton listingId={listing.id} size="lg" />
+              {listing.price != null && (
+                <PriceGate
+                  price={listing.price}
+                  currency={listingCurrency(listing)}
+                  transactionType={listing.transaction_type}
+                  size="hero"
+                  listingId={listing.id}
+                  onUnlockClick={() => setUnlockOpen(true)}
+                />
+              )}
+            </div>
           </div>
         </div>
       </section>
