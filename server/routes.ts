@@ -39,6 +39,7 @@ import {
 } from "./lead-welcome-listings";
 import { handleCalendlyWebhook } from "./calendly-webhook";
 import { regenerateMarketReportHandler } from "./regenerate-report";
+import { weeklyReportHandler } from "./weekly-report";
 import { registerProjectCoordsRoutes } from "./project-coords-routes";
 import {
   handleMilestoneOnFavorite,
@@ -173,6 +174,13 @@ export async function registerRoutes(
   // Called externally by a cron scheduler on the 1st of every month.
   // Auth via x-cron-token header. See server/regenerate-report.ts.
   app.post("/api/admin/regenerate-market-report", regenerateMarketReportHandler);
+
+  // ── Cron: weekly Monday admin lead report ───────────────────────────────
+  // Called externally by cron-job.org every Monday at 09:00 Cairo time.
+  // Auth via x-cron-token header, same shared secret as the other crons.
+  // Sends a branded HTML email to admin@places-egy.com with the last 7
+  // days of leads + deals + hot leads. See server/weekly-report.ts.
+  app.post("/api/admin/weekly-report", weeklyReportHandler);
 
   // ── Cron: favorites digest sweep (every 30 min) ─────────────────────────
   // Finds accounts eligible for the 2h debounced digest (or weekly recap on
