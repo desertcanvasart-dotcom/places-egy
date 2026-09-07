@@ -42,15 +42,24 @@ function cn(...inputs: Array<string | false | null | undefined>) {
 // blank-map bug where vector styles were resolving but tiles never appeared.
 // Trade-off: slightly heavier per pane (~40KB PNG vs ~5KB vector), no infinite
 // zoom smoothness. Fine for the admin pin-drop + public browse use cases.
+//
+// API key (2026-09-07): CARTO recently started overlaying an "API KEY
+// REQUIRED" watermark on anonymous tile requests. We append &api_key=…
+// from VITE_CARTO_API_KEY when set to remove the watermark. Falls back to
+// unauthenticated tiles (still work, just watermarked) if the env var
+// is missing — so a bad key never breaks the map entirely.
+const CARTO_API_KEY = import.meta.env.VITE_CARTO_API_KEY ?? "";
+const CARTO_QS = CARTO_API_KEY ? `?api_key=${encodeURIComponent(CARTO_API_KEY)}` : "";
+
 const RASTER_LIGHT_STYLE = {
   version: 8 as const,
   sources: {
     "carto-light": {
       type: "raster" as const,
       tiles: [
-        "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-        "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-        "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
+        `https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png${CARTO_QS}`,
+        `https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png${CARTO_QS}`,
+        `https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png${CARTO_QS}`,
       ],
       tileSize: 256,
       attribution:
@@ -68,9 +77,9 @@ const RASTER_DARK_STYLE = {
     "carto-dark": {
       ...RASTER_LIGHT_STYLE.sources["carto-light"],
       tiles: [
-        "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
-        "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
-        "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+        `https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png${CARTO_QS}`,
+        `https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png${CARTO_QS}`,
+        `https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png${CARTO_QS}`,
       ],
     },
   },
