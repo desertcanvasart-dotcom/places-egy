@@ -200,10 +200,20 @@ function CanonicalTag() {
   return null;
 }
 
+// Suspense fallback shown while React.lazy() is fetching the chunk for a
+// route the user just navigated to. Renders a full-height branded screen
+// with the site background — deliberately NOT a bare white flash + tiny
+// spinner. That's what users interpreted as "the page 404'd" — a moment
+// of near-blank screen while the chunk loads.
 function PageLoader() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <Loader2 className="w-8 h-8 animate-spin text-accent" />
+    <div className="min-h-screen w-full flex items-center justify-center bg-background">
+      <div className="flex flex-col items-center gap-3">
+        <Loader2 className="w-6 h-6 animate-spin text-accent/70" />
+        <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+          Loading
+        </p>
+      </div>
     </div>
   );
 }

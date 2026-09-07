@@ -74,9 +74,15 @@ const SECTION_ICONS: Record<string, LucideIcon> = {
 
 export default function FAQSectionPage() {
   const { slug } = useParams<{ slug: string }>();
+  // Same guard as /locations/{slug}: wait for wouter's params to settle
+  // before deciding this is a 404. Without this gate the component flashed
+  // <NotFound /> for a frame on the initial render, which users perceive
+  // as 'the page 404'd then loaded'. Render a matched cream background
+  // while we wait, then either render the real section or NotFound.
+  if (!slug) {
+    return <div className="min-h-screen w-full bg-background" aria-hidden />;
+  }
   const section = getFAQSectionBySlug(slug);
-
-  // Fall through to NotFound for invalid /faqs/{bad-slug} URLs.
   if (!section) return <NotFound />;
 
   return <SectionView section={section} />;

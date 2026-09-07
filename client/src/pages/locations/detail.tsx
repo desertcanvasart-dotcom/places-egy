@@ -72,7 +72,16 @@ function propertyTypeIcon(_type: string): LucideIcon {
 
 export default function LocationDetail() {
   const { slug } = useParams<{ slug: string }>();
-  const content = LOCATION_CONTENT[slug];
+  // Wait one frame for wouter's params to settle before deciding this is a
+  // 404. Without this guard the component would flash <NotFound /> for a
+  // frame when it renders before the router has populated `slug`, which
+  // users perceive as "the page 404'd then loaded". Simple two-tick gate:
+  // render a matched cream background while we wait, then render either
+  // the real content or NotFound depending on whether the slug matched.
+  const content = slug ? LOCATION_CONTENT[slug] : undefined;
+  if (!slug) {
+    return <div className="min-h-screen w-full bg-background" aria-hidden />;
+  }
 
   // Per-location <title> + meta description so each /locations/{slug} page
   // ranks for its own district instead of being consolidated into the
