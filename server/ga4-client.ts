@@ -103,85 +103,91 @@ export async function fetchGa4WeeklyTraffic(): Promise<GA4WeeklyTraffic | null> 
   const prevEnd = new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000);
 
   try {
-    // One batchRunReports call = one API bill event + one auth round-trip.
-    // Six queries below all share the same property so batching keeps
-    // latency low + quota usage low. Adds per-day and per-channel breakdowns
-    // for the inline SVG chart rendering.
-    const [batch] = await client.batchRunReports({
-      property,
-      requests: [
-        // Query 0 — sessions + users + keyEvents for THIS week
-        {
-          dateRanges: [{ startDate: toGa4Date(weekStart), endDate: toGa4Date(weekEnd) }],
-          metrics: [
-            { name: "sessions" },
-            { name: "totalUsers" },
-            { name: "keyEvents" },
-          ],
-        },
-        // Query 1 — sessions PREVIOUS week (for delta %)
-        {
-          dateRanges: [{ startDate: toGa4Date(prevStart), endDate: toGa4Date(prevEnd) }],
-          metrics: [{ name: "sessions" }],
-        },
-        // Query 2 — top landing page by sessions, this week
-        {
-          dateRanges: [{ startDate: toGa4Date(weekStart), endDate: toGa4Date(weekEnd) }],
-          dimensions: [{ name: "landingPagePlusQueryString" }],
-          metrics: [{ name: "sessions" }],
-          orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
-          limit: 1,
-        },
-        // Query 3 — top default channel group by sessions, this week
-        {
-          dateRanges: [{ startDate: toGa4Date(weekStart), endDate: toGa4Date(weekEnd) }],
-          dimensions: [{ name: "sessionDefaultChannelGroup" }],
-          metrics: [{ name: "sessions" }],
-          orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
-          limit: 1,
-        },
-        // Query 4 — sessions PER DAY for the last 7 days (line chart data)
-        {
-          dateRanges: [{ startDate: toGa4Date(weekStart), endDate: toGa4Date(weekEnd) }],
-          dimensions: [{ name: "date" }],
-          metrics: [{ name: "sessions" }],
-          orderBys: [{ dimension: { dimensionName: "date" } }],
-        },
-        // Query 5 — channel mix (top 5) for the sessions-by-channel bar chart
-        {
-          dateRanges: [{ startDate: toGa4Date(weekStart), endDate: toGa4Date(weekEnd) }],
-          dimensions: [{ name: "sessionDefaultChannelGroup" }],
-          metrics: [{ name: "sessions" }],
-          orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
-          limit: 5,
-        },
-        // Query 6 — new vs returning users
-        {
-          dateRanges: [{ startDate: toGa4Date(weekStart), endDate: toGa4Date(weekEnd) }],
-          dimensions: [{ name: "newVsReturning" }],
-          metrics: [{ name: "totalUsers" }],
-        },
-        // Query 7 — device category breakdown (mobile / desktop / tablet)
-        {
-          dateRanges: [{ startDate: toGa4Date(weekStart), endDate: toGa4Date(weekEnd) }],
-          dimensions: [{ name: "deviceCategory" }],
-          metrics: [{ name: "sessions" }],
-          orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
-        },
-        // Query 8 — Key events by event name (contact_form_submit, etc.)
-        // Filtered to only Key events so we don't get noise from every
-        // event fired on the site.
-        {
-          dateRanges: [{ startDate: toGa4Date(weekStart), endDate: toGa4Date(weekEnd) }],
-          dimensions: [{ name: "eventName" }],
-          metrics: [{ name: "keyEvents" }],
-          orderBys: [{ metric: { metricName: "keyEvents" }, desc: true }],
-          limit: 10,
-        },
-      ],
-    });
+    // GA4 batchRunReports caps at 5 sub-requests per call. Split the 9
+    // queries across two batches, then concatenate the reports back into
+    // one array so the parsing below is unchanged.
+    const thisWeek = { startDate: toGa4Date(weekStart), endDate: toGa4Date(weekEnd) };
+    const [batchA, batchB] = await Promise.all([
+      client.batchRunReports({
+        property,
+        requests: [
+          // Query 0 — sessions + users + keyEvents for THIS week
+          {
+            dateRanges: [thisWeek],
+            metrics: [
+              { name: "sessions" },
+              { name: "totalUsers" },
+              { name: "keyEvents" },
+            ],
+          },
+          // Query 1 — sessions PREVIOUS week (for delta %)
+          {
+            dateRanges: [{ startDate: toGa4Date(prevStart), endDate: toGa4Date(prevEnd) }],
+            metrics: [{ name: "sessions" }],
+          },
+          // Query 2 — top landing page by sessions, this week
+          {
+            dateRanges: [thisWeek],
+            dimensions: [{ name: "landingPagePlusQueryString" }],
+            metrics: [{ name: "sessions" }],
+            orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+            limit: 1,
+          },
+          // Query 3 — top default channel group by sessions, this week
+          {
+            dateRanges: [thisWeek],
+            dimensions: [{ name: "sessionDefaultChannelGroup" }],
+            metrics: [{ name: "sessions" }],
+            orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+            limit: 1,
+          },
+          // Query 4 — sessions PER DAY for the last 7 days (line chart data)
+          {
+            dateRanges: [thisWeek],
+            dimensions: [{ name: "date" }],
+            metrics: [{ name: "sessions" }],
+            orderBys: [{ dimension: { dimensionName: "date" } }],
+          },
+        ],
+      }),
+      client.batchRunReports({
+        property,
+        requests: [
+          // Query 5 — channel mix (top 5) for the sessions-by-channel bar chart
+          {
+            dateRanges: [thisWeek],
+            dimensions: [{ name: "sessionDefaultChannelGroup" }],
+            metrics: [{ name: "sessions" }],
+            orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+            limit: 5,
+          },
+          // Query 6 — new vs returning users
+          {
+            dateRanges: [thisWeek],
+            dimensions: [{ name: "newVsReturning" }],
+            metrics: [{ name: "totalUsers" }],
+          },
+          // Query 7 — device category breakdown (mobile / desktop / tablet)
+          {
+            dateRanges: [thisWeek],
+            dimensions: [{ name: "deviceCategory" }],
+            metrics: [{ name: "sessions" }],
+            orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+          },
+          // Query 8 — Key events by event name (contact_form_submit, etc.)
+          {
+            dateRanges: [thisWeek],
+            dimensions: [{ name: "eventName" }],
+            metrics: [{ name: "keyEvents" }],
+            orderBys: [{ metric: { metricName: "keyEvents" }, desc: true }],
+            limit: 10,
+          },
+        ],
+      }),
+    ]);
 
-    const [q0, q1, q2, q3, q4, q5, q6, q7, q8] = batch.reports ?? [];
+    const reports = [...(batchA[0].reports ?? []), ...(batchB[0].reports ?? [])];
+    const [q0, q1, q2, q3, q4, q5, q6, q7, q8] = reports;
 
     // Parse this-week totals
     const q0row = q0?.rows?.[0]?.metricValues ?? [];
