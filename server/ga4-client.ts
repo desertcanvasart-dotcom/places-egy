@@ -77,6 +77,16 @@ export interface GA4WeeklyTraffic {
   dailySessions: Array<{ date: string; sessions: number }>;
   // Channel mix (top 5) for the sessions-by-channel bar chart.
   channelBreakdown: Array<{ name: string; sessions: number }>;
+  // Audience breakdown: new visitors vs returning
+  newUsers: number;
+  returningUsers: number;
+  // Device split (mobile / desktop / tablet)
+  deviceBreakdown: Array<{ name: string; sessions: number }>;
+  // Per-event count for the 5 configured Key events. Names come straight
+  // from GA4 so admin sees the exact event slugs they'd see in GA4 itself
+  // (contact_form_submit, developer_survey_submit, price_unlock_submit,
+  // whatsapp_click, phone_click, etc.).
+  keyEventBreakdown: Array<{ name: string; count: number }>;
 }
 
 // Fetch the last-7-days snapshot from GA4. Returns null if the client
@@ -145,10 +155,33 @@ export async function fetchGa4WeeklyTraffic(): Promise<GA4WeeklyTraffic | null> 
           orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
           limit: 5,
         },
+        // Query 6 — new vs returning users
+        {
+          dateRanges: [{ startDate: toGa4Date(weekStart), endDate: toGa4Date(weekEnd) }],
+          dimensions: [{ name: "newVsReturning" }],
+          metrics: [{ name: "totalUsers" }],
+        },
+        // Query 7 — device category breakdown (mobile / desktop / tablet)
+        {
+          dateRanges: [{ startDate: toGa4Date(weekStart), endDate: toGa4Date(weekEnd) }],
+          dimensions: [{ name: "deviceCategory" }],
+          metrics: [{ name: "sessions" }],
+          orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+        },
+        // Query 8 — Key events by event name (contact_form_submit, etc.)
+        // Filtered to only Key events so we don't get noise from every
+        // event fired on the site.
+        {
+          dateRanges: [{ startDate: toGa4Date(weekStart), endDate: toGa4Date(weekEnd) }],
+          dimensions: [{ name: "eventName" }],
+          metrics: [{ name: "keyEvents" }],
+          orderBys: [{ metric: { metricName: "keyEvents" }, desc: true }],
+          limit: 10,
+        },
       ],
     });
 
-    const [q0, q1, q2, q3, q4, q5] = batch.reports ?? [];
+    const [q0, q1, q2, q3, q4, q5, q6, q7, q8] = batch.reports ?? [];
 
     // Parse this-week totals
     const q0row = q0?.rows?.[0]?.metricValues ?? [];
@@ -206,6 +239,36 @@ export async function fetchGa4WeeklyTraffic(): Promise<GA4WeeklyTraffic | null> 
         sessions: Number(row.metricValues?.[0]?.value ?? 0),
       }));
 
+    // New vs returning users. GA4 returns rows like:
+    //   [{ dim: "new", metric: 42 }, { dim: "returning", metric: 18 }]
+    // Sum returning + new to derive percentages later.
+    let newUsers = 0;
+    let returningUsers = 0;
+    for (const row of q6?.rows ?? []) {
+      const label = (row.dimensionValues?.[0]?.value ?? "").toLowerCase();
+      const count = Number(row.metricValues?.[0]?.value ?? 0);
+      if (label === "new") newUsers = count;
+      else if (label === "returning") returningUsers = count;
+    }
+
+    // Device split — GA4 returns "mobile" / "desktop" / "tablet" / "smart tv"
+    const deviceBreakdown: Array<{ name: string; sessions: number }> =
+      (q7?.rows ?? []).map((row) => ({
+        name: (row.dimensionValues?.[0]?.value ?? "(unknown)")
+          .replace(/^\w/, (c) => c.toUpperCase()),
+        sessions: Number(row.metricValues?.[0]?.value ?? 0),
+      }));
+
+    // Key event breakdown by name. GA4 returns events sorted by keyEvents
+    // desc thanks to the orderBy in the query.
+    const keyEventBreakdown: Array<{ name: string; count: number }> =
+      (q8?.rows ?? [])
+        .map((row) => ({
+          name: row.dimensionValues?.[0]?.value ?? "(unknown)",
+          count: Number(row.metricValues?.[0]?.value ?? 0),
+        }))
+        .filter((e) => e.count > 0);
+
     return {
       sessions,
       prevSessions,
@@ -217,6 +280,10 @@ export async function fetchGa4WeeklyTraffic(): Promise<GA4WeeklyTraffic | null> 
       conversionRatePct,
       dailySessions,
       channelBreakdown,
+      newUsers,
+      returningUsers,
+      deviceBreakdown,
+      keyEventBreakdown,
     };
   } catch (err) {
     console.warn(

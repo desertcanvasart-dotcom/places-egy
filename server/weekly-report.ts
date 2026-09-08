@@ -421,6 +421,59 @@ function renderReport(m: WeeklyMetrics): string {
             </div>`
           : ""}
 
+        <!-- Audience: new vs returning + device split, side-by-side -->
+        ${m.ga4.newUsers + m.ga4.returningUsers > 0 || m.ga4.deviceBreakdown.length > 0
+          ? `<table role="presentation" cellpadding="0" cellspacing="6" width="100%" style="margin-bottom:24px;">
+              <tr>
+                ${m.ga4.newUsers + m.ga4.returningUsers > 0
+                  ? `<td valign="top" style="width:50%; padding:16px; background:#ffffff; border:1px solid #EAE4DA; border-radius:12px; vertical-align:top;">
+                      <p style="margin:0 0 8px 0; font-size:10px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:2px;">
+                        New vs returning
+                      </p>
+                      ${renderHorizontalBars(
+                        [
+                          { name: "New", value: m.ga4.newUsers },
+                          { name: "Returning", value: m.ga4.returningUsers },
+                        ],
+                        { color: "#171717" },
+                      )}
+                      <p style="margin:8px 0 0 0; font-size:11px; color:#64748B;">
+                        ${(() => {
+                          const total = m.ga4.newUsers + m.ga4.returningUsers;
+                          const newPct = total === 0 ? 0 : Math.round((m.ga4.newUsers / total) * 100);
+                          return `${newPct}% new visitors · ${100 - newPct}% returning`;
+                        })()}
+                      </p>
+                    </td>`
+                  : ""}
+                ${m.ga4.deviceBreakdown.length > 0
+                  ? `<td valign="top" style="width:50%; padding:16px; background:#ffffff; border:1px solid #EAE4DA; border-radius:12px; vertical-align:top;">
+                      <p style="margin:0 0 8px 0; font-size:10px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:2px;">
+                        Device split
+                      </p>
+                      ${renderHorizontalBars(
+                        m.ga4.deviceBreakdown.map((d) => ({ name: d.name, value: d.sessions })),
+                        { color: "#E11D48" },
+                      )}
+                    </td>`
+                  : ""}
+              </tr>
+            </table>`
+          : ""}
+
+        <!-- Key events breakdown: what specifically fired + how many times -->
+        ${m.ga4.keyEventBreakdown.length > 0
+          ? `<div style="margin-bottom:24px; padding:16px; background:#ffffff; border:1px solid #EAE4DA; border-radius:12px;">
+              <p style="margin:0 0 8px 0; font-size:10px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:2px;">
+                Key events by name
+              </p>
+              ${renderHorizontalBars(
+                m.ga4.keyEventBreakdown.map((e) => ({ name: e.name, value: e.count })),
+                { color: "#171717" },
+              )}
+            </div>`
+          : ""}
+
         ${m.ga4.topLandingPage
           ? `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:24px;">
               <tr>
