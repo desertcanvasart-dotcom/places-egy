@@ -195,37 +195,67 @@ function fmtDate(iso: string): string {
 // background-color divs render identically in Gmail, Apple Mail, and
 // Outlook web with zero external image requests.
 
-// Vertical bar chart for the daily-sessions series. Each day is a table
-// column; the bar is a background-colored <div> whose height is set as
-// an inline percentage of the tallest day. The value sits above each bar.
+// Grouped-bar chart for the daily-sessions comparison. Each day column
+// has two skinny bars side by side: red = this week, light gray =
+// previous week. Mirrors the "Last 7 days vs Previous period" comparison
+// on the GA4 home dashboard, but rendered as pure HTML/CSS so Gmail
+// won't strip it.
 function renderSessionsLineChart(
   daily: Array<{ date: string; sessions: number }>,
+  prevDaily: Array<{ date: string; sessions: number }> = [],
 ): string {
   if (daily.length === 0) return "";
-  const max = Math.max(...daily.map((d) => d.sessions), 1);
-  const CHART_H = 100;
+  // Scale to the tallest bar across BOTH series so the comparison is honest.
+  const allValues = [
+    ...daily.map((d) => d.sessions),
+    ...prevDaily.map((d) => d.sessions),
+  ];
+  const max = Math.max(...allValues, 1);
+  const CHART_H = 110;
   const cells = daily
-    .map((d) => {
+    .map((d, i) => {
       const dayLabel = new Date(d.date).toLocaleDateString("en-US", { weekday: "short" });
-      const heightPx = Math.max(Math.round((d.sessions / max) * CHART_H), d.sessions > 0 ? 4 : 0);
-      const valueLabel = d.sessions > 0
-        ? `<div style="font-size:11px; font-weight:700; color:#171717; margin-bottom:4px; line-height:1;">${d.sessions}</div>`
-        : `<div style="font-size:11px; color:#CBD5E1; margin-bottom:4px; line-height:1;">0</div>`;
+      const prev = prevDaily[i]?.sessions ?? 0;
+      const currH = Math.max(Math.round((d.sessions / max) * CHART_H), d.sessions > 0 ? 3 : 0);
+      const prevH = Math.max(Math.round((prev / max) * CHART_H), prev > 0 ? 3 : 0);
       return `
-        <td valign="bottom" align="center" style="padding:0 4px; vertical-align:bottom;">
-          <div style="height:${CHART_H}px; display:flex; flex-direction:column; justify-content:flex-end; align-items:center;">
-            ${valueLabel}
-            <div style="width:100%; max-width:48px; height:${heightPx}px; background:#E11D48; border-radius:4px 4px 0 0;"></div>
-          </div>
+        <td valign="bottom" align="center" style="padding:0 3px; vertical-align:bottom;">
+          <div style="font-size:11px; font-weight:700; color:#171717; margin-bottom:4px; line-height:1;">${d.sessions}</div>
+          <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto;">
+            <tr>
+              <td valign="bottom" style="padding:0 1px; vertical-align:bottom; height:${CHART_H}px;">
+                <div style="width:14px; height:${currH}px; background:#E11D48; border-radius:3px 3px 0 0;"></div>
+              </td>
+              <td valign="bottom" style="padding:0 1px; vertical-align:bottom; height:${CHART_H}px;">
+                <div style="width:14px; height:${prevH}px; background:#CBD5E1; border-radius:3px 3px 0 0;"></div>
+              </td>
+            </tr>
+          </table>
           <div style="font-size:10px; color:#94A3B8; margin-top:6px; text-transform:uppercase; letter-spacing:0.5px;">${dayLabel}</div>
         </td>
       `;
     })
     .join("");
+  // Simple legend row below the chart so recipients know which bar is which.
+  const legend = `
+    <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:8px auto 0;">
+      <tr>
+        <td style="padding:0 8px; vertical-align:middle;">
+          <span style="display:inline-block; width:10px; height:10px; background:#E11D48; border-radius:2px; vertical-align:middle;"></span>
+          <span style="font-size:11px; color:#475569; margin-left:6px; vertical-align:middle;">This week</span>
+        </td>
+        <td style="padding:0 8px; vertical-align:middle;">
+          <span style="display:inline-block; width:10px; height:10px; background:#CBD5E1; border-radius:2px; vertical-align:middle;"></span>
+          <span style="font-size:11px; color:#475569; margin-left:6px; vertical-align:middle;">Previous week</span>
+        </td>
+      </tr>
+    </table>
+  `;
   return `
     <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="table-layout:fixed;">
       <tr>${cells}</tr>
     </table>
+    ${legend}
   `;
 }
 
@@ -334,55 +364,53 @@ function renderReport(m: WeeklyMetrics): string {
     </table>
 
     ${m.ga4
-      ? `<table role="presentation" cellpadding="0" cellspacing="6" width="100%" style="margin-bottom:12px;">
+      ? (() => {
+          // Small helper: render a "+42% vs prev" line, green up / red down / gray flat.
+          const deltaLine = (pct: number | null, curr: number): string => {
+            if (pct === null) {
+              return curr > 0
+                ? `<span style="color:#059669;">+${curr}</span> vs 0`
+                : "—";
+            }
+            if (pct > 0) return `<span style="color:#059669;">▲ ${pct}%</span> vs prev`;
+            if (pct < 0) return `<span style="color:#dc2626;">▼ ${Math.abs(pct)}%</span> vs prev`;
+            return "flat vs prev";
+          };
+          const avgEngagement = (() => {
+            const s = m.ga4.avgEngagementTimeSec;
+            const mins = Math.floor(s / 60);
+            const secs = s % 60;
+            return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+          })();
+          return `<table role="presentation" cellpadding="0" cellspacing="6" width="100%" style="margin-bottom:12px;">
           <tr>
-            ${kpiCell("Active users", m.ga4.activeUsers.toLocaleString(), "last 7 days")}
+            ${kpiCell("Active users", m.ga4.activeUsers.toLocaleString(), deltaLine(m.ga4.activeUsersDeltaPct, m.ga4.activeUsers))}
             ${kpiCell("New users", m.ga4.newUsers.toLocaleString(), "first-time visitors")}
-            ${kpiCell(
-              "Avg engagement",
-              (() => {
-                const s = m.ga4.avgEngagementTimeSec;
-                const mins = Math.floor(s / 60);
-                const secs = s % 60;
-                return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
-              })(),
-              "per active user",
-            )}
-            ${kpiCell("Event count", m.ga4.eventCount.toLocaleString(), "total events")}
+            ${kpiCell("Avg engagement", avgEngagement, "per active user")}
+            ${kpiCell("Event count", m.ga4.eventCount.toLocaleString(), deltaLine(m.ga4.eventCountDeltaPct, m.ga4.eventCount))}
           </tr>
         </table>
         <table role="presentation" cellpadding="0" cellspacing="6" width="100%" style="margin-bottom:24px;">
           <tr>
-            ${kpiCell(
-              "Sessions",
-              m.ga4.sessions.toLocaleString(),
-              m.ga4.sessionsDeltaPct === null
-                ? m.ga4.sessions > 0
-                  ? `+${m.ga4.sessions} vs 0`
-                  : "—"
-                : m.ga4.sessionsDeltaPct > 0
-                  ? `<span style="color:#059669;">+${m.ga4.sessionsDeltaPct}%</span> vs prev`
-                  : m.ga4.sessionsDeltaPct < 0
-                    ? `<span style="color:#dc2626;">${m.ga4.sessionsDeltaPct}%</span> vs prev`
-                    : "flat",
-            )}
+            ${kpiCell("Sessions", m.ga4.sessions.toLocaleString(), deltaLine(m.ga4.sessionsDeltaPct, m.ga4.sessions))}
             ${kpiCell("Users", m.ga4.users.toLocaleString(), "unique visitors")}
             ${kpiCell(
               "Key events",
               m.ga4.keyEvents.toLocaleString(),
               m.ga4.conversionRatePct === null
-                ? "conversion tracking"
+                ? deltaLine(m.ga4.keyEventsDeltaPct, m.ga4.keyEvents)
                 : `${m.ga4.conversionRatePct}% conv rate`,
             )}
           </tr>
-        </table>
+        </table>`;
+        })()
 
-        <!-- Daily sessions sparkline — inline SVG, works in every email client -->
+        <!-- Sessions: this week vs previous week (grouped bars) -->
         <div style="margin-bottom:24px; padding:16px; background:#ffffff; border:1px solid #EAE4DA; border-radius:12px;">
           <p style="margin:0 0 8px 0; font-size:10px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:2px;">
-            Sessions · last 7 days
+            Sessions · last 7 days vs previous
           </p>
-          ${renderSessionsLineChart(m.ga4.dailySessions)}
+          ${renderSessionsLineChart(m.ga4.dailySessions, m.ga4.prevDailySessions)}
         </div>
 
 <!-- Audience: new vs returning + device split, side-by-side -->

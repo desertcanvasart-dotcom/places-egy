@@ -73,6 +73,17 @@ export interface GA4WeeklyTraffic {
   activeUsers: number;
   avgEngagementTimeSec: number; // per active user, in seconds
   eventCount: number; // total events (not just Key events)
+  // Previous-week counterparts + WoW deltas for the GA4-overview tiles.
+  // Null delta = previous week was 0 (can't divide).
+  prevActiveUsers: number;
+  activeUsersDeltaPct: number | null;
+  prevEventCount: number;
+  eventCountDeltaPct: number | null;
+  prevKeyEvents: number;
+  keyEventsDeltaPct: number | null;
+  // Daily previous-week sessions series, aligned index-by-index with
+  // dailySessions, for the this-week-vs-prev-week overlay chart.
+  prevDailySessions: Array<{ date: string; sessions: number }>;
   topLandingPage: { path: string; sessions: number } | null;
   topChannel: { name: string; sessions: number } | null;
   conversionRatePct: number | null; // (keyEvents / sessions) * 100
@@ -129,10 +140,16 @@ export async function fetchGa4WeeklyTraffic(): Promise<GA4WeeklyTraffic | null> 
               { name: "eventCount" },
             ],
           },
-          // Query 1 — sessions PREVIOUS week (for delta %)
+          // Query 1 — headline KPIs PREVIOUS week (for WoW deltas on
+          // sessions, activeUsers, eventCount, keyEvents).
           {
             dateRanges: [{ startDate: toGa4Date(prevStart), endDate: toGa4Date(prevEnd) }],
-            metrics: [{ name: "sessions" }],
+            metrics: [
+              { name: "sessions" },
+              { name: "activeUsers" },
+              { name: "eventCount" },
+              { name: "keyEvents" },
+            ],
           },
           // Query 2 — top landing page by sessions, this week
           {
@@ -191,12 +208,20 @@ export async function fetchGa4WeeklyTraffic(): Promise<GA4WeeklyTraffic | null> 
             orderBys: [{ metric: { metricName: "keyEvents" }, desc: true }],
             limit: 10,
           },
+          // Query 9 — sessions PER DAY for the PREVIOUS week (line chart
+          // comparison layer). Same shape as Query 4 but shifted.
+          {
+            dateRanges: [{ startDate: toGa4Date(prevStart), endDate: toGa4Date(prevEnd) }],
+            dimensions: [{ name: "date" }],
+            metrics: [{ name: "sessions" }],
+            orderBys: [{ dimension: { dimensionName: "date" } }],
+          },
         ],
       }),
     ]);
 
     const reports = [...(batchA[0].reports ?? []), ...(batchB[0].reports ?? [])];
-    const [q0, q1, q2, q3, q4, q5, q6, q7, q8] = reports;
+    const [q0, q1, q2, q3, q4, q5, q6, q7, q8, q9] = reports;
 
     // Parse this-week totals
     const q0row = q0?.rows?.[0]?.metricValues ?? [];
@@ -212,10 +237,18 @@ export async function fetchGa4WeeklyTraffic(): Promise<GA4WeeklyTraffic | null> 
       activeUsers === 0 ? 0 : Math.round(totalEngagementSec / activeUsers);
     const eventCount = Number(q0row[5]?.value ?? 0);
 
-    // Parse previous-week sessions
-    const prevSessions = Number(q1?.rows?.[0]?.metricValues?.[0]?.value ?? 0);
-    const sessionsDeltaPct =
-      prevSessions === 0 ? null : Math.round(((sessions - prevSessions) / prevSessions) * 100);
+    // Parse previous-week headline KPIs (sessions/activeUsers/eventCount/keyEvents)
+    const q1row = q1?.rows?.[0]?.metricValues ?? [];
+    const prevSessions = Number(q1row[0]?.value ?? 0);
+    const prevActiveUsers = Number(q1row[1]?.value ?? 0);
+    const prevEventCount = Number(q1row[2]?.value ?? 0);
+    const prevKeyEvents = Number(q1row[3]?.value ?? 0);
+    const wowDelta = (curr: number, prev: number): number | null =>
+      prev === 0 ? null : Math.round(((curr - prev) / prev) * 100);
+    const sessionsDeltaPct = wowDelta(sessions, prevSessions);
+    const activeUsersDeltaPct = wowDelta(activeUsers, prevActiveUsers);
+    const eventCountDeltaPct = wowDelta(eventCount, prevEventCount);
+    const keyEventsDeltaPct = wowDelta(keyEvents, prevKeyEvents);
 
     // Parse top landing page
     const topLandingRow = q2?.rows?.[0];
@@ -253,6 +286,23 @@ export async function fetchGa4WeeklyTraffic(): Promise<GA4WeeklyTraffic | null> 
       const d = new Date(weekStart.getTime() + i * 24 * 60 * 60 * 1000);
       const iso = toGa4Date(d);
       dailySessions.push({ date: iso, sessions: dayMap.get(iso) ?? 0 });
+    }
+
+    // Same fill-in for the PREVIOUS-week daily series (q9), aligned
+    // index-by-index with dailySessions so the chart can render them
+    // as day-by-day pairs.
+    const prevDayMap = new Map<string, number>();
+    for (const row of q9?.rows ?? []) {
+      const raw = row.dimensionValues?.[0]?.value ?? "";
+      const iso =
+        raw.length === 8 ? `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}` : raw;
+      prevDayMap.set(iso, Number(row.metricValues?.[0]?.value ?? 0));
+    }
+    const prevDailySessions: Array<{ date: string; sessions: number }> = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(prevStart.getTime() + i * 24 * 60 * 60 * 1000);
+      const iso = toGa4Date(d);
+      prevDailySessions.push({ date: iso, sessions: prevDayMap.get(iso) ?? 0 });
     }
 
     // Channel breakdown (top 5)
@@ -301,6 +351,13 @@ export async function fetchGa4WeeklyTraffic(): Promise<GA4WeeklyTraffic | null> 
       activeUsers,
       avgEngagementTimeSec,
       eventCount,
+      prevActiveUsers,
+      activeUsersDeltaPct,
+      prevEventCount,
+      eventCountDeltaPct,
+      prevKeyEvents,
+      keyEventsDeltaPct,
+      prevDailySessions,
       topLandingPage,
       topChannel,
       conversionRatePct,
