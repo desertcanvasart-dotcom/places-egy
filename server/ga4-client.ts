@@ -72,6 +72,11 @@ export interface GA4WeeklyTraffic {
   topLandingPage: { path: string; sessions: number } | null;
   topChannel: { name: string; sessions: number } | null;
   conversionRatePct: number | null; // (keyEvents / sessions) * 100
+  // Per-day sessions for the last 7 days, oldest → newest, for the
+  // inline-SVG sparkline chart in the email.
+  dailySessions: Array<{ date: string; sessions: number }>;
+  // Channel mix (top 5) for the sessions-by-channel bar chart.
+  channelBreakdown: Array<{ name: string; sessions: number }>;
 }
 
 // Fetch the last-7-days snapshot from GA4. Returns null if the client
@@ -89,8 +94,9 @@ export async function fetchGa4WeeklyTraffic(): Promise<GA4WeeklyTraffic | null> 
 
   try {
     // One batchRunReports call = one API bill event + one auth round-trip.
-    // Four separate metric queries below all share the same property + date
-    // ranges so batching keeps latency low + quota usage low.
+    // Six queries below all share the same property so batching keeps
+    // latency low + quota usage low. Adds per-day and per-channel breakdowns
+    // for the inline SVG chart rendering.
     const [batch] = await client.batchRunReports({
       property,
       requests: [
@@ -124,10 +130,25 @@ export async function fetchGa4WeeklyTraffic(): Promise<GA4WeeklyTraffic | null> 
           orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
           limit: 1,
         },
+        // Query 4 — sessions PER DAY for the last 7 days (line chart data)
+        {
+          dateRanges: [{ startDate: toGa4Date(weekStart), endDate: toGa4Date(weekEnd) }],
+          dimensions: [{ name: "date" }],
+          metrics: [{ name: "sessions" }],
+          orderBys: [{ dimension: { dimensionName: "date" } }],
+        },
+        // Query 5 — channel mix (top 5) for the sessions-by-channel bar chart
+        {
+          dateRanges: [{ startDate: toGa4Date(weekStart), endDate: toGa4Date(weekEnd) }],
+          dimensions: [{ name: "sessionDefaultChannelGroup" }],
+          metrics: [{ name: "sessions" }],
+          orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+          limit: 5,
+        },
       ],
     });
 
-    const [q0, q1, q2, q3] = batch.reports ?? [];
+    const [q0, q1, q2, q3, q4, q5] = batch.reports ?? [];
 
     // Parse this-week totals
     const q0row = q0?.rows?.[0]?.metricValues ?? [];
@@ -161,6 +182,30 @@ export async function fetchGa4WeeklyTraffic(): Promise<GA4WeeklyTraffic | null> 
     const conversionRatePct =
       sessions === 0 ? null : Math.round((keyEvents / sessions) * 1000) / 10; // one decimal
 
+    // Per-day sessions — GA4 returns YYYYMMDD strings which we normalize to
+    // YYYY-MM-DD for downstream chart rendering. GA4 may skip days with 0
+    // sessions, so we fill in gaps to always have a 7-point series.
+    const dayMap = new Map<string, number>();
+    for (const row of q4?.rows ?? []) {
+      const raw = row.dimensionValues?.[0]?.value ?? "";
+      const iso =
+        raw.length === 8 ? `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}` : raw;
+      dayMap.set(iso, Number(row.metricValues?.[0]?.value ?? 0));
+    }
+    const dailySessions: Array<{ date: string; sessions: number }> = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(weekStart.getTime() + i * 24 * 60 * 60 * 1000);
+      const iso = toGa4Date(d);
+      dailySessions.push({ date: iso, sessions: dayMap.get(iso) ?? 0 });
+    }
+
+    // Channel breakdown (top 5)
+    const channelBreakdown: Array<{ name: string; sessions: number }> =
+      (q5?.rows ?? []).map((row) => ({
+        name: row.dimensionValues?.[0]?.value ?? "(unknown)",
+        sessions: Number(row.metricValues?.[0]?.value ?? 0),
+      }));
+
     return {
       sessions,
       prevSessions,
@@ -170,6 +215,8 @@ export async function fetchGa4WeeklyTraffic(): Promise<GA4WeeklyTraffic | null> 
       topLandingPage,
       topChannel,
       conversionRatePct,
+      dailySessions,
+      channelBreakdown,
     };
   } catch (err) {
     console.warn(

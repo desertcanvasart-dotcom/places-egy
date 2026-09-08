@@ -41,6 +41,9 @@ interface WeeklyMetrics {
     listing_id: number | null;
     created_at: string;
   }>;
+  // Top 5 lead sources with counts — powers the "Leads by source" bar chart
+  // in the email. Same source labeling as the topSource single-value field.
+  leadsBySource: Array<{ name: string; value: number }>;
   weekStart: string; // YYYY-MM-DD
   weekEnd: string; // YYYY-MM-DD
   // Traffic block from GA4 — null if the service account isn't configured
@@ -84,8 +87,10 @@ async function fetchMetrics(): Promise<WeeklyMetrics> {
     const key = (l.utm_source as string | null) ?? (l.lead_source as string) ?? "direct";
     sourceCounts.set(key, (sourceCounts.get(key) ?? 0) + 1);
   }
-  const topSourceEntry = [...sourceCounts.entries()].sort((a, b) => b[1] - a[1])[0];
+  const sortedSources = [...sourceCounts.entries()].sort((a, b) => b[1] - a[1]);
+  const topSourceEntry = sortedSources[0];
   const topSource = topSourceEntry ? { name: topSourceEntry[0], count: topSourceEntry[1] } : null;
+  const leadsBySource = sortedSources.slice(0, 5).map(([name, value]) => ({ name, value }));
 
   // ── Top page (by page_url) ──────────────────────────────────────────────
   const pageCounts = new Map<string, number>();
@@ -177,6 +182,7 @@ async function fetchMetrics(): Promise<WeeklyMetrics> {
     dealsThisWeek: dealsThisWeek?.length ?? 0,
     bookingsThisWeek: bookingsCount,
     hotLeads,
+    leadsBySource,
     weekStart: weekStart.toISOString().split("T")[0],
     weekEnd: weekEnd.toISOString().split("T")[0],
     ga4,
@@ -197,6 +203,110 @@ function fmtDate(iso: string): string {
     month: "short",
     day: "numeric",
   });
+}
+
+// Render a compact SVG sparkline chart (line + dots) for the last-7-days
+// sessions series. Inline SVG works in every modern email client (Gmail,
+// Outlook, Apple Mail) with no external image request — no "show images"
+// gate. Dimensions kept small (600×140) so it fits the 600px email column
+// even on mobile.
+function renderSessionsLineChart(
+  daily: Array<{ date: string; sessions: number }>,
+): string {
+  if (daily.length === 0) return "";
+  const W = 600;
+  const H = 140;
+  const PAD_L = 32;
+  const PAD_R = 20;
+  const PAD_T = 20;
+  const PAD_B = 24;
+  const chartW = W - PAD_L - PAD_R;
+  const chartH = H - PAD_T - PAD_B;
+  const max = Math.max(...daily.map((d) => d.sessions), 1);
+  const stepX = daily.length > 1 ? chartW / (daily.length - 1) : 0;
+  const scaleY = (v: number) => PAD_T + chartH - (v / max) * chartH;
+  const points = daily
+    .map((d, i) => `${PAD_L + i * stepX},${scaleY(d.sessions)}`)
+    .join(" ");
+  const areaPath =
+    `M${PAD_L},${PAD_T + chartH} ` +
+    daily
+      .map((d, i) => `L${PAD_L + i * stepX},${scaleY(d.sessions)}`)
+      .join(" ") +
+    ` L${PAD_L + (daily.length - 1) * stepX},${PAD_T + chartH} Z`;
+  const dayLabels = daily
+    .map((d, i) => {
+      const x = PAD_L + i * stepX;
+      const label = new Date(d.date).toLocaleDateString("en-US", { weekday: "short" });
+      return `<text x="${x}" y="${H - 6}" text-anchor="middle" font-size="10" fill="#94A3B8">${label}</text>`;
+    })
+    .join("");
+  const dots = daily
+    .map((d, i) => {
+      const x = PAD_L + i * stepX;
+      const y = scaleY(d.sessions);
+      return `<circle cx="${x}" cy="${y}" r="3" fill="#E11D48" stroke="#ffffff" stroke-width="1.5"/>`;
+    })
+    .join("");
+  const valueLabels = daily
+    .map((d, i) => {
+      if (d.sessions === 0) return "";
+      const x = PAD_L + i * stepX;
+      const y = scaleY(d.sessions) - 8;
+      return `<text x="${x}" y="${y}" text-anchor="middle" font-size="10" font-weight="600" fill="#171717">${d.sessions}</text>`;
+    })
+    .join("");
+  const yMaxLabel = `<text x="${PAD_L - 6}" y="${PAD_T + 4}" text-anchor="end" font-size="9" fill="#94A3B8">${max}</text>`;
+  const yMinLabel = `<text x="${PAD_L - 6}" y="${PAD_T + chartH}" text-anchor="end" font-size="9" fill="#94A3B8">0</text>`;
+  return `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="display:block; max-width:100%; height:auto;">
+      <path d="${areaPath}" fill="#E11D48" fill-opacity="0.08"/>
+      <polyline points="${points}" fill="none" stroke="#E11D48" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      ${dots}
+      ${valueLabels}
+      ${dayLabels}
+      ${yMaxLabel}
+      ${yMinLabel}
+    </svg>
+  `;
+}
+
+// Render a compact horizontal bar chart for channel breakdown (or any
+// name+value series). Each bar is a row so the height scales with the
+// number of series. Rendered as SVG for the same email-client
+// compatibility as the sparkline above.
+function renderHorizontalBars(
+  data: Array<{ name: string; value: number }>,
+  opts: { color?: string } = {},
+): string {
+  if (data.length === 0) return "";
+  const color = opts.color ?? "#E11D48";
+  const W = 600;
+  const ROW_H = 26;
+  const H = data.length * ROW_H + 8;
+  const LABEL_W = 130;
+  const VALUE_W = 40;
+  const PAD_L = 8;
+  const PAD_R = 8;
+  const barsW = W - PAD_L - LABEL_W - VALUE_W - PAD_R - 8;
+  const max = Math.max(...data.map((d) => d.value), 1);
+  const rows = data
+    .map((d, i) => {
+      const y = i * ROW_H + 4;
+      const barW = Math.max((d.value / max) * barsW, 2); // min 2px so 0-values show a tick
+      const barX = PAD_L + LABEL_W;
+      return `
+        <text x="${PAD_L}" y="${y + 15}" font-size="12" fill="#475569">${escapeHtml(d.name)}</text>
+        <rect x="${barX}" y="${y + 6}" width="${barW}" height="14" rx="3" fill="${color}" fill-opacity="0.85"/>
+        <text x="${barX + barW + 6}" y="${y + 16}" font-size="11" font-weight="600" fill="#171717">${d.value.toLocaleString()}</text>
+      `;
+    })
+    .join("");
+  return `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="display:block; max-width:100%; height:auto;">
+      ${rows}
+    </svg>
+  `;
 }
 
 function renderReport(m: WeeklyMetrics): string {
@@ -293,6 +403,24 @@ function renderReport(m: WeeklyMetrics): string {
           </tr>
         </table>
 
+        <!-- Daily sessions sparkline — inline SVG, works in every email client -->
+        <div style="margin-bottom:24px; padding:16px; background:#ffffff; border:1px solid #EAE4DA; border-radius:12px;">
+          <p style="margin:0 0 8px 0; font-size:10px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:2px;">
+            Sessions · last 7 days
+          </p>
+          ${renderSessionsLineChart(m.ga4.dailySessions)}
+        </div>
+
+        <!-- Channel mix bar chart -->
+        ${m.ga4.channelBreakdown.length > 0
+          ? `<div style="margin-bottom:24px; padding:16px; background:#ffffff; border:1px solid #EAE4DA; border-radius:12px;">
+              <p style="margin:0 0 8px 0; font-size:10px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:2px;">
+                Sessions by channel
+              </p>
+              ${renderHorizontalBars(m.ga4.channelBreakdown.map((c) => ({ name: c.name, value: c.sessions })))}
+            </div>`
+          : ""}
+
         ${m.ga4.topLandingPage
           ? `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:24px;">
               <tr>
@@ -307,6 +435,15 @@ function renderReport(m: WeeklyMetrics): string {
       : `<div style="margin-bottom:24px; padding:12px 16px; background:#F8F5F1; border-radius:8px; font-size:12px; color:#64748B;">
           GA4 traffic data unavailable this week. Check GA4_PROPERTY_ID and GA4_SERVICE_ACCOUNT_JSON env vars in Railway.
         </div>`}
+
+    ${m.leadsBySource.length > 0
+      ? `<div style="margin-bottom:24px; padding:16px; background:#ffffff; border:1px solid #EAE4DA; border-radius:12px;">
+          <p style="margin:0 0 8px 0; font-size:10px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:2px;">
+            Leads by source
+          </p>
+          ${renderHorizontalBars(m.leadsBySource, { color: "#171717" })}
+        </div>`
+      : ""}
 
     <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:24px;">
       <tr>
