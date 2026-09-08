@@ -189,107 +189,80 @@ function fmtDate(iso: string): string {
   });
 }
 
-// Render a compact SVG sparkline chart (line + dots) for the last-7-days
-// sessions series. Inline SVG works in every modern email client (Gmail,
-// Outlook, Apple Mail) with no external image request — no "show images"
-// gate. Dimensions kept small (600×140) so it fits the 600px email column
-// even on mobile.
+// Charts are rendered as HTML tables + colored <div>s, NOT inline SVG.
+// Gmail (both web + mobile) strips <svg> from email bodies, which was
+// leaving the report with labeled-but-empty chart cards. HTML tables +
+// background-color divs render identically in Gmail, Apple Mail, and
+// Outlook web with zero external image requests.
+
+// Vertical bar chart for the daily-sessions series. Each day is a table
+// column; the bar is a background-colored <div> whose height is set as
+// an inline percentage of the tallest day. The value sits above each bar.
 function renderSessionsLineChart(
   daily: Array<{ date: string; sessions: number }>,
 ): string {
   if (daily.length === 0) return "";
-  const W = 600;
-  const H = 140;
-  const PAD_L = 32;
-  const PAD_R = 20;
-  const PAD_T = 20;
-  const PAD_B = 24;
-  const chartW = W - PAD_L - PAD_R;
-  const chartH = H - PAD_T - PAD_B;
   const max = Math.max(...daily.map((d) => d.sessions), 1);
-  const stepX = daily.length > 1 ? chartW / (daily.length - 1) : 0;
-  const scaleY = (v: number) => PAD_T + chartH - (v / max) * chartH;
-  const points = daily
-    .map((d, i) => `${PAD_L + i * stepX},${scaleY(d.sessions)}`)
-    .join(" ");
-  const areaPath =
-    `M${PAD_L},${PAD_T + chartH} ` +
-    daily
-      .map((d, i) => `L${PAD_L + i * stepX},${scaleY(d.sessions)}`)
-      .join(" ") +
-    ` L${PAD_L + (daily.length - 1) * stepX},${PAD_T + chartH} Z`;
-  const dayLabels = daily
-    .map((d, i) => {
-      const x = PAD_L + i * stepX;
-      const label = new Date(d.date).toLocaleDateString("en-US", { weekday: "short" });
-      return `<text x="${x}" y="${H - 6}" text-anchor="middle" font-size="10" fill="#94A3B8">${label}</text>`;
+  const CHART_H = 100;
+  const cells = daily
+    .map((d) => {
+      const dayLabel = new Date(d.date).toLocaleDateString("en-US", { weekday: "short" });
+      const heightPx = Math.max(Math.round((d.sessions / max) * CHART_H), d.sessions > 0 ? 4 : 0);
+      const valueLabel = d.sessions > 0
+        ? `<div style="font-size:11px; font-weight:700; color:#171717; margin-bottom:4px; line-height:1;">${d.sessions}</div>`
+        : `<div style="font-size:11px; color:#CBD5E1; margin-bottom:4px; line-height:1;">0</div>`;
+      return `
+        <td valign="bottom" align="center" style="padding:0 4px; vertical-align:bottom;">
+          <div style="height:${CHART_H}px; display:flex; flex-direction:column; justify-content:flex-end; align-items:center;">
+            ${valueLabel}
+            <div style="width:100%; max-width:48px; height:${heightPx}px; background:#E11D48; border-radius:4px 4px 0 0;"></div>
+          </div>
+          <div style="font-size:10px; color:#94A3B8; margin-top:6px; text-transform:uppercase; letter-spacing:0.5px;">${dayLabel}</div>
+        </td>
+      `;
     })
     .join("");
-  const dots = daily
-    .map((d, i) => {
-      const x = PAD_L + i * stepX;
-      const y = scaleY(d.sessions);
-      return `<circle cx="${x}" cy="${y}" r="3" fill="#E11D48" stroke="#ffffff" stroke-width="1.5"/>`;
-    })
-    .join("");
-  const valueLabels = daily
-    .map((d, i) => {
-      if (d.sessions === 0) return "";
-      const x = PAD_L + i * stepX;
-      const y = scaleY(d.sessions) - 8;
-      return `<text x="${x}" y="${y}" text-anchor="middle" font-size="10" font-weight="600" fill="#171717">${d.sessions}</text>`;
-    })
-    .join("");
-  const yMaxLabel = `<text x="${PAD_L - 6}" y="${PAD_T + 4}" text-anchor="end" font-size="9" fill="#94A3B8">${max}</text>`;
-  const yMinLabel = `<text x="${PAD_L - 6}" y="${PAD_T + chartH}" text-anchor="end" font-size="9" fill="#94A3B8">0</text>`;
   return `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="display:block; max-width:100%; height:auto;">
-      <path d="${areaPath}" fill="#E11D48" fill-opacity="0.08"/>
-      <polyline points="${points}" fill="none" stroke="#E11D48" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-      ${dots}
-      ${valueLabels}
-      ${dayLabels}
-      ${yMaxLabel}
-      ${yMinLabel}
-    </svg>
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="table-layout:fixed;">
+      <tr>${cells}</tr>
+    </table>
   `;
 }
 
-// Render a compact horizontal bar chart for channel breakdown (or any
-// name+value series). Each bar is a row so the height scales with the
-// number of series. Rendered as SVG for the same email-client
-// compatibility as the sparkline above.
+// Horizontal bar chart — one row per series. Rendered as a 3-column
+// table: [label] [bar] [value]. The bar itself is a colored <div>
+// inside a light-gray track <div>, width set as inline percentage.
 function renderHorizontalBars(
   data: Array<{ name: string; value: number }>,
   opts: { color?: string } = {},
 ): string {
   if (data.length === 0) return "";
   const color = opts.color ?? "#E11D48";
-  const W = 600;
-  const ROW_H = 26;
-  const H = data.length * ROW_H + 8;
-  const LABEL_W = 130;
-  const VALUE_W = 40;
-  const PAD_L = 8;
-  const PAD_R = 8;
-  const barsW = W - PAD_L - LABEL_W - VALUE_W - PAD_R - 8;
   const max = Math.max(...data.map((d) => d.value), 1);
   const rows = data
-    .map((d, i) => {
-      const y = i * ROW_H + 4;
-      const barW = Math.max((d.value / max) * barsW, 2); // min 2px so 0-values show a tick
-      const barX = PAD_L + LABEL_W;
+    .map((d) => {
+      const widthPct = Math.max((d.value / max) * 100, d.value > 0 ? 2 : 0);
       return `
-        <text x="${PAD_L}" y="${y + 15}" font-size="12" fill="#475569">${escapeHtml(d.name)}</text>
-        <rect x="${barX}" y="${y + 6}" width="${barW}" height="14" rx="3" fill="${color}" fill-opacity="0.85"/>
-        <text x="${barX + barW + 6}" y="${y + 16}" font-size="11" font-weight="600" fill="#171717">${d.value.toLocaleString()}</text>
+        <tr>
+          <td style="padding:6px 12px 6px 0; font-size:12px; color:#475569; white-space:nowrap; vertical-align:middle; width:130px;">
+            ${escapeHtml(d.name)}
+          </td>
+          <td style="padding:6px 0; vertical-align:middle;">
+            <div style="background:#F1F5F9; border-radius:4px; height:14px; overflow:hidden;">
+              <div style="background:${color}; width:${widthPct}%; height:14px; border-radius:4px;"></div>
+            </div>
+          </td>
+          <td style="padding:6px 0 6px 8px; font-size:12px; font-weight:700; color:#171717; text-align:right; white-space:nowrap; vertical-align:middle; width:60px;">
+            ${d.value.toLocaleString()}
+          </td>
+        </tr>
       `;
     })
     .join("");
   return `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="display:block; max-width:100%; height:auto;">
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
       ${rows}
-    </svg>
+    </table>
   `;
 }
 
