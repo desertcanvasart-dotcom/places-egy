@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { supabaseAdmin } from "./supabase";
 import { sendMail } from "./mailer";
+import { fetchGa4WeeklyTraffic, type GA4WeeklyTraffic } from "./ga4-client";
 
 // Weekly Monday-morning admin email report.
 //
@@ -42,6 +43,10 @@ interface WeeklyMetrics {
   }>;
   weekStart: string; // YYYY-MM-DD
   weekEnd: string; // YYYY-MM-DD
+  // Traffic block from GA4 — null if the service account isn't configured
+  // yet OR the fetch failed. Report still ships in that case, just
+  // without the traffic KPIs.
+  ga4: GA4WeeklyTraffic | null;
 }
 
 async function fetchMetrics(): Promise<WeeklyMetrics> {
@@ -160,6 +165,9 @@ async function fetchMetrics(): Promise<WeeklyMetrics> {
       created_at: l.created_at,
     }));
 
+  // GA4 traffic in parallel — fire-and-await but not blocking on failure.
+  const ga4 = await fetchGa4WeeklyTraffic();
+
   return {
     leadsThisWeek: thisCount,
     leadsPrevWeek: prevCount,
@@ -171,6 +179,7 @@ async function fetchMetrics(): Promise<WeeklyMetrics> {
     hotLeads,
     weekStart: weekStart.toISOString().split("T")[0],
     weekEnd: weekEnd.toISOString().split("T")[0],
+    ga4,
   };
 }
 
@@ -252,6 +261,53 @@ function renderReport(m: WeeklyMetrics): string {
       </tr>
     </table>
 
+    ${m.ga4
+      ? `<table role="presentation" cellpadding="0" cellspacing="6" width="100%" style="margin-bottom:24px;">
+          <tr>
+            ${kpiCell(
+              "Sessions",
+              m.ga4.sessions.toLocaleString(),
+              m.ga4.sessionsDeltaPct === null
+                ? m.ga4.sessions > 0
+                  ? `+${m.ga4.sessions} vs 0`
+                  : "—"
+                : m.ga4.sessionsDeltaPct > 0
+                  ? `<span style="color:#059669;">+${m.ga4.sessionsDeltaPct}%</span> vs prev`
+                  : m.ga4.sessionsDeltaPct < 0
+                    ? `<span style="color:#dc2626;">${m.ga4.sessionsDeltaPct}%</span> vs prev`
+                    : "flat",
+            )}
+            ${kpiCell("Users", m.ga4.users.toLocaleString(), "unique visitors")}
+            ${kpiCell(
+              "Key events",
+              m.ga4.keyEvents.toLocaleString(),
+              m.ga4.conversionRatePct === null
+                ? "conversion tracking"
+                : `${m.ga4.conversionRatePct}% conv rate`,
+            )}
+            ${kpiCell(
+              "Top channel",
+              `<span style="font-size:16px;">${m.ga4.topChannel ? escapeHtml(m.ga4.topChannel.name) : "—"}</span>`,
+              m.ga4.topChannel ? `${m.ga4.topChannel.sessions.toLocaleString()} sessions` : "",
+            )}
+          </tr>
+        </table>
+
+        ${m.ga4.topLandingPage
+          ? `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:24px;">
+              <tr>
+                <td valign="top" style="padding:16px; background:#F8F5F1; border-radius:12px; vertical-align:top;">
+                  <p style="margin:0 0 6px 0; font-size:10px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:2px;">Top landing page (traffic)</p>
+                  <p style="margin:0; font-size:14px; font-weight:600; color:#171717; font-family:monospace; word-break:break-all;">${escapeHtml(m.ga4.topLandingPage.path)}</p>
+                  <p style="margin:4px 0 0 0; font-size:12px; color:#64748B;">${m.ga4.topLandingPage.sessions.toLocaleString()} session${m.ga4.topLandingPage.sessions === 1 ? "" : "s"} · from GA4</p>
+                </td>
+              </tr>
+            </table>`
+          : ""}`
+      : `<div style="margin-bottom:24px; padding:12px 16px; background:#F8F5F1; border-radius:8px; font-size:12px; color:#64748B;">
+          GA4 traffic data unavailable this week. Check GA4_PROPERTY_ID and GA4_SERVICE_ACCOUNT_JSON env vars in Railway.
+        </div>`}
+
     <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:24px;">
       <tr>
         <td valign="top" style="padding:16px; background:#F8F5F1; border-radius:12px; vertical-align:top;">
@@ -323,9 +379,14 @@ export async function weeklyReportHandler(
   try {
     const metrics = await fetchMetrics();
     const html = renderReport(metrics);
+    // Subject line includes sessions when GA4 data is available so admin
+    // can scan the inbox and know the traffic pulse at a glance.
+    const sessionsBit = metrics.ga4
+      ? `, ${metrics.ga4.sessions.toLocaleString()} sessions`
+      : "";
     await sendMail({
       to: "admin@places-egy.com",
-      subject: `PLACES weekly — ${metrics.leadsThisWeek} leads, ${metrics.dealsThisWeek} deals`,
+      subject: `PLACES weekly — ${metrics.leadsThisWeek} leads, ${metrics.dealsThisWeek} deals${sessionsBit}`,
       html,
     });
     console.log(
