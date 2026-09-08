@@ -385,17 +385,7 @@ function renderReport(m: WeeklyMetrics): string {
           ${renderSessionsLineChart(m.ga4.dailySessions)}
         </div>
 
-        <!-- Channel mix bar chart -->
-        ${m.ga4.channelBreakdown.length > 0
-          ? `<div style="margin-bottom:24px; padding:16px; background:#ffffff; border:1px solid #EAE4DA; border-radius:12px;">
-              <p style="margin:0 0 8px 0; font-size:10px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:2px;">
-                Sessions by channel
-              </p>
-              ${renderHorizontalBars(m.ga4.channelBreakdown.map((c) => ({ name: c.name, value: c.sessions })))}
-            </div>`
-          : ""}
-
-        <!-- Audience: new vs returning + device split, side-by-side -->
+<!-- Audience: new vs returning + device split, side-by-side -->
         ${m.ga4.newUsers + m.ga4.returningUsers > 0 || m.ga4.deviceBreakdown.length > 0
           ? `<table role="presentation" cellpadding="0" cellspacing="6" width="100%" style="margin-bottom:24px;">
               <tr>
