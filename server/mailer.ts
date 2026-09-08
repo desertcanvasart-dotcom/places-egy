@@ -126,20 +126,26 @@ export const T = {
       ar: "PLACES · شريكك المتخصص للعقارات الإدارية في مصر",
     },
     cairoEgypt: { en: "Cairo · Egypt", ar: "القاهرة · مصر" },
-    talkToUs: { en: "Talk to Us", ar: "تحدث معنا" },
-    viewOffice: { en: "View office →", ar: "عرض المكتب →" },
+    talkToUs: { en: "Talk to Us", ar: "تعالَ نتكلم" },
+    viewOffice: { en: "View office →", ar: "افتح المكتب ←" },
     hi: { en: "Hi", ar: "أهلاً" },
     signOff: { en: "— The PLACES Team", ar: "— فريق PLACES" },
     similarOffices: {
       en: "Similar offices you might like",
-      ar: "مكاتب مشابهة قد تعجبك",
+      ar: "مكاتب قريبة من اهتمامك",
     },
     perSqm: { en: "sqm", ar: "م²" },
     forRent: { en: "For rent", ar: "للإيجار" },
     forSale: { en: "For sale", ar: "للبيع" },
     reply: {
       en: "Questions? Reply to this email — it goes straight to our advisors.",
-      ar: "أسئلة؟ رد على هذا البريد — يصل مباشرة لمستشارينا.",
+      ar: "أي سؤال، رد على الإيميل ده. المستشار بيقرأ بنفسه.",
+    },
+    warmly: { en: "Warmly", ar: "تحياتنا" },
+    theTeam: { en: "The PLACES team", ar: "فريق PLACES" },
+    browseAll: {
+      en: "Browse all available offices →",
+      ar: "شوف كل المكاتب المتاحة ←",
     },
   },
   digest2h: {
@@ -1027,59 +1033,110 @@ type WelcomeSource =
   | "price_unlock"
   | "account_signup";
 
-const WELCOME_COPY: Record<
-  WelcomeSource,
-  {
-    subject: (name: string) => string;
-    hookLabel: string;
-    hookHeadline: string;
-    hookBody: (ctx: WelcomeContext) => string;
-    ctaLabel: string;
-    ctaBody: string;
-  }
-> = {
+type WelcomeCopy = {
+  subject: (name: string) => string;
+  hookLabel: string;
+  hookHeadline: string;
+  hookBody: (ctx: WelcomeContext) => string;
+  ctaLabel: string;
+  ctaBody: string;
+};
+
+// Bilingual welcome-email copy. Native Arabic (Egyptian conversational
+// register, not literal translation from English). Picked at send time
+// from lead.preferred_language.
+const WELCOME_COPY: Record<WelcomeSource, Record<Lang, WelcomeCopy>> = {
   contact_form: {
-    subject: (n) => `Hi ${n} — 3 admin offices worth looking at`,
-    hookLabel: "Just for you",
-    hookHeadline: "Since you reached out, here are 3 offices worth a look.",
-    hookBody: () =>
-      "Pulled from our latest inventory. Every one is verified, currently available, and typical of what PLACES advisors are showing this week. A PLACES advisor will follow up personally shortly.",
-    ctaLabel: "Want a personal short-list?",
-    ctaBody:
-      "Book a free 15-minute call and a PLACES advisor will hand-pick 5 offices matching your exact budget, size, and location — no pressure, no pitch.",
+    en: {
+      subject: (n) => `Hi ${n} — 3 admin offices worth looking at`,
+      hookLabel: "Just for you",
+      hookHeadline: "Since you reached out, here are 3 offices worth a look.",
+      hookBody: () =>
+        "Pulled from our latest inventory. Every one is verified, currently available, and typical of what PLACES advisors are showing this week. A PLACES advisor will follow up personally shortly.",
+      ctaLabel: "Want a personal short-list?",
+      ctaBody:
+        "Book a free 15-minute call and a PLACES advisor will hand-pick 5 offices matching your exact budget, size, and location — no pressure, no pitch.",
+    },
+    ar: {
+      subject: (n) => `${n}، عندنا 3 مكاتب تناسبك`,
+      hookLabel: "اختيار خاص",
+      hookHeadline: "شكراً إنك تواصلت. جهزنالك 3 مكاتب تستاهل تشوفها.",
+      hookBody: () =>
+        "دي من أحدث ما عندنا، ومطروحة فعلاً في السوق. مستشارنا هيرجعلك قريب بتفاصيل أكتر.",
+      ctaLabel: "تحب نجهزلك اختيارات محددة؟",
+      ctaBody:
+        "احجز مكالمة 15 دقيقة. مستشارنا هيفهم متطلباتك، ويرشحلك 5 مكاتب مختارة خصيصاً ليك.",
+    },
   },
   concierge: {
-    subject: (n) => `Hi ${n} — 3 offices matching what you told us`,
-    hookLabel: "Matched for you",
-    hookHeadline: "Based on what you told us, here are 3 units worth a closer look.",
-    hookBody: () =>
-      "These are the newest listings that fit the direction you shared with us. A PLACES advisor will follow up with a more tailored short-list within 24 hours.",
-    ctaLabel: "Want a live walk-through?",
-    ctaBody:
-      "Book a free 15-minute call and a PLACES advisor will walk you through the districts and price bands that matter most to you.",
+    en: {
+      subject: (n) => `Hi ${n} — 3 offices matching what you told us`,
+      hookLabel: "Matched for you",
+      hookHeadline: "Based on what you told us, here are 3 units worth a closer look.",
+      hookBody: () =>
+        "These are the newest listings that fit the direction you shared with us. A PLACES advisor will follow up with a more tailored short-list within 24 hours.",
+      ctaLabel: "Want a live walk-through?",
+      ctaBody:
+        "Book a free 15-minute call and a PLACES advisor will walk you through the districts and price bands that matter most to you.",
+    },
+    ar: {
+      subject: (n) => `${n}، خيارات على مقاس اللي طلبته`,
+      hookLabel: "مختارة بناءً على طلبك",
+      hookHeadline: "دي 3 مكاتب أقرب لصورة اللي بتدور عليه.",
+      hookBody: () =>
+        "اخترناهم بناءً على كلامك معانا. خلال 24 ساعة هتوصلك قائمة أوسع من مستشارك المخصص.",
+      ctaLabel: "تحب مستشار يرافقك في البحث؟",
+      ctaBody:
+        "احجز 15 دقيقة، ومستشارنا هيوريك المناطق، الأسعار، والفرص اللي بتناسب توجهك.",
+    },
   },
   price_unlock: {
-    subject: (n) =>
-      `Hi ${n} — 3 similar offices at comparable prices`,
-    hookLabel: "You unlocked pricing",
-    hookHeadline: "Here are 3 more units in the same range worth comparing.",
-    hookBody: (ctx) =>
-      ctx.contextListing
-        ? `Since you looked at ${escapeHtml(ctx.contextListing.title)}, we pulled a few similar options — same district and space type, different price points. Compare before you decide.`
-        : "Here are 3 more offices in the same price range as the one you unlocked. Compare terms side-by-side before you commit.",
-    ctaLabel: "Ready to see one in person?",
-    ctaBody:
-      "Book a free 15-minute call and a PLACES advisor will arrange viewings for the units you're leaning toward — usually same-week.",
+    en: {
+      subject: (n) => `Hi ${n} — 3 similar offices at comparable prices`,
+      hookLabel: "You unlocked pricing",
+      hookHeadline: "Here are 3 more units in the same range worth comparing.",
+      hookBody: (ctx) =>
+        ctx.contextListing
+          ? `Since you looked at ${escapeHtml(ctx.contextListing.title)}, we pulled a few similar options — same district and space type, different price points. Compare before you decide.`
+          : "Here are 3 more offices in the same price range as the one you unlocked. Compare terms side-by-side before you commit.",
+      ctaLabel: "Ready to see one in person?",
+      ctaBody:
+        "Book a free 15-minute call and a PLACES advisor will arrange viewings for the units you're leaning toward — usually same-week.",
+    },
+    ar: {
+      subject: (n) => `${n}، أسعار مقاربة لنفس النطاق`,
+      hookLabel: "السعر بين إيديك",
+      hookHeadline: "قبل ما تقرر، شوف 3 اختيارات تانية في نفس الفلوس.",
+      hookBody: (ctx) =>
+        ctx.contextListing
+          ? `بما إنك اهتميت بـ ${escapeHtml(ctx.contextListing.title)}، لمينالك بدائل من نفس المنطقة وبنفس المساحة تقريباً. المقارنة هتوريك الفرق.`
+          : "دي 3 وحدات في نفس النطاق السعري. حط الشروط جنب بعض، وقرر براحتك.",
+      ctaLabel: "تحب تعاينهم شخصياً؟",
+      ctaBody:
+        "احجز 15 دقيقة، ومستشارنا هيرتب معاينة للوحدات اللي شدتك — عادةً في نفس الأسبوع.",
+    },
   },
   account_signup: {
-    subject: (n) => `Welcome to PLACES, ${n} — 3 offices to save first`,
-    hookLabel: "Your PLACES account is ready",
-    hookHeadline: "Start with 3 offices worth saving.",
-    hookBody: () =>
-      "Your saved-listings account is live. Save any office on places-egy.com with the heart icon — we'll email you when the price drops or a similar unit becomes available.",
-    ctaLabel: "Want a personal short-list?",
-    ctaBody:
-      "Book a free 15-minute call and a PLACES advisor will hand-pick 5 offices matching your exact budget, size, and location.",
+    en: {
+      subject: (n) => `Welcome to PLACES, ${n} — 3 offices to save first`,
+      hookLabel: "Your PLACES account is ready",
+      hookHeadline: "Start with 3 offices worth saving.",
+      hookBody: () =>
+        "Your saved-listings account is live. Save any office on places-egy.com with the heart icon — we'll email you when the price drops or a similar unit becomes available.",
+      ctaLabel: "Want a personal short-list?",
+      ctaBody:
+        "Book a free 15-minute call and a PLACES advisor will hand-pick 5 offices matching your exact budget, size, and location.",
+    },
+    ar: {
+      subject: (n) => `أهلاً بيك في PLACES، ${n}`,
+      hookLabel: "حسابك اتفعّل",
+      hookHeadline: "دي أول 3 مكاتب تبدأ بيهم.",
+      hookBody: () =>
+        "تقدر تحفظ أي مكتب يعجبك من علامة القلب. لو نزل سعر جديد أو وحدة شبيهة، هنبلغك أول واحد.",
+      ctaLabel: "تحب نجهزلك اختيارات محددة؟",
+      ctaBody:
+        "احجز مكالمة 15 دقيقة. مستشارنا هيفهم متطلباتك، ويرشحلك 5 مكاتب مختارة خصيصاً ليك.",
+    },
   },
 };
 
@@ -1099,9 +1156,11 @@ export async function sendLeadWelcomeWithListings(opts: {
   source: WelcomeSource;
   listings: FavoritedListing[]; // 3 recent listings, pre-fetched by caller
   context?: WelcomeContext;
+  lang?: Lang; // recipient's preferred language, from lead.preferred_language
 }): Promise<void> {
   const first = firstNameOf(opts.toName);
-  const copy = WELCOME_COPY[opts.source];
+  const lang: Lang = opts.lang ?? "en";
+  const copy = WELCOME_COPY[opts.source][lang];
   const ctx: WelcomeContext = opts.context ?? {};
 
   // Fall back gracefully if the caller couldn't fetch listings — the email
@@ -1110,18 +1169,18 @@ export async function sendLeadWelcomeWithListings(opts: {
   const listingCards = opts.listings.length
     ? `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:8px;">
         ${opts.listings
-          .map((l) => officeCard(l, "en", `email_welcome_${opts.source}`))
+          .map((l) => officeCard(l, lang, `email_welcome_${opts.source}`))
           .join("")}
       </table>
       <p style="margin:4px 0 24px 0; font-size:12px; color:#94A3B8; text-align:center;">
         <a href="https://places-egy.com/listings?utm_source=places-egy.com&utm_medium=email&utm_campaign=email_welcome_${opts.source}&utm_content=browse_all" style="color:#64748B; text-decoration:underline;">
-          Browse all available offices →
+          ${escapeHtml(t(T.common.browseAll, lang))}
         </a>
       </p>`
     : "";
 
   const body = `
-    <p style="margin:0 0 20px 0; font-size:16px; color:#171717;">Hi ${escapeHtml(first)}, 👋</p>
+    <p style="margin:0 0 20px 0; font-size:16px; color:#171717;">${escapeHtml(t(T.common.hi, lang))} ${escapeHtml(first)}, 👋</p>
 
     <p style="margin:0 0 6px 0; font-size:11px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:3px;">
       ${escapeHtml(copy.hookLabel)}
@@ -1146,24 +1205,28 @@ export async function sendLeadWelcomeWithListings(opts: {
       </p>
       <a href="${taggedCalendlyUrl({ campaign: `email_welcome_${opts.source}`, content: "talk_to_us" })}"
          style="display:inline-block; background:#171717; color:#ffffff; padding:11px 22px; border-radius:999px; text-decoration:none; font-weight:600; font-size:14px;">
-        Talk to us →
+        ${escapeHtml(t(T.common.talkToUs, lang))} →
       </a>
     </div>
 
     <p style="margin:24px 0 8px 0; font-size:14px; line-height:1.6; color:#64748B;">
-      Questions? Reply to this email — it goes straight to our advisors.
+      ${escapeHtml(t(T.common.reply, lang))}
     </p>
     <p style="margin:16px 0 0 0; font-size:14px; color:#171717;">
-      Warmly,<br>The PLACES team
+      ${escapeHtml(t(T.common.warmly, lang))},<br>${escapeHtml(t(T.common.theTeam, lang))}
     </p>
   `;
 
   const preheader =
     opts.listings.length > 0
-      ? `${opts.listings.length} offices inside — prices, sizes, and quick-view links.`
-      : "A PLACES advisor is following up on your submission shortly.";
+      ? lang === "ar"
+        ? `${opts.listings.length} مكاتب جوه الإيميل — أسعار، مساحات، ولينكات معاينة سريعة.`
+        : `${opts.listings.length} offices inside — prices, sizes, and quick-view links.`
+      : lang === "ar"
+        ? "مستشار من PLACES هيتابع طلبك قريباً."
+        : "A PLACES advisor is following up on your submission shortly.";
 
-  const html = brandedShell({ preheader, body, lang: "en" });
+  const html = brandedShell({ preheader, body, lang });
 
   return sendMail({
     to: opts.toEmail,

@@ -541,11 +541,19 @@ export async function weeklyReportHandler(
         `${metrics.ga4.keyEvents.toLocaleString()} event${metrics.ga4.keyEvents === 1 ? "" : "s"}`,
       );
     }
-    await sendMail({
-      to: "admin@places-egy.com",
-      subject: `PLACES weekly summary · ${parts.join(" · ")}`,
-      html,
-    });
+    // Recipients: admin inbox + Mohamed Safwat. Both receive the same
+    // report; sent as separate emails so mailer errors on one don't
+    // block the other.
+    const recipients = ["admin@places-egy.com", "mohamed.safwat@places-egy.com"];
+    await Promise.all(
+      recipients.map((to) =>
+        sendMail({
+          to,
+          subject: `PLACES weekly summary · ${parts.join(" · ")}`,
+          html,
+        }),
+      ),
+    );
     console.log(
       `[weekly-report] sent for ${metrics.weekStart} to ${metrics.weekEnd}:`,
       metrics.leadsThisWeek,

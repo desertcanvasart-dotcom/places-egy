@@ -315,6 +315,7 @@ export async function registerRoutes(
             source: "price_unlock",
             listings,
             context: { contextListing },
+            lang: lead.preferred_language ?? "en",
           });
         })();
       } else {
@@ -326,6 +327,7 @@ export async function registerRoutes(
             toName: lead.name,
             source: "contact_form",
             listings,
+            lang: lead.preferred_language ?? "en",
           });
         })();
       }
@@ -455,6 +457,7 @@ export async function registerRoutes(
             toName: rest.name,
             source: "concierge",
             listings,
+            lang: rest.preferred_language ?? "en",
           });
         })();
       }
@@ -692,6 +695,7 @@ export async function registerRoutes(
           toName: body.name,
           source: "account_signup",
           listings,
+          lang: body.preferred_language ?? "en",
         });
       })();
 
