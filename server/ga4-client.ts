@@ -69,6 +69,10 @@ export interface GA4WeeklyTraffic {
   sessionsDeltaPct: number | null; // null if prev = 0
   users: number;
   keyEvents: number; // sum of the 5 configured Key events
+  // GA4-overview tiles admin recognizes from the GA4 dashboard.
+  activeUsers: number;
+  avgEngagementTimeSec: number; // per active user, in seconds
+  eventCount: number; // total events (not just Key events)
   topLandingPage: { path: string; sessions: number } | null;
   topChannel: { name: string; sessions: number } | null;
   conversionRatePct: number | null; // (keyEvents / sessions) * 100
@@ -111,13 +115,18 @@ export async function fetchGa4WeeklyTraffic(): Promise<GA4WeeklyTraffic | null> 
       client.batchRunReports({
         property,
         requests: [
-          // Query 0 — sessions + users + keyEvents for THIS week
+          // Query 0 — headline KPIs for THIS week. Mirrors the tiles
+          // admin sees on the GA4 home dashboard: sessions, users,
+          // activeUsers, newUsers, avgEngagementTime, eventCount, keyEvents.
           {
             dateRanges: [thisWeek],
             metrics: [
               { name: "sessions" },
               { name: "totalUsers" },
               { name: "keyEvents" },
+              { name: "activeUsers" },
+              { name: "userEngagementDuration" },
+              { name: "eventCount" },
             ],
           },
           // Query 1 — sessions PREVIOUS week (for delta %)
@@ -194,6 +203,14 @@ export async function fetchGa4WeeklyTraffic(): Promise<GA4WeeklyTraffic | null> 
     const sessions = Number(q0row[0]?.value ?? 0);
     const users = Number(q0row[1]?.value ?? 0);
     const keyEvents = Number(q0row[2]?.value ?? 0);
+    const activeUsers = Number(q0row[3]?.value ?? 0);
+    // userEngagementDuration is total seconds across active users.
+    // GA4 dashboards show "avg per active user" — divide here so admins
+    // see the same number they see in the GA4 UI.
+    const totalEngagementSec = Number(q0row[4]?.value ?? 0);
+    const avgEngagementTimeSec =
+      activeUsers === 0 ? 0 : Math.round(totalEngagementSec / activeUsers);
+    const eventCount = Number(q0row[5]?.value ?? 0);
 
     // Parse previous-week sessions
     const prevSessions = Number(q1?.rows?.[0]?.metricValues?.[0]?.value ?? 0);
@@ -281,6 +298,9 @@ export async function fetchGa4WeeklyTraffic(): Promise<GA4WeeklyTraffic | null> 
       sessionsDeltaPct,
       users,
       keyEvents,
+      activeUsers,
+      avgEngagementTimeSec,
+      eventCount,
       topLandingPage,
       topChannel,
       conversionRatePct,

@@ -334,7 +334,24 @@ function renderReport(m: WeeklyMetrics): string {
     </table>
 
     ${m.ga4
-      ? `<table role="presentation" cellpadding="0" cellspacing="6" width="100%" style="margin-bottom:24px;">
+      ? `<table role="presentation" cellpadding="0" cellspacing="6" width="100%" style="margin-bottom:12px;">
+          <tr>
+            ${kpiCell("Active users", m.ga4.activeUsers.toLocaleString(), "last 7 days")}
+            ${kpiCell("New users", m.ga4.newUsers.toLocaleString(), "first-time visitors")}
+            ${kpiCell(
+              "Avg engagement",
+              (() => {
+                const s = m.ga4.avgEngagementTimeSec;
+                const mins = Math.floor(s / 60);
+                const secs = s % 60;
+                return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+              })(),
+              "per active user",
+            )}
+            ${kpiCell("Event count", m.ga4.eventCount.toLocaleString(), "total events")}
+          </tr>
+        </table>
+        <table role="presentation" cellpadding="0" cellspacing="6" width="100%" style="margin-bottom:24px;">
           <tr>
             ${kpiCell(
               "Sessions",
@@ -356,11 +373,6 @@ function renderReport(m: WeeklyMetrics): string {
               m.ga4.conversionRatePct === null
                 ? "conversion tracking"
                 : `${m.ga4.conversionRatePct}% conv rate`,
-            )}
-            ${kpiCell(
-              "Top channel",
-              `<span style="font-size:16px;">${m.ga4.topChannel ? escapeHtml(m.ga4.topChannel.name) : "—"}</span>`,
-              m.ga4.topChannel ? `${m.ga4.topChannel.sessions.toLocaleString()} sessions` : "",
             )}
           </tr>
         </table>
@@ -460,19 +472,14 @@ function renderReport(m: WeeklyMetrics): string {
         </div>`
       : ""}
 
-    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:24px;">
+    <table role="presentation" cellpadding="0" cellspacing="6" width="100%" style="margin-bottom:24px;">
       <tr>
-        <td valign="top" style="padding:16px; background:#F8F5F1; border-radius:12px; vertical-align:top;">
+        <td valign="top" style="width:50%; padding:16px; background:#F8F5F1; border-radius:12px; vertical-align:top;">
           <p style="margin:0 0 6px 0; font-size:10px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:2px;">Top source</p>
           <p style="margin:0; font-size:16px; font-weight:600; color:#171717;">${m.topSource ? escapeHtml(m.topSource.name) : "—"}</p>
           ${m.topSource ? `<p style="margin:4px 0 0 0; font-size:12px; color:#64748B;">${m.topSource.count} lead${m.topSource.count === 1 ? "" : "s"}</p>` : ""}
         </td>
-      </tr>
-    </table>
-
-    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:24px;">
-      <tr>
-        <td valign="top" style="padding:16px; background:#F8F5F1; border-radius:12px; vertical-align:top;">
+        <td valign="top" style="width:50%; padding:16px; background:#F8F5F1; border-radius:12px; vertical-align:top;">
           <p style="margin:0 0 6px 0; font-size:10px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:2px;">Top converting page</p>
           <p style="margin:0; font-size:14px; font-weight:600; color:#171717; font-family:monospace; word-break:break-all;">${m.topPage ? escapeHtml(m.topPage.path) : "—"}</p>
           ${m.topPage ? `<p style="margin:4px 0 0 0; font-size:12px; color:#64748B;">${m.topPage.count} lead${m.topPage.count === 1 ? "" : "s"} originated here</p>` : ""}
