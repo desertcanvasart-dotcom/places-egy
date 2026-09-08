@@ -19,10 +19,8 @@ import { fetchGa4WeeklyTraffic, type GA4WeeklyTraffic } from "./ga4-client";
 //   - Leads this week vs previous 7-day window (count + delta %)
 //   - Top lead source this week
 //   - Top page / listing that produced leads this week
-//   - Deals shipped this week (Supabase `deals` table)
-//   - Calendly bookings this week (Supabase `calendly_bookings` — falls
-//     back to empty section if the table is empty since Zapier bridge
-//     isn't yet wired)
+//   - Contacted leads this week (leads with status='contacted' in the
+//     admin dashboard, created this week) — the sales-progress signal
 //   - 3 hottest leads (highest-priority sources, last 7 days) with names
 
 interface WeeklyMetrics {
@@ -31,8 +29,7 @@ interface WeeklyMetrics {
   leadsDeltaPct: number | null; // null if prev = 0 (can't divide)
   topSource: { name: string; count: number } | null;
   topPage: { path: string; count: number } | null;
-  dealsThisWeek: number;
-  bookingsThisWeek: number;
+  contactedThisWeek: number;
   hotLeads: Array<{
     name: string;
     email: string | null;
@@ -110,28 +107,16 @@ async function fetchMetrics(): Promise<WeeklyMetrics> {
   const topPageEntry = [...pageCounts.entries()].sort((a, b) => b[1] - a[1])[0];
   const topPage = topPageEntry ? { path: topPageEntry[0], count: topPageEntry[1] } : null;
 
-  // ── Deals shipped this week (created_at within window) ──────────────────
-  const { data: dealsThisWeek } = await supabaseAdmin
-    .from("deals")
+  // ── Contacted leads this week (status='contacted' in admin dashboard) ───
+  // Counts leads that were CREATED this week AND have been marked as
+  // "contacted" (or beyond) in the admin dashboard — a follow-up signal
+  // showing how many of this week's leads have actually been actioned.
+  const { data: contactedThisWeek } = await supabaseAdmin
+    .from("leads")
     .select("id")
+    .in("status", ["contacted", "qualified", "won"])
     .gte("created_at", weekStart.toISOString())
     .lt("created_at", weekEnd.toISOString());
-
-  // ── Bookings this week (from calendly_bookings) ─────────────────────────
-  // Bookings table may not exist if Calendly Zapier hasn't been wired yet
-  // (as of 2026-09-07 it's paused). Fail open (0 bookings) rather than
-  // break the whole report.
-  let bookingsCount = 0;
-  try {
-    const { data: bookings } = await supabaseAdmin
-      .from("calendly_bookings")
-      .select("id")
-      .gte("created_at", weekStart.toISOString())
-      .lt("created_at", weekEnd.toISOString());
-    bookingsCount = bookings?.length ?? 0;
-  } catch {
-    // Table doesn't exist — leave at 0.
-  }
 
   // ── Hot leads: top 3 by "warm signal" this week ─────────────────────────
   // Simple heuristic: leads with a magnet (price_unlock, market_report,
@@ -179,8 +164,7 @@ async function fetchMetrics(): Promise<WeeklyMetrics> {
     leadsDeltaPct: deltaPct,
     topSource,
     topPage,
-    dealsThisWeek: dealsThisWeek?.length ?? 0,
-    bookingsThisWeek: bookingsCount,
+    contactedThisWeek: contactedThisWeek?.length ?? 0,
     hotLeads,
     leadsBySource,
     weekStart: weekStart.toISOString().split("T")[0],
@@ -365,8 +349,13 @@ function renderReport(m: WeeklyMetrics): string {
     <table role="presentation" cellpadding="0" cellspacing="6" width="100%" style="margin-bottom:24px;">
       <tr>
         ${kpiCell("Leads", m.leadsThisWeek, m.leadsPrevWeek > 0 ? `${m.leadsPrevWeek} prev week` : "—")}
-        ${kpiCell("Deals shipped", m.dealsThisWeek, m.dealsThisWeek === 1 ? "1 published" : `${m.dealsThisWeek} published`)}
-        ${kpiCell("Bookings", m.bookingsThisWeek, "via Calendly")}
+        ${kpiCell(
+          "Contacted",
+          m.contactedThisWeek,
+          m.leadsThisWeek > 0
+            ? `${Math.round((m.contactedThisWeek / m.leadsThisWeek) * 100)}% of leads`
+            : "—",
+        )}
         ${kpiCell("Hot leads", m.hotLeads.length, "high-intent this week")}
       </tr>
     </table>
@@ -569,22 +558,30 @@ export async function weeklyReportHandler(
   try {
     const metrics = await fetchMetrics();
     const html = renderReport(metrics);
-    // Subject line includes sessions when GA4 data is available so admin
-    // can scan the inbox and know the traffic pulse at a glance.
-    const sessionsBit = metrics.ga4
-      ? `, ${metrics.ga4.sessions.toLocaleString()} sessions`
-      : "";
+    // Subject line: framed as a weekly summary, leads first, then the two
+    // most-useful traffic numbers from GA4 (sessions + key events). If GA4
+    // isn't back yet we just ship the leads number.
+    // Example: "PLACES weekly summary · 11 leads · 1,240 sessions · 34 events"
+    const parts: string[] = [
+      `${metrics.leadsThisWeek} lead${metrics.leadsThisWeek === 1 ? "" : "s"}`,
+    ];
+    if (metrics.ga4) {
+      parts.push(`${metrics.ga4.sessions.toLocaleString()} sessions`);
+      parts.push(
+        `${metrics.ga4.keyEvents.toLocaleString()} event${metrics.ga4.keyEvents === 1 ? "" : "s"}`,
+      );
+    }
     await sendMail({
       to: "admin@places-egy.com",
-      subject: `PLACES weekly — ${metrics.leadsThisWeek} leads, ${metrics.dealsThisWeek} deals${sessionsBit}`,
+      subject: `PLACES weekly summary · ${parts.join(" · ")}`,
       html,
     });
     console.log(
       `[weekly-report] sent for ${metrics.weekStart} to ${metrics.weekEnd}:`,
       metrics.leadsThisWeek,
       "leads,",
-      metrics.dealsThisWeek,
-      "deals",
+      metrics.contactedThisWeek,
+      "contacted",
     );
     res.json({ ok: true, ...metrics });
   } catch (err) {
