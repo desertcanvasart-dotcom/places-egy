@@ -189,6 +189,61 @@ function fmtDate(iso: string): string {
   });
 }
 
+// Map raw GA4 event names → plain-English labels the sales team recognizes.
+// Anything not in this map falls through to a titlecased version of the slug
+// (so we never surface "developer_survey_submit" untouched).
+const EVENT_LABELS: Record<string, string> = {
+  contact_form_submit: "Form submits",
+  price_unlock_submit: "Price unlocks",
+  developer_survey_submit: "Survey submits",
+  concierge_submit: "Concierge chats",
+  whatsapp_click: "WhatsApp clicks",
+  phone_click: "Phone clicks",
+  email_click: "Email clicks",
+  calendly_open: "Booking opens",
+  favorite_add: "Listing saves",
+  account_signup: "Account signups",
+};
+
+function friendlyEventName(slug: string): string {
+  return (
+    EVENT_LABELS[slug] ??
+    slug
+      .replace(/[-_]+/g, " ")
+      .trim()
+      .replace(/\b\w/g, (c) => c.toUpperCase())
+  );
+}
+
+// Same idea for lead sources — the DB stores slugs (corner_popup, etc.);
+// the email should show what a human would recognize.
+const LEAD_SOURCE_LABELS: Record<string, string> = {
+  corner_popup: "Homepage popup",
+  blog_slide_up: "Blog popup",
+  footer: "Footer button",
+  market_report_page: "Market report page",
+  market_report_landing: "Market report page",
+  concierge_widget: "Concierge chat widget",
+  contact_page: "Contact page",
+  contact_form: "Contact page",
+  listing_inquiry: "Listing inquiry",
+  exit_intent: "Exit-intent popup",
+  favorites_email_me_now: "'Email my saved list' button",
+  developer_survey_popup: "Developer survey popup",
+  developer_survey_inline: "Developer survey inline",
+  price_unlock: "Price unlock",
+};
+
+function friendlyLeadSource(slug: string): string {
+  return (
+    LEAD_SOURCE_LABELS[slug] ??
+    slug
+      .replace(/[-_]+/g, " ")
+      .trim()
+      .replace(/\b\w/g, (c) => c.toUpperCase())
+  );
+}
+
 // Charts are rendered as HTML tables + colored <div>s, NOT inline SVG.
 // Gmail (both web + mobile) strips <svg> from email bodies, which was
 // leaving the report with labeled-but-empty chart cards. HTML tables +
@@ -300,13 +355,13 @@ function renderReport(m: WeeklyMetrics): string {
   const deltaLine =
     m.leadsDeltaPct === null
       ? m.leadsThisWeek > 0
-        ? `<span style="color:#059669; font-weight:600;">+${m.leadsThisWeek}</span> vs 0 previous week`
-        : `<span style="color:#6b7280;">— no leads either week</span>`
+        ? `<span style="color:#059669; font-weight:600;">+${m.leadsThisWeek}</span> new leads vs 0 last week`
+        : `<span style="color:#6b7280;">No leads this week or last week</span>`
       : m.leadsDeltaPct > 0
-        ? `<span style="color:#059669; font-weight:600;">+${m.leadsDeltaPct}%</span> vs previous 7 days`
+        ? `<span style="color:#059669; font-weight:600;">▲ ${m.leadsDeltaPct}%</span> more leads than last week`
         : m.leadsDeltaPct < 0
-          ? `<span style="color:#dc2626; font-weight:600;">${m.leadsDeltaPct}%</span> vs previous 7 days`
-          : `<span style="color:#6b7280;">flat</span> vs previous 7 days`;
+          ? `<span style="color:#dc2626; font-weight:600;">▼ ${Math.abs(m.leadsDeltaPct)}%</span> fewer leads than last week`
+          : `<span style="color:#6b7280;">Same as last week</span>`;
 
   const kpiCell = (label: string, value: string | number, extra?: string) => `
     <td valign="top" style="width:25%; padding:16px 12px; background:#F8F5F1; border-radius:12px; text-align:center; vertical-align:top;">
@@ -330,7 +385,7 @@ function renderReport(m: WeeklyMetrics): string {
             </div>
           </td>
           <td style="padding:12px 16px; border-bottom:1px solid #EAE4DA; font-size:12px; color:#64748B; white-space:nowrap;">
-            <span style="background:#E11D48; color:#ffffff; padding:2px 8px; border-radius:999px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">${escapeHtml(l.source)}</span>
+            <span style="background:#E11D48; color:#ffffff; padding:2px 8px; border-radius:999px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">${escapeHtml(friendlyLeadSource(l.source))}</span>
             <div style="margin-top:4px; color:#94A3B8;">${fmtDate(l.created_at)}</div>
           </td>
         </tr>`,
@@ -349,163 +404,77 @@ function renderReport(m: WeeklyMetrics): string {
       ${deltaLine}
     </p>
 
+    <!-- Section 1: New leads + Contacted -->
     <table role="presentation" cellpadding="0" cellspacing="6" width="100%" style="margin-bottom:24px;">
       <tr>
-        ${kpiCell("Leads", m.leadsThisWeek, m.leadsPrevWeek > 0 ? `${m.leadsPrevWeek} prev week` : "—")}
+        ${kpiCell("New leads this week", m.leadsThisWeek, m.leadsPrevWeek > 0 ? `${m.leadsPrevWeek} last week` : "—")}
         ${kpiCell(
-          "Contacted",
+          "Leads already contacted",
           m.contactedThisWeek,
           m.leadsThisWeek > 0
-            ? `${Math.round((m.contactedThisWeek / m.leadsThisWeek) * 100)}% of leads`
+            ? `${Math.round((m.contactedThisWeek / m.leadsThisWeek) * 100)}% of new leads`
             : "—",
         )}
-        ${kpiCell("Hot leads", m.hotLeads.length, "high-intent this week")}
       </tr>
     </table>
 
+    <!-- Section 2: Website traffic (plain labels) + section 3 chart -->
     ${m.ga4
       ? (() => {
-          // Small helper: render a "+42% vs prev" line, green up / red down / gray flat.
           const deltaLine = (pct: number | null, curr: number): string => {
-            if (pct === null) {
-              return curr > 0
-                ? `<span style="color:#059669;">+${curr}</span> vs 0`
-                : "—";
-            }
-            if (pct > 0) return `<span style="color:#059669;">▲ ${pct}%</span> vs prev`;
-            if (pct < 0) return `<span style="color:#dc2626;">▼ ${Math.abs(pct)}%</span> vs prev`;
-            return "flat vs prev";
+            if (pct === null) return curr > 0 ? `up from 0` : "—";
+            if (pct > 0) return `<span style="color:#059669;">▲ ${pct}%</span> vs last week`;
+            if (pct < 0) return `<span style="color:#dc2626;">▼ ${Math.abs(pct)}%</span> vs last week`;
+            return "same as last week";
           };
-          const avgEngagement = (() => {
-            const s = m.ga4.avgEngagementTimeSec;
-            const mins = Math.floor(s / 60);
-            const secs = s % 60;
-            return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
-          })();
-          return `<table role="presentation" cellpadding="0" cellspacing="6" width="100%" style="margin-bottom:12px;">
+          return `<table role="presentation" cellpadding="0" cellspacing="6" width="100%" style="margin-bottom:24px;">
           <tr>
-            ${kpiCell("Active users", m.ga4.activeUsers.toLocaleString(), deltaLine(m.ga4.activeUsersDeltaPct, m.ga4.activeUsers))}
-            ${kpiCell("New users", m.ga4.newUsers.toLocaleString(), "first-time visitors")}
-            ${kpiCell("Avg engagement", avgEngagement, "per active user")}
-            ${kpiCell("Event count", m.ga4.eventCount.toLocaleString(), deltaLine(m.ga4.eventCountDeltaPct, m.ga4.eventCount))}
+            ${kpiCell("Website visits", m.ga4.sessions.toLocaleString(), deltaLine(m.ga4.sessionsDeltaPct, m.ga4.sessions))}
+            ${kpiCell("Website visitors", m.ga4.users.toLocaleString(), "unique people")}
+            ${kpiCell("Actions taken", m.ga4.keyEvents.toLocaleString(), deltaLine(m.ga4.keyEventsDeltaPct, m.ga4.keyEvents))}
           </tr>
         </table>
-        <table role="presentation" cellpadding="0" cellspacing="6" width="100%" style="margin-bottom:24px;">
-          <tr>
-            ${kpiCell("Sessions", m.ga4.sessions.toLocaleString(), deltaLine(m.ga4.sessionsDeltaPct, m.ga4.sessions))}
-            ${kpiCell("Users", m.ga4.users.toLocaleString(), "unique visitors")}
-            ${kpiCell(
-              "Key events",
-              m.ga4.keyEvents.toLocaleString(),
-              m.ga4.conversionRatePct === null
-                ? deltaLine(m.ga4.keyEventsDeltaPct, m.ga4.keyEvents)
-                : `${m.ga4.conversionRatePct}% conv rate`,
-            )}
-          </tr>
-        </table>`;
-        })()
 
-        <!-- Sessions: this week vs previous week (grouped bars) -->
+        <!-- Chart: this week vs last week -->
         <div style="margin-bottom:24px; padding:16px; background:#ffffff; border:1px solid #EAE4DA; border-radius:12px;">
           <p style="margin:0 0 8px 0; font-size:10px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:2px;">
-            Sessions · last 7 days vs previous
+            Website visits — this week vs last week
           </p>
           ${renderSessionsLineChart(m.ga4.dailySessions, m.ga4.prevDailySessions)}
         </div>
 
-<!-- Audience: new vs returning + device split, side-by-side -->
-        ${m.ga4.newUsers + m.ga4.returningUsers > 0 || m.ga4.deviceBreakdown.length > 0
-          ? `<table role="presentation" cellpadding="0" cellspacing="6" width="100%" style="margin-bottom:24px;">
-              <tr>
-                ${m.ga4.newUsers + m.ga4.returningUsers > 0
-                  ? `<td valign="top" style="width:50%; padding:16px; background:#ffffff; border:1px solid #EAE4DA; border-radius:12px; vertical-align:top;">
-                      <p style="margin:0 0 8px 0; font-size:10px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:2px;">
-                        New vs returning
-                      </p>
-                      ${renderHorizontalBars(
-                        [
-                          { name: "New", value: m.ga4.newUsers },
-                          { name: "Returning", value: m.ga4.returningUsers },
-                        ],
-                        { color: "#171717" },
-                      )}
-                      <p style="margin:8px 0 0 0; font-size:11px; color:#64748B;">
-                        ${(() => {
-                          const total = m.ga4.newUsers + m.ga4.returningUsers;
-                          const newPct = total === 0 ? 0 : Math.round((m.ga4.newUsers / total) * 100);
-                          return `${newPct}% new visitors · ${100 - newPct}% returning`;
-                        })()}
-                      </p>
-                    </td>`
-                  : ""}
-                ${m.ga4.deviceBreakdown.length > 0
-                  ? `<td valign="top" style="width:50%; padding:16px; background:#ffffff; border:1px solid #EAE4DA; border-radius:12px; vertical-align:top;">
-                      <p style="margin:0 0 8px 0; font-size:10px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:2px;">
-                        Device split
-                      </p>
-                      ${renderHorizontalBars(
-                        m.ga4.deviceBreakdown.map((d) => ({ name: d.name, value: d.sessions })),
-                        { color: "#E11D48" },
-                      )}
-                    </td>`
-                  : ""}
-              </tr>
-            </table>`
-          : ""}
-
-        <!-- Key events breakdown: what specifically fired + how many times -->
+        <!-- Actions breakdown: which specific actions people took -->
         ${m.ga4.keyEventBreakdown.length > 0
           ? `<div style="margin-bottom:24px; padding:16px; background:#ffffff; border:1px solid #EAE4DA; border-radius:12px;">
               <p style="margin:0 0 8px 0; font-size:10px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:2px;">
-                Key events by name
+                What actions people took
               </p>
               ${renderHorizontalBars(
-                m.ga4.keyEventBreakdown.map((e) => ({ name: e.name, value: e.count })),
+                m.ga4.keyEventBreakdown.map((e) => ({ name: friendlyEventName(e.name), value: e.count })),
                 { color: "#171717" },
               )}
             </div>`
-          : ""}
-
-        ${m.ga4.topLandingPage
-          ? `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:24px;">
-              <tr>
-                <td valign="top" style="padding:16px; background:#F8F5F1; border-radius:12px; vertical-align:top;">
-                  <p style="margin:0 0 6px 0; font-size:10px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:2px;">Top landing page (traffic)</p>
-                  <p style="margin:0; font-size:14px; font-weight:600; color:#171717; font-family:monospace; word-break:break-all;">${escapeHtml(m.ga4.topLandingPage.path)}</p>
-                  <p style="margin:4px 0 0 0; font-size:12px; color:#64748B;">${m.ga4.topLandingPage.sessions.toLocaleString()} session${m.ga4.topLandingPage.sessions === 1 ? "" : "s"} · from GA4</p>
-                </td>
-              </tr>
-            </table>`
-          : ""}`
+          : ""}`;
+        })()
       : `<div style="margin-bottom:24px; padding:12px 16px; background:#F8F5F1; border-radius:8px; font-size:12px; color:#64748B;">
-          GA4 traffic data unavailable this week. Check GA4_PROPERTY_ID and GA4_SERVICE_ACCOUNT_JSON env vars in Railway.
+          Website traffic data isn't available this week — Google Analytics connection needs a check.
         </div>`}
 
+    <!-- Section 4: Where the leads came from -->
     ${m.leadsBySource.length > 0
       ? `<div style="margin-bottom:24px; padding:16px; background:#ffffff; border:1px solid #EAE4DA; border-radius:12px;">
           <p style="margin:0 0 8px 0; font-size:10px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:2px;">
-            Leads by source
+            Where new leads came from this week
           </p>
-          ${renderHorizontalBars(m.leadsBySource, { color: "#171717" })}
+          ${renderHorizontalBars(
+            m.leadsBySource.map((s) => ({ name: friendlyLeadSource(s.name), value: s.value })),
+            { color: "#171717" },
+          )}
         </div>`
       : ""}
 
-    <table role="presentation" cellpadding="0" cellspacing="6" width="100%" style="margin-bottom:24px;">
-      <tr>
-        <td valign="top" style="width:50%; padding:16px; background:#F8F5F1; border-radius:12px; vertical-align:top;">
-          <p style="margin:0 0 6px 0; font-size:10px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:2px;">Top source</p>
-          <p style="margin:0; font-size:16px; font-weight:600; color:#171717;">${m.topSource ? escapeHtml(m.topSource.name) : "—"}</p>
-          ${m.topSource ? `<p style="margin:4px 0 0 0; font-size:12px; color:#64748B;">${m.topSource.count} lead${m.topSource.count === 1 ? "" : "s"}</p>` : ""}
-        </td>
-        <td valign="top" style="width:50%; padding:16px; background:#F8F5F1; border-radius:12px; vertical-align:top;">
-          <p style="margin:0 0 6px 0; font-size:10px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:2px;">Top converting page</p>
-          <p style="margin:0; font-size:14px; font-weight:600; color:#171717; font-family:monospace; word-break:break-all;">${m.topPage ? escapeHtml(m.topPage.path) : "—"}</p>
-          ${m.topPage ? `<p style="margin:4px 0 0 0; font-size:12px; color:#64748B;">${m.topPage.count} lead${m.topPage.count === 1 ? "" : "s"} originated here</p>` : ""}
-        </td>
-      </tr>
-    </table>
-
-    <h2 style="margin:32px 0 12px 0; font-size:16px; font-weight:700; color:#171717;">Hot leads to reach out to</h2>
+    <!-- Section 5: Hot leads to follow up -->
+    <h2 style="margin:32px 0 12px 0; font-size:16px; font-weight:700; color:#171717;">Hot leads to follow up</h2>
     <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#ffffff; border:1px solid #EAE4DA; border-radius:12px; overflow:hidden;">
       ${hotLeadsRows}
     </table>
@@ -556,18 +525,13 @@ export async function weeklyReportHandler(
   try {
     const metrics = await fetchMetrics();
     const html = renderReport(metrics);
-    // Subject line: framed as a weekly summary, leads first, then the two
-    // most-useful traffic numbers from GA4 (sessions + key events). If GA4
-    // isn't back yet we just ship the leads number.
-    // Example: "PLACES weekly summary · 11 leads · 1,240 sessions · 34 events"
+    // Subject line: plain labels the sales team scans instantly.
+    // Example: "PLACES weekly summary · 11 new leads · 1,240 website visits"
     const parts: string[] = [
-      `${metrics.leadsThisWeek} lead${metrics.leadsThisWeek === 1 ? "" : "s"}`,
+      `${metrics.leadsThisWeek} new lead${metrics.leadsThisWeek === 1 ? "" : "s"}`,
     ];
     if (metrics.ga4) {
-      parts.push(`${metrics.ga4.sessions.toLocaleString()} sessions`);
-      parts.push(
-        `${metrics.ga4.keyEvents.toLocaleString()} event${metrics.ga4.keyEvents === 1 ? "" : "s"}`,
-      );
+      parts.push(`${metrics.ga4.sessions.toLocaleString()} website visits`);
     }
     // Recipients: admin inbox + Mohamed Safwat. Both receive the same
     // report; sent as separate emails so mailer errors on one don't
