@@ -75,8 +75,11 @@ function cn(...inputs: Array<string | false | null | undefined>) {
 //
 // Attribution is required by ODbL — OpenFreeMap's own hosted style
 // bakes it into the map so no manual attribution string needed.
-const OPENFREEMAP_LIGHT_STYLE = "https://tiles.openfreemap.org/styles/positron";
-const OPENFREEMAP_DARK_STYLE = "https://tiles.openfreemap.org/styles/dark-matter";
+// The ?v= query string bumps whenever we swap providers, forcing MapLibre
+// to refetch the style JSON instead of serving a stale cached CARTO URL
+// from a returning visitor's browser. Bump when swapping providers.
+const OPENFREEMAP_LIGHT_STYLE = "https://tiles.openfreemap.org/styles/positron?v=2";
+const OPENFREEMAP_DARK_STYLE = "https://tiles.openfreemap.org/styles/dark-matter?v=2";
 
 const defaultStyles = {
   dark: OPENFREEMAP_DARK_STYLE,
