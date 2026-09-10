@@ -590,34 +590,34 @@ function buildFaqJsonLd(items: FaqQAPair[]): string {
 //
 // Fails gracefully — if the CMS is unreachable during the Railway build,
 // we log and skip rather than crashing the whole deploy.
-interface ArabicBlogPost {
+interface BlogPostMeta {
   slug: string;
-  titleAr: string;
-  descriptionAr: string;
-  englishSlug: string | null; // Polylang translation pair, if any
+  title: string;
+  description: string;
   publishedAt: string;
   featuredImage: string | null;
+  // Slug of this post's translation in the opposite language. Populated
+  // via Polylang's translations pointer when available. Null when the
+  // counterpart isn't published or Polylang doesn't expose it.
+  otherLangSlug: string | null;
 }
 
-async function collectArabicBlogPosts(): Promise<ArabicBlogPost[]> {
+// Fetch a language's blog posts from WordPress at build time. Used for
+// both /ar/blog/* and /blog/* prerendering. Returns [] on any failure so
+// deploys ship even when the CMS is briefly unreachable.
+async function collectBlogPosts(lang: "en" | "ar"): Promise<BlogPostMeta[]> {
   const CMS = "https://cms.places-egy.com";
-  const url = `${CMS}/wp-json/wp/v2/posts?lang=ar&per_page=100&_embed=true`;
+  const url = `${CMS}/wp-json/wp/v2/posts?lang=${lang}&per_page=100&_embed=true`;
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
     if (!res.ok) {
-      console.warn(`[prerender] Arabic blog fetch failed: HTTP ${res.status} — skipping`);
+      console.warn(`[prerender] ${lang.toUpperCase()} blog fetch failed: HTTP ${res.status} — skipping`);
       return [];
     }
-    // WP REST returns an array of posts. Each has:
-    //   slug: string (Arabic slug or the ar-blog-<english> fallback)
-    //   title.rendered / excerpt.rendered — HTML with entities
-    //   date — ISO
-    //   translations — Polylang exposes { en: 123, ar: 456 } pointing at
-    //     translation post IDs (only present when our WP snippet enables it).
-    //     If missing we skip the hreflang pairing but still ship the AR page.
-    //   yoast_head_json.title / description — SEO plugin values
-    //   _embedded["wp:featuredmedia"][0].source_url
-    type WpArPost = {
+    // WP REST post shape. `translations` is a Polylang addition (only
+    // present when our WP snippet enables it); when missing we ship the
+    // page without a cross-language hreflang pair.
+    type WpPost = {
       slug: string;
       title: { rendered: string };
       excerpt: { rendered: string };
@@ -629,28 +629,28 @@ async function collectArabicBlogPosts(): Promise<ArabicBlogPost[]> {
         "wp:featuredmedia"?: Array<{ source_url?: string }>;
       };
     };
-    const raw = (await res.json()) as WpArPost[];
-    // For each Arabic post that has a Polylang translation pointer, resolve
-    // its English translation's slug so we can emit reciprocal hreflang.
-    const enIds = raw
-      .map((p) => p.translations?.en)
+    const raw = (await res.json()) as WpPost[];
+    // Resolve counterpart-lang post IDs to slugs in one bulk lookup.
+    const otherLang = lang === "ar" ? "en" : "ar";
+    const otherIds = raw
+      .map((p) => p.translations?.[otherLang])
       .filter((id): id is number => typeof id === "number");
-    const enSlugMap = new Map<number, string>();
-    if (enIds.length > 0) {
+    const otherSlugMap = new Map<number, string>();
+    if (otherIds.length > 0) {
       try {
-        const enRes = await fetch(
-          `${CMS}/wp-json/wp/v2/posts?include=${enIds.join(",")}&per_page=100&_fields=id,slug`,
+        const otherRes = await fetch(
+          `${CMS}/wp-json/wp/v2/posts?include=${otherIds.join(",")}&per_page=100&_fields=id,slug&lang=${otherLang}`,
           { signal: AbortSignal.timeout(15000) },
         );
-        if (enRes.ok) {
-          const enData = (await enRes.json()) as Array<{ id: number; slug: string }>;
-          for (const p of enData) enSlugMap.set(p.id, p.slug);
+        if (otherRes.ok) {
+          const otherData = (await otherRes.json()) as Array<{ id: number; slug: string }>;
+          for (const p of otherData) otherSlugMap.set(p.id, p.slug);
         }
       } catch (err) {
-        console.warn(`[prerender] English translation slug fetch failed:`, err);
+        console.warn(`[prerender] ${otherLang.toUpperCase()} translation slug lookup failed:`, err);
       }
     }
-    return raw.map((p): ArabicBlogPost => {
+    return raw.map((p): BlogPostMeta => {
       const meta = p.meta ?? {};
       const seoTitle =
         (meta.rank_math_title as string | undefined) ||
@@ -660,18 +660,18 @@ async function collectArabicBlogPosts(): Promise<ArabicBlogPost[]> {
         (meta.rank_math_description as string | undefined) ||
         p.yoast_head_json?.description ||
         p.excerpt.rendered.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim().slice(0, 240);
-      const enId = p.translations?.en;
+      const otherId = p.translations?.[otherLang];
       return {
         slug: p.slug,
-        titleAr: decodeEntitiesServer(seoTitle),
-        descriptionAr: decodeEntitiesServer(seoDescription),
-        englishSlug: enId ? enSlugMap.get(enId) ?? null : null,
+        title: decodeEntitiesServer(seoTitle),
+        description: decodeEntitiesServer(seoDescription),
         publishedAt: p.date,
         featuredImage: p._embedded?.["wp:featuredmedia"]?.[0]?.source_url ?? null,
+        otherLangSlug: otherId ? otherSlugMap.get(otherId) ?? null : null,
       };
     });
   } catch (err) {
-    console.warn(`[prerender] Arabic blog fetch threw — skipping:`, err);
+    console.warn(`[prerender] ${lang.toUpperCase()} blog fetch threw — skipping:`, err);
     return [];
   }
 }
@@ -793,14 +793,43 @@ export async function prerender() {
     locationWritten++;
   }
 
-  // Arabic blog posts + the /ar/blog hub. Real Arabic <title>, description,
-  // og:locale=ar_EG, RTL <html>, and reciprocal hreflang tags when an English
-  // translation exists. Fixes the "every /ar/blog/* serves homepage meta"
-  // bug that was making Google treat Arabic posts as homepage duplicates.
-  const arPosts = await collectArabicBlogPosts();
+  // Blog posts in both languages. Each post ships as its own static HTML
+  // with real per-post <title>, description, self-canonical, reciprocal
+  // hreflang alternates, and (for Arabic) <html lang="ar" dir="rtl">.
+  // Fixes the "every /ar/blog/* serves homepage meta" bug and does the
+  // same for English posts (previously also SPA-shell-only).
+  const [enPosts, arPosts] = await Promise.all([
+    collectBlogPosts("en"),
+    collectBlogPosts("ar"),
+  ]);
+  let enBlogWritten = 0;
   let arBlogWritten = 0;
+
+  // English blog posts — /blog/{slug}.html per post.
+  for (const post of enPosts) {
+    const meta: RouteMeta = {
+      route: `/blog/${post.slug}`,
+      title: post.title,
+      description: post.description,
+      url: `${SITE}/blog/${post.slug}`,
+      image: post.featuredImage ?? undefined,
+    };
+    const alternates: Array<{ hreflang: string; url: string }> = [
+      { hreflang: "en", url: `${SITE}/blog/${post.slug}` },
+    ];
+    if (post.otherLangSlug) {
+      alternates.push({ hreflang: "ar", url: `${SITE}/ar/blog/${post.otherLangSlug}` });
+    }
+    alternates.push({ hreflang: "x-default", url: `${SITE}/blog/${post.slug}` });
+    const html = injectMeta(shell, meta, { lang: "en", alternates });
+    const outPath = path.join(DIST, `${meta.route}.html`);
+    await mkdir(path.dirname(outPath), { recursive: true });
+    await writeFile(outPath, html, "utf8");
+    enBlogWritten++;
+  }
+
+  // Arabic blog posts + the /ar/blog hub.
   if (arPosts.length > 0) {
-    // /ar/blog hub — the Arabic-language listing page for the blog.
     const hubMeta: RouteMeta = {
       route: "/ar/blog",
       title: "المدونة — رؤى وأدلة PLACES",
@@ -824,17 +853,17 @@ export async function prerender() {
     for (const post of arPosts) {
       const meta: RouteMeta = {
         route: `/ar/blog/${post.slug}`,
-        title: post.titleAr,
-        description: post.descriptionAr,
+        title: post.title,
+        description: post.description,
         url: `${SITE}/ar/blog/${post.slug}`,
         image: post.featuredImage ?? undefined,
       };
       const alternates: Array<{ hreflang: string; url: string }> = [
         { hreflang: "ar", url: `${SITE}/ar/blog/${post.slug}` },
       ];
-      if (post.englishSlug) {
-        alternates.push({ hreflang: "en", url: `${SITE}/blog/${post.englishSlug}` });
-        alternates.push({ hreflang: "x-default", url: `${SITE}/blog/${post.englishSlug}` });
+      if (post.otherLangSlug) {
+        alternates.push({ hreflang: "en", url: `${SITE}/blog/${post.otherLangSlug}` });
+        alternates.push({ hreflang: "x-default", url: `${SITE}/blog/${post.otherLangSlug}` });
       }
       const html = injectMeta(shell, meta, { lang: "ar", alternates });
       const outPath = path.join(DIST, `${meta.route}.html`);
@@ -845,6 +874,6 @@ export async function prerender() {
   }
 
   console.log(
-    `prerendered ${developerWritten} developer pages + ${indexWritten} index shells + ${guideWritten} guides + ${faqWritten} FAQ sections + ${locationWritten} locations + ${arBlogWritten} Arabic blog pages (meta-only)`,
+    `prerendered ${developerWritten} developer pages + ${indexWritten} index shells + ${guideWritten} guides + ${faqWritten} FAQ sections + ${locationWritten} locations + ${enBlogWritten} EN blog + ${arBlogWritten} AR blog (meta-only)`,
   );
 }

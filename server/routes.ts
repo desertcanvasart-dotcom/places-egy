@@ -134,6 +134,19 @@ export async function registerRoutes(
     return proxyToWp(`/posts?${params.toString()}`, res);
   });
 
+  // GET /api/blog/posts/by-id/:id — single post by numeric ID. Used to
+  // resolve Polylang translation pointers (translations: { en: 123 }) into
+  // the counterpart post's slug so the client can emit reciprocal hreflang.
+  // Guards :id as a positive integer to keep this from being a general
+  // proxy passthrough.
+  app.get("/api/blog/posts/by-id/:id", async (req: Request, res: Response) => {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0 || id > 10_000_000) {
+      return res.status(400).json({ message: "Invalid id" });
+    }
+    return proxyToWp(`/posts/${id}?_fields=slug`, res);
+  });
+
   // GET /api/blog/posts/:slug?lang=en|ar — single post by slug
   app.get("/api/blog/posts/:slug", async (req: Request, res: Response) => {
     const slug = encodeURIComponent(String(req.params.slug));

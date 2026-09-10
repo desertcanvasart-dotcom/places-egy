@@ -42,6 +42,11 @@ export type BlogPost = {
   categories: BlogCategory[];
   tags: BlogTag[];
   lang: BlogLang;
+  // Slug of this post's translation in the opposite language, when one
+  // exists. Populated via Polylang's `translations` field on the WP REST
+  // response. Used to emit reciprocal hreflang alternates so Google can
+  // pair /blog/foo (EN) ↔ /ar/blog/bar (AR) at runtime + prerender.
+  translationSlug: string | null;
   seo: {
     title?: string;
     description?: string;
@@ -83,6 +88,10 @@ type WpPost = {
   content: { rendered: string };
   excerpt: { rendered: string };
   lang?: string; // added by our Polylang REST snippet
+  // Polylang exposes translation pairs as { en: id, ar: id } pointing at
+  // the counterpart post ID in the opposite language. Only present when
+  // a translation has been created + published; missing = no pair.
+  translations?: Record<string, number>;
   meta?: Record<string, unknown>;
   // Yoast SEO injects this when the plugin is active.
   yoast_head_json?: {
@@ -154,11 +163,36 @@ function mapWpPost(wp: WpPost): BlogPost {
     categories: categories.map((c) => ({ name: c.name, slug: c.slug })),
     tags: tags.map((t) => ({ name: t.name, slug: t.slug })),
     lang: wp.lang === "ar" ? "ar" : "en",
+    // Placeholder — the async fetch layer fills this in from Polylang's
+    // translations pointer via a second WP call (see fetchPost below).
+    translationSlug: null,
     seo: {
       title: seoTitle ? decodeHtmlEntities(seoTitle) : undefined,
       description: seoDescription ? decodeHtmlEntities(seoDescription) : undefined,
     },
   };
+}
+
+// Given a WP post's Polylang translations map + the caller's own language,
+// fetch the counterpart post's slug via one lookup. Returns null when no
+// translation exists (Polylang didn't expose one, or the counterpart isn't
+// published yet). Fails silently on network error — better to skip the
+// hreflang pair than to fabricate a URL that 404s.
+async function resolveTranslationSlug(
+  wp: WpPost,
+  ownLang: BlogLang,
+): Promise<string | null> {
+  const otherLang = ownLang === "ar" ? "en" : "ar";
+  const otherId = wp.translations?.[otherLang];
+  if (!otherId) return null;
+  try {
+    const res = await fetch(`/api/blog/posts/by-id/${otherId}?_fields=slug`);
+    if (!res.ok) return null;
+    const data = (await res.json()) as { slug?: string };
+    return typeof data.slug === "string" ? data.slug : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function fetchPosts(opts: FetchPostsOptions = {}): Promise<PostsResponse> {
@@ -204,7 +238,14 @@ export async function fetchPost(slug: string, lang?: BlogLang): Promise<BlogPost
   // so [] here means the slug doesn't exist.
   const data = (await res.json()) as WpPost[];
   if (!Array.isArray(data) || data.length === 0) return null;
-  return mapWpPost(data[0]);
+  const wpRaw = data[0];
+  const mapped = mapWpPost(wpRaw);
+  // Resolve translationSlug in a second fetch (only if Polylang points to a
+  // counterpart). Fails silently — a missing pair is fine, a wrong pair
+  // would send Google to a 404.
+  const own: BlogLang = mapped.lang;
+  mapped.translationSlug = await resolveTranslationSlug(wpRaw, own);
+  return mapped;
 }
 
 export async function fetchRelatedPosts(post: BlogPost, limit = 3): Promise<BlogPost[]> {

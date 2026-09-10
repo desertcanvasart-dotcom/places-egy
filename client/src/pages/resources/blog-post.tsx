@@ -150,14 +150,24 @@ export default function BlogPostPage({ lang = "en" }: { lang?: BlogLang }) {
     setMetaTag("twitter:description", description);
     if (image) setMetaTag("twitter:image", image);
 
-    // hreflang tags — tell Google that this post has an alternate-language
-    // version at the mirrored URL (if it exists). Even if the mirror is
-    // missing, listing both is standard practice and Google handles gracefully.
-    const enUrl = `${BASE_URL}/blog/${post.slug}`;
-    const arUrl = `${BASE_URL}/ar/blog/${post.slug}`;
-    setLinkTag("alternate", enUrl, "en");
-    setLinkTag("alternate", arUrl, "ar");
-    setLinkTag("alternate", enUrl, "x-default");
+    // hreflang tags. Polylang exposes translation pairs on the WP REST
+    // response and blog.ts resolves each post's counterpart slug in a
+    // secondary fetch. When we have the pair we emit reciprocal alternates
+    // so Google can properly cluster EN/AR translations instead of treating
+    // them as duplicates. When we don't (translation missing/unpublished),
+    // fall back to self + x-default → English blog hub. Better to
+    // under-claim than to point Google at a 404.
+    setLinkTag("alternate", url, isAr ? "ar" : "en");
+    if (post.translationSlug) {
+      const otherLang: BlogLang = isAr ? "en" : "ar";
+      const otherBase = otherLang === "ar" ? "/ar/blog" : "/blog";
+      const otherUrl = `${BASE_URL}${otherBase}/${post.translationSlug}`;
+      setLinkTag("alternate", otherUrl, otherLang);
+      // x-default points at the English version whenever available.
+      setLinkTag("alternate", isAr ? otherUrl : url, "x-default");
+    } else {
+      setLinkTag("alternate", `${BASE_URL}/blog`, "x-default");
+    }
     setLinkTag("canonical", url);
 
     trackEvent("blog_post_view", {
