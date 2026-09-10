@@ -1322,8 +1322,18 @@ export async function registerRoutes(
       if (!file.mimetype.startsWith("image/")) {
         return res.status(400).json({ message: "File must be an image" });
       }
-      const ext = file.originalname.split(".").pop() || "bin";
-      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      // Extension whitelist — defence in depth beyond the MIME check.
+      // Anything not in the allowlist gets rejected + normalized (never
+      // written to storage) so path-traversal-y extensions can't leak in
+      // via the filename we hand to Supabase Storage.
+      const ALLOWED_EXTS = new Set(["jpg", "jpeg", "png", "webp", "gif", "avif"]);
+      const rawExt = (file.originalname.split(".").pop() || "").toLowerCase();
+      if (!ALLOWED_EXTS.has(rawExt)) {
+        return res.status(400).json({
+          message: `Unsupported image type. Allowed: ${[...ALLOWED_EXTS].join(", ")}`,
+        });
+      }
+      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${rawExt}`;
       const { error: upErr } = await supabaseAdmin.storage
         .from(SUPABASE_BUCKET)
         .upload(fileName, file.buffer, {
