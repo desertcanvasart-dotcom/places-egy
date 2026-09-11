@@ -76,11 +76,14 @@ const PERMANENT_REDIRECTS: Record<string, string> = {
   "/ar/blog/ar-blog-south-90-street-offices": "/ar/blog/مكاتب-التسعين-الجنوبى",
   "/ar/blog/ready-to-move-vs-core-and-shell-offices-in-egypt-تختار-مكتب-جاهز-ولا-تجهزه-بنف": "/ar/blog/مكتب-جاهز-ام-كور-اند-شل",
 
-  // English blog post rename (2026-09-11). Trimming the redundant "-a-
-  // practical-business-guide" suffix — the shorter slug is easier to
-  // share, ranks equivalently for the same keywords, and matches the
-  // pattern we're standardising on across the blog.
-  "/blog/office-space-for-rent-in-new-cairo-a-practical-business-guide": "/blog/office-space-for-rent-new-cairo",
+  // English blog post renames (2026-09-11). Trimming redundant suffixes
+  // and standardising on `offices-for-{rent,sale}-new-cairo` shape so
+  // the URLs match the same keyword pattern searchers type. Every old
+  // variant collapses to the final slug in ONE hop (no redirect chains
+  // — Google treats chained 301s as slightly weaker signals).
+  "/blog/office-space-for-rent-in-new-cairo-a-practical-business-guide": "/blog/offices-for-rent-new-cairo",
+  "/blog/office-space-for-rent-new-cairo": "/blog/offices-for-rent-new-cairo",
+  "/blog/offices-for-sale-in-new-cairo-what-to-check-before-buying": "/blog/offices-for-sale-new-cairo",
   "/ar/blog/تكلفة-المكتب-الحقيقية-ما-وراء-سعر-الإي": "/ar/blog/تكلفة-المكتب-الحقيقية",
   "/ar/blog/how-to-choose-company-office-location-cairo": "/ar/blog/اختيار-مقر-الشركة-القاهرة",
   "/ar/blog/مكاتب-إدارية-للبيع-في-القاهرة-الجديدة": "/ar/blog/مكاتب-للبيع-التجمع-الخامس",
