@@ -10,6 +10,12 @@ Disallow: /dashboard
 # detail pages (/listings/{id}-{slug}) and the base /listings page stay
 # fully crawlable.
 Disallow: /listings?
+# /projects?q=X are search-filter variants of the /projects hub — each
+# renders the projects page filtered to one project. Google was crawling
+# 90+ of these and correctly refusing to index them (all soft-duplicates
+# of the base /projects). Blocking here saves crawl budget + declutters
+# GSC's "not indexed" report.
+Disallow: /projects?q=
 
 # AI / LLM crawlers — explicitly welcomed so PLACES content can be surfaced and
 # cited in AI search (ChatGPT, Perplexity, Google AI Overviews, Claude, etc.).
@@ -28,5 +34,11 @@ User-agent: CCBot
 Allow: /
 Disallow: /dashboard
 Disallow: /listings?
+# /projects?q=X are search-filter variants of the /projects hub — each
+# renders the projects page filtered to one project. Google was crawling
+# 90+ of these and correctly refusing to index them (all soft-duplicates
+# of the base /projects). Blocking here saves crawl budget + declutters
+# GSC's "not indexed" report.
+Disallow: /projects?q=
 
 Sitemap: https://places-egy.com/sitemap.xml
