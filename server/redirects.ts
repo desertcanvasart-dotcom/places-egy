@@ -53,6 +53,31 @@ const PERMANENT_REDIRECTS: Record<string, string> = {
   "/admin/downtown-cairo": "/locations/downtown-cairo",
   "/admin/sheraton": "/locations/sheraton",
   "/admin/maadi": "/locations/maadi",
+
+  // Arabic blog slug cleanup (2026-09-11). Old slugs had 3 patterns Google
+  // + Arabic readers hate: `ar-blog-<english>` prefixes (Polylang collision
+  // workaround), `-2` suffixes (same-slug collision), and mixed English
+  // words in Arabic URLs. Renamed to native Arabic slugs that read
+  // naturally in search results + share previews and rank for Arabic
+  // keyword queries. Every old URL 301s to the new Arabic URL so Google
+  // transfers ranking signal and any inbound WhatsApp/email links still
+  // land on the right post.
+  "/ar/blog/ar-blog-admin-offices-egypt-guide": "/ar/blog/دليل-المكاتب-الادارية-مصر",
+  "/ar/blog/types-of-admin-offices-egypt-2": "/ar/blog/انواع-المكاتب-الادارية-مصر",
+  "/ar/blog/business-parks-egypt-2": "/ar/blog/دليل-بيزنس-بارك-مصر",
+  "/ar/blog/business-buildings-egypt-2": "/ar/blog/المبانى-الادارية-مصر",
+  "/ar/blog/ar-blog-new-capital-right-for-your-company": "/ar/blog/العاصمة-الادارية-للشركات",
+  "/ar/blog/ar-blog-business-park-vs-street-location": "/ar/blog/بيزنس-بارك-ام-مكتب-على-الشارع",
+  "/ar/blog/ar-blog-mistakes-buying-office-new-cairo": "/ar/blog/اخطاء-شراء-مكتب-التجمع-الخامس",
+  "/ar/blog/ar-blog-new-cairo-vs-administrative-capital-offices": "/ar/blog/التجمع-الخامس-ام-العاصمة-الادارية",
+  "/ar/blog/أفضل-مناطق-المكاتب-الإدارية-في-القاهر": "/ar/blog/افضل-اماكن-المكاتب-التجمع-الخامس",
+  "/ar/blog/ar-blog-new-cairo-vs-sheikh-zayed-offices": "/ar/blog/التجمع-الخامس-ام-الشيخ-زايد-للشركات",
+  "/ar/blog/ar-blog-north-90-street-offices": "/ar/blog/مكاتب-التسعين-الشمالى",
+  "/ar/blog/تكلفة-المكتب-الحقيقية-ما-وراء-سعر-الإي": "/ar/blog/تكلفة-المكتب-الحقيقية",
+  "/ar/blog/how-to-choose-company-office-location-cairo": "/ar/blog/اختيار-مقر-الشركة-القاهرة",
+  "/ar/blog/مكاتب-إدارية-للبيع-في-القاهرة-الجديدة": "/ar/blog/مكاتب-للبيع-التجمع-الخامس",
+  "/ar/blog/مكاتب-إدارية-للبيع-في-القاهرة-الجديدة-2": "/ar/blog/مكاتب-للبيع-التجمع-الخامس",
+  "/ar/blog/أشتري-ولا-أأجر-مكتب-لشركتي-دليل-عملي-ق": "/ar/blog/شراء-ام-ايجار-مكتب",
 };
 
 // Prefix redirects for path roots that have moved. Anything matching the
