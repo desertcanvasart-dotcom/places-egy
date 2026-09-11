@@ -229,7 +229,7 @@ export default function BlogPostPage({ lang = "en" }: { lang?: BlogLang }) {
               <ChevronRight className={`w-3.5 h-3.5 ${isAr ? "rotate-180" : ""}`} />
               <span className="text-primary line-clamp-1">{post.title}</span>
             </nav>
-            <BlogLangSwitcher lang={lang} />
+            <BlogLangSwitcher lang={lang} translationSlug={post.translationSlug} />
           </div>
 
           <div className="flex items-center gap-2 mb-4">
