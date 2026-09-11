@@ -73,6 +73,8 @@ const PERMANENT_REDIRECTS: Record<string, string> = {
   "/ar/blog/أفضل-مناطق-المكاتب-الإدارية-في-القاهر": "/ar/blog/افضل-اماكن-المكاتب-التجمع-الخامس",
   "/ar/blog/ar-blog-new-cairo-vs-sheikh-zayed-offices": "/ar/blog/التجمع-الخامس-ام-الشيخ-زايد-للشركات",
   "/ar/blog/ar-blog-north-90-street-offices": "/ar/blog/مكاتب-التسعين-الشمالى",
+  "/ar/blog/ar-blog-south-90-street-offices": "/ar/blog/مكاتب-التسعين-الجنوبى",
+  "/ar/blog/ready-to-move-vs-core-and-shell-offices-in-egypt-تختار-مكتب-جاهز-ولا-تجهزه-بنف": "/ar/blog/مكتب-جاهز-ام-كور-اند-شل",
   "/ar/blog/تكلفة-المكتب-الحقيقية-ما-وراء-سعر-الإي": "/ar/blog/تكلفة-المكتب-الحقيقية",
   "/ar/blog/how-to-choose-company-office-location-cairo": "/ar/blog/اختيار-مقر-الشركة-القاهرة",
   "/ar/blog/مكاتب-إدارية-للبيع-في-القاهرة-الجديدة": "/ar/blog/مكاتب-للبيع-التجمع-الخامس",
