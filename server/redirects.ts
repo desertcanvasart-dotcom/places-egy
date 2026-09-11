@@ -84,6 +84,20 @@ const PERMANENT_REDIRECTS: Record<string, string> = {
   "/blog/office-space-for-rent-in-new-cairo-a-practical-business-guide": "/blog/offices-for-rent-new-cairo",
   "/blog/office-space-for-rent-new-cairo": "/blog/offices-for-rent-new-cairo",
   "/blog/offices-for-sale-in-new-cairo-what-to-check-before-buying": "/blog/offices-for-sale-new-cairo",
+  // North/South 90 Street EN post slug cleanup (2026-09-11). Post #80
+  // was renamed from `blog-north-90-street-offices-new-cairo` → the
+  // freed slug `north-90-street-offices` (post #86 vacated it after
+  // being corrected to `south-90-street-offices`). Only redirecting
+  // the truly-abandoned old URL — `/blog/north-90-street-offices`
+  // itself is NOT redirected because it now correctly serves post #80.
+  //
+  // Google will notice the content behind `north-90-street-offices`
+  // changed (South content → North content) on its next recrawl. This
+  // costs some historical ranking signal for the URL, which is
+  // unavoidable when a URL is repurposed. Alternative would have been
+  // to keep #86 at a new slug and 301 the old one — user chose to swap
+  // in-place for the cleaner shorter slug.
+  "/blog/blog-north-90-street-offices-new-cairo": "/blog/north-90-street-offices",
   "/ar/blog/تكلفة-المكتب-الحقيقية-ما-وراء-سعر-الإي": "/ar/blog/تكلفة-المكتب-الحقيقية",
   "/ar/blog/how-to-choose-company-office-location-cairo": "/ar/blog/اختيار-مقر-الشركة-القاهرة",
   "/ar/blog/مكاتب-إدارية-للبيع-في-القاهرة-الجديدة": "/ar/blog/مكاتب-للبيع-التجمع-الخامس",
