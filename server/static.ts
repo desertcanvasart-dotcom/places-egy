@@ -44,6 +44,17 @@ export function serveStatic(app: Express) {
         // would never be served and crawlers would keep getting the generic
         // index.html shell.
         extensions: ["html"],
+        // Never auto-301 a directory URL to add a trailing slash. Our
+        // registerRedirects middleware canonicalizes URLs to the NO-slash
+        // form (for consistent hreflang + canonical + backlink equity),
+        // and serve-static's default "add trailing slash" redirect fought
+        // it, creating an infinite loop on prerendered index-style routes
+        // like /admin/business-park (whose file is admin/business-park/
+        // index.html). With redirect:false, a bare directory URL falls
+        // through to the SPA catch-all — which is what we want, since the
+        // catch-all sends the SPA shell and the client-side router handles
+        // /admin/:type properly.
+        redirect: false,
         setHeaders: (res, filePath) => {
           // Vite-hashed assets (`/assets/index-abc123.js`, etc.) are immutable
           // — the filename changes when the content changes — so cache forever.

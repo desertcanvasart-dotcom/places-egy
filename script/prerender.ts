@@ -719,9 +719,20 @@ export async function prerender() {
   // the homepage canonical hardcoded).
   for (const meta of INDEX_ROUTES) {
     const html = injectMeta(shell, meta);
-    const outPath = path.join(DIST, meta.route, "index.html");
-    await mkdir(path.dirname(outPath), { recursive: true });
-    await writeFile(outPath, html, "utf8");
+    // Write BOTH the flat file (admin/business-park.html) AND the
+    // directory index (admin/business-park/index.html). The flat file
+    // is what serve-static's extensions:["html"] resolves for a URL
+    // without a trailing slash — without it, serve-static's directory-
+    // redirect fought our trailing-slash-strip middleware and produced
+    // an infinite 301 loop on every INDEX_ROUTES URL (blocked in GSC).
+    // Keeping the directory index too so any bookmarked /foo/ URL that
+    // slips past the redirect strip still works.
+    const flatOut = path.join(DIST, `${meta.route}.html`);
+    const indexOut = path.join(DIST, meta.route, "index.html");
+    await mkdir(path.dirname(flatOut), { recursive: true });
+    await writeFile(flatOut, html, "utf8");
+    await mkdir(path.dirname(indexOut), { recursive: true });
+    await writeFile(indexOut, html, "utf8");
     indexWritten++;
   }
 
