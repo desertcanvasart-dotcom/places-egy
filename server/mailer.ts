@@ -163,8 +163,8 @@ export const T = {
     },
     ctaLabel: { en: "Ready to talk it through?", ar: "مستعد للتحدث؟" },
     ctaBody: {
-      en: "Book a 15-minute call and a PLACES advisor will walk you through the ones you're leaning toward.",
-      ar: "احجز مكالمة 15 دقيقة وسيقوم مستشار PLACES بمساعدتك في المكاتب التي تفكر بها.",
+      en: "Book a call and a PLACES advisor will walk you through the ones you're leaning toward.",
+      ar: "احجز مكالمة، ومستشار PLACES هيساعدك في المكاتب اللي بتفكر فيها.",
     },
   },
   digestWeekly: {
@@ -194,7 +194,7 @@ export const T = {
       en: "You've saved 10 offices with PLACES. That's a strong shortlist. A quick call with one of our advisors will save you hours of research — we know these buildings inside out.",
       ar: "لقد حفظت 10 مكاتب على PLACES. هذه قائمة قوية. مكالمة سريعة مع أحد مستشارينا ستوفر عليك ساعات من البحث — نحن نعرف هذه المباني جيداً.",
     },
-    ctaLabel: { en: "Book a 15-minute call", ar: "احجز مكالمة 15 دقيقة" },
+    ctaLabel: { en: "Book a call", ar: "احجز مكالمة" },
     ctaBody: {
       en: "No pressure, no sales pitch — just an honest advisor conversation about the offices you shortlisted.",
       ar: "بدون ضغط أو عروض بيع — فقط محادثة صادقة مع مستشار عن المكاتب التي اخترتها.",
@@ -611,7 +611,7 @@ export async function sendMarketReportReply(opts: {
         ${isAr ? "تريد قراءة مخصصة؟" : "Want a personalised read?"}
       </p>
       <p style="margin:0 0 14px 0; font-size:14px; line-height:1.5; color:#171717;">
-        ${isAr ? "احجز مكالمة مجانية مدتها 15 دقيقة وسيرشدك مستشار PLACES خلال المناطق والفئات السعرية التي تهمك." : "Book a free 15-minute call and a PLACES advisor will walk you through the districts and price bands you care about most — no pressure, no pitch."}
+        ${isAr ? "احجز مكالمة مجانية، ومستشار PLACES هيرشدك خلال المناطق والفئات السعرية اللي بتهمك." : "Book a free call and a PLACES advisor will walk you through the districts and price bands you care about most — no pressure, no pitch."}
       </p>
       <a href="${taggedCalendlyUrl({ campaign: "email_market_report", content: "talk_to_us" })}"
          style="display:inline-block; background:#171717; color:#ffffff; padding:11px 22px; border-radius:999px; text-decoration:none; font-weight:600; font-size:14px;">
@@ -708,14 +708,14 @@ export async function sendDeveloperSurveyReply(opts: {
 
   const hi = isAr ? "مرحباً" : "Hi";
   const intro = isAr
-    ? "شكراً لطلبك استطلاع أسعار المطورين. الملف مرفق أدناه — يستحق ~15 دقيقة من وقتك."
-    : "Thanks for requesting the developer price survey. The PDF is one click below — it's worth ~15 minutes of your time.";
+    ? "شكراً لطلبك استطلاع أسعار المطورين. الملف مرفق أدناه."
+    : "Thanks for requesting the developer price survey. The PDF is one click below.";
   const talkTitle = isAr
     ? "تحتاج رأي بشأن مطور معين؟"
     : "Want a read on a specific developer?";
   const talkBody = isAr
-    ? "احجز مكالمة مجانية مدتها 15 دقيقة وسيقارن مستشار PLACES بين المطورين الذين تفكر فيهم."
-    : "Book a free 15-minute call and a PLACES advisor will compare the developers you're actually considering, side by side.";
+    ? "احجز مكالمة مجانية، ومستشار PLACES هيقارنلك بين المطورين اللي بتفكر فيهم جنب بعض."
+    : "Book a free call and a PLACES advisor will compare the developers you're actually considering, side by side.";
   const talkCta = isAr ? "تحدث معنا" : "Talk to us";
   const replyLine = isAr
     ? "أي أسئلة؟ فقط رد على هذا البريد الإلكتروني — تصل مباشرة إلى فريقنا."
@@ -1055,7 +1055,7 @@ const WELCOME_COPY: Record<WelcomeSource, Record<Lang, WelcomeCopy>> = {
         "Pulled from our latest inventory. Every one is verified, currently available, and typical of what PLACES advisors are showing this week. A PLACES advisor will follow up personally shortly.",
       ctaLabel: "Want a personal short-list?",
       ctaBody:
-        "Book a free 15-minute call and a PLACES advisor will hand-pick 5 offices matching your exact budget, size, and location — no pressure, no pitch.",
+        "Book a free call and a PLACES advisor will hand-pick 5 offices matching your exact budget, size, and location — no pressure, no pitch.",
     },
     ar: {
       subject: (n) => `${n}، عندنا 3 مكاتب تناسبك`,
@@ -1065,7 +1065,7 @@ const WELCOME_COPY: Record<WelcomeSource, Record<Lang, WelcomeCopy>> = {
         "دي من أحدث ما عندنا، ومطروحة فعلاً في السوق. مستشارنا هيرجعلك قريب بتفاصيل أكتر.",
       ctaLabel: "تحب نجهزلك اختيارات محددة؟",
       ctaBody:
-        "احجز مكالمة 15 دقيقة. مستشارنا هيفهم متطلباتك، ويرشحلك 5 مكاتب مختارة خصيصاً ليك.",
+        "احجز مكالمة مع مستشارنا. هيفهم متطلباتك ويرشحلك 5 مكاتب مختارة خصيصاً ليك.",
     },
   },
   concierge: {
@@ -1077,7 +1077,7 @@ const WELCOME_COPY: Record<WelcomeSource, Record<Lang, WelcomeCopy>> = {
         "These are the newest listings that fit the direction you shared with us. A PLACES advisor will follow up with a more tailored short-list within 24 hours.",
       ctaLabel: "Want a live walk-through?",
       ctaBody:
-        "Book a free 15-minute call and a PLACES advisor will walk you through the districts and price bands that matter most to you.",
+        "Book a free call and a PLACES advisor will walk you through the districts and price bands that matter most to you.",
     },
     ar: {
       subject: (n) => `${n}، خيارات على مقاس اللي طلبته`,
@@ -1087,7 +1087,7 @@ const WELCOME_COPY: Record<WelcomeSource, Record<Lang, WelcomeCopy>> = {
         "اخترناهم بناءً على كلامك معانا. خلال 24 ساعة هتوصلك قائمة أوسع من مستشارك المخصص.",
       ctaLabel: "تحب مستشار يرافقك في البحث؟",
       ctaBody:
-        "احجز 15 دقيقة، ومستشارنا هيوريك المناطق، الأسعار، والفرص اللي بتناسب توجهك.",
+        "احجز مكالمة، ومستشارنا هيوريك المناطق والأسعار والفرص اللي بتناسب توجهك.",
     },
   },
   price_unlock: {
@@ -1101,7 +1101,7 @@ const WELCOME_COPY: Record<WelcomeSource, Record<Lang, WelcomeCopy>> = {
           : "Here are 3 more offices in the same price range as the one you unlocked. Compare terms side-by-side before you commit.",
       ctaLabel: "Ready to see one in person?",
       ctaBody:
-        "Book a free 15-minute call and a PLACES advisor will arrange viewings for the units you're leaning toward — usually same-week.",
+        "Book a free call and a PLACES advisor will arrange viewings for the units you're leaning toward — usually same-week.",
     },
     ar: {
       subject: (n) => `${n}، أسعار مقاربة لنفس النطاق`,
@@ -1113,7 +1113,7 @@ const WELCOME_COPY: Record<WelcomeSource, Record<Lang, WelcomeCopy>> = {
           : "دي 3 وحدات في نفس النطاق السعري. حط الشروط جنب بعض، وقرر براحتك.",
       ctaLabel: "تحب تعاينهم شخصياً؟",
       ctaBody:
-        "احجز 15 دقيقة، ومستشارنا هيرتب معاينة للوحدات اللي شدتك — عادةً في نفس الأسبوع.",
+        "احجز مكالمة، ومستشارنا هيرتب معاينة للوحدات اللي شدتك — غالباً في نفس الأسبوع.",
     },
   },
   account_signup: {
@@ -1125,7 +1125,7 @@ const WELCOME_COPY: Record<WelcomeSource, Record<Lang, WelcomeCopy>> = {
         "Your saved-listings account is live. Save any office on places-egy.com with the heart icon — we'll email you when the price drops or a similar unit becomes available.",
       ctaLabel: "Want a personal short-list?",
       ctaBody:
-        "Book a free 15-minute call and a PLACES advisor will hand-pick 5 offices matching your exact budget, size, and location.",
+        "Book a free call and a PLACES advisor will hand-pick 5 offices matching your exact budget, size, and location.",
     },
     ar: {
       subject: (n) => `أهلاً بيك في PLACES، ${n}`,
@@ -1135,7 +1135,7 @@ const WELCOME_COPY: Record<WelcomeSource, Record<Lang, WelcomeCopy>> = {
         "تقدر تحفظ أي مكتب يعجبك من علامة القلب. لو نزل سعر جديد أو وحدة شبيهة، هنبلغك أول واحد.",
       ctaLabel: "تحب نجهزلك اختيارات محددة؟",
       ctaBody:
-        "احجز مكالمة 15 دقيقة. مستشارنا هيفهم متطلباتك، ويرشحلك 5 مكاتب مختارة خصيصاً ليك.",
+        "احجز مكالمة مع مستشارنا. هيفهم متطلباتك ويرشحلك 5 مكاتب مختارة خصيصاً ليك.",
     },
   },
 };
