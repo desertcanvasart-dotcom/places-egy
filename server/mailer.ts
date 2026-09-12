@@ -1058,14 +1058,13 @@ const WELCOME_COPY: Record<WelcomeSource, Record<Lang, WelcomeCopy>> = {
         "Book a free call and a PLACES advisor will hand-pick 5 offices matching your exact budget, size, and location — no pressure, no pitch.",
     },
     ar: {
-      subject: (n) => `${n}، عندنا 3 مكاتب تناسبك`,
-      hookLabel: "اختيار خاص",
-      hookHeadline: "شكراً إنك تواصلت. جهزنالك 3 مكاتب تستاهل تشوفها.",
-      hookBody: () =>
-        "دي من أحدث ما عندنا، ومطروحة فعلاً في السوق. مستشارنا هيرجعلك قريب بتفاصيل أكتر.",
-      ctaLabel: "تحب نجهزلك اختيارات محددة؟",
+      subject: (n) => `${n}، 3 مكاتب ممكن تناسبك`,
+      hookLabel: "اختارناهم لك",
+      hookHeadline: "مكاتب اختارناهم لك",
+      hookBody: () => "دي أحدث مكاتب مطروحة في السوق.",
+      ctaLabel: "مهتم تعرف تفاصيل أكتر أو في مواصفات معينة لمكتب أحلامك؟",
       ctaBody:
-        "احجز مكالمة مع مستشارنا. هيفهم متطلباتك ويرشحلك 5 مكاتب مختارة خصيصاً ليك.",
+        "ابعتلنا ومستشارنا العقاري هيرشحلك 5 مكاتب مختارة مخصوص ليك.",
     },
   },
   concierge: {
@@ -1080,14 +1079,14 @@ const WELCOME_COPY: Record<WelcomeSource, Record<Lang, WelcomeCopy>> = {
         "Book a free call and a PLACES advisor will walk you through the districts and price bands that matter most to you.",
     },
     ar: {
-      subject: (n) => `${n}، خيارات على مقاس اللي طلبته`,
-      hookLabel: "مختارة بناءً على طلبك",
-      hookHeadline: "دي 3 مكاتب أقرب لصورة اللي بتدور عليه.",
+      subject: (n) => `${n}، اختيارات بناءً على طلبك`,
+      hookLabel: "مكاتب هتعجبك",
+      hookHeadline: "دي 3 مكاتب أقرب لصورة اللي بتدور عليه",
       hookBody: () =>
         "اخترناهم بناءً على كلامك معانا. خلال 24 ساعة هتوصلك قائمة أوسع من مستشارك المخصص.",
       ctaLabel: "تحب مستشار يرافقك في البحث؟",
       ctaBody:
-        "احجز مكالمة، ومستشارنا هيوريك المناطق والأسعار والفرص اللي بتناسب توجهك.",
+        "احجز مكالمة، ومستشارنا هيوجهك للمناطق والأسعار والفرص اللي بتناسب طلبك.",
     },
   },
   price_unlock: {
@@ -1104,16 +1103,16 @@ const WELCOME_COPY: Record<WelcomeSource, Record<Lang, WelcomeCopy>> = {
         "Book a free call and a PLACES advisor will arrange viewings for the units you're leaning toward — usually same-week.",
     },
     ar: {
-      subject: (n) => `${n}، أسعار مقاربة لنفس النطاق`,
-      hookLabel: "السعر بين إيديك",
-      hookHeadline: "قبل ما تقرر، شوف 3 اختيارات تانية في نفس الفلوس.",
+      subject: (n) => `${n}، أسعار في حدود ميزانيتك`,
+      hookLabel: "أسعار وطريقة دفع واضحة",
+      hookHeadline: "قبل ما تقرر، شوف 3 اختيارات تانية بنفس الميزانية",
       hookBody: (ctx) =>
         ctx.contextListing
-          ? `بما إنك اهتميت بـ ${escapeHtml(ctx.contextListing.title)}، لمينالك بدائل من نفس المنطقة وبنفس المساحة تقريباً. المقارنة هتوريك الفرق.`
+          ? `بما إنك اهتميت بـ ${escapeHtml(ctx.contextListing.title)}، جمعنالك بدائل من نفس المنطقة وبنفس المساحة تقريباً.`
           : "دي 3 وحدات في نفس النطاق السعري. حط الشروط جنب بعض، وقرر براحتك.",
-      ctaLabel: "تحب تعاينهم شخصياً؟",
+      ctaLabel: "تحب تعاينهم بنفسك؟",
       ctaBody:
-        "احجز مكالمة، ومستشارنا هيرتب معاينة للوحدات اللي شدتك — غالباً في نفس الأسبوع.",
+        "ابعتلنا ومستشارنا العقاري هيرتب معاينة للوحدات اللي عجبتك.",
     },
   },
   account_signup: {
@@ -1130,12 +1129,12 @@ const WELCOME_COPY: Record<WelcomeSource, Record<Lang, WelcomeCopy>> = {
     ar: {
       subject: (n) => `أهلاً بيك في PLACES، ${n}`,
       hookLabel: "حسابك اتفعّل",
-      hookHeadline: "دي أول 3 مكاتب تبدأ بيهم.",
+      hookHeadline: "دي نبذة عن مكاتب ممكن تناسبك",
       hookBody: () =>
-        "تقدر تحفظ أي مكتب يعجبك من علامة القلب. لو نزل سعر جديد أو وحدة شبيهة، هنبلغك أول واحد.",
-      ctaLabel: "تحب نجهزلك اختيارات محددة؟",
+        "لو نزل سعر جديد أو وحدة شبيهة، هنبلغك أول واحد.",
+      ctaLabel: "تحب مستشار يرافقك في البحث؟",
       ctaBody:
-        "احجز مكالمة مع مستشارنا. هيفهم متطلباتك ويرشحلك 5 مكاتب مختارة خصيصاً ليك.",
+        "ابعتلنا ومستشارنا هيوجهك للمناطق والأسعار والفرص اللي بتناسب طلبك.",
     },
   },
 };
