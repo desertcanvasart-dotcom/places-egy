@@ -98,6 +98,12 @@ const PERMANENT_REDIRECTS: Record<string, string> = {
   // to keep #86 at a new slug and 301 the old one — user chose to swap
   // in-place for the cleaner shorter slug.
   "/blog/blog-north-90-street-offices-new-cairo": "/blog/north-90-street-offices",
+
+  // Post repurposed 2026-09-12: an old "offices for SALE in New Cairo"
+  // Arabic post was rewritten to be about "offices for RENT". Old sale
+  // URL → new rent URL so any inbound backlinks or Google-indexed URLs
+  // land on the current content.
+  "/ar/blog/مكاتب-إدارية-للبيع-القاهرة-الجديدة-2": "/ar/blog/مكاتب-إدارية-للإيجار-القاهرة-الجديدة",
   "/ar/blog/تكلفة-المكتب-الحقيقية-ما-وراء-سعر-الإي": "/ar/blog/تكلفة-المكتب-الحقيقية",
   "/ar/blog/how-to-choose-company-office-location-cairo": "/ar/blog/اختيار-مقر-الشركة-القاهرة",
   "/ar/blog/مكاتب-إدارية-للبيع-في-القاهرة-الجديدة": "/ar/blog/مكاتب-للبيع-التجمع-الخامس",
