@@ -40,6 +40,7 @@ import {
 import { handleCalendlyWebhook } from "./calendly-webhook";
 import { regenerateMarketReportHandler } from "./regenerate-report";
 import { weeklyReportHandler } from "./weekly-report";
+import { nurtureFollowupsHandler } from "./nurture";
 import { registerProjectCoordsRoutes } from "./project-coords-routes";
 import {
   handleMilestoneOnFavorite,
@@ -194,6 +195,13 @@ export async function registerRoutes(
   // Sends a branded HTML email to admin@places-egy.com with the last 7
   // days of leads + deals + hot leads. See server/weekly-report.ts.
   app.post("/api/admin/weekly-report", weeklyReportHandler);
+
+  // ── Cron: day-2 + day-5 nurture followups ───────────────────────────────
+  // Called daily at 10:00 Cairo. Finds leads created 48-72h ago (day_2) and
+  // 5-6 days ago (day_5), sends templated nurture emails with 3 fresh
+  // listings + WhatsApp CTA. Idempotent via sent_followups table.
+  // See server/nurture.ts and sql/sent-followups.sql.
+  app.post("/api/admin/send-nurture-followups", nurtureFollowupsHandler);
 
   // ── Cron: favorites digest sweep (every 30 min) ─────────────────────────
   // Finds accounts eligible for the 2h debounced digest (or weekly recap on
