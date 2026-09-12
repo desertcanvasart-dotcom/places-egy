@@ -36,6 +36,32 @@ export function taggedCalendlyUrl(opts: {
   return `${CALENDLY_URL}${sep}${params.toString()}`;
 }
 
+// PLACES WhatsApp business number. Same number as the site footer +
+// admin contact block; overridable via env if the number ever rotates
+// without a deploy.
+const WHATSAPP_NUMBER = process.env.WHATSAPP_NUMBER ?? "201063618217";
+
+// Universal prefill text — approved by user 2026-09-12. One line per
+// language, same on every WhatsApp CTA across all customer emails so
+// sales team sees consistent inbound message format.
+const WHATSAPP_PREFILL: Record<Lang, string> = {
+  en: "Hi PLACES, I'd like to ask you about available offices",
+  ar: "أهلاً PLACES، عايز استفسر عن مكاتب متاحة",
+};
+
+// Build a wa.me deep link that opens WhatsApp with the prefilled message
+// for the recipient's language. wa.me is WhatsApp's official click-to-chat
+// endpoint — works on mobile (opens the app) and desktop (opens web).
+//
+// Note: wa.me doesn't support UTM-style params — the prefill IS the tracking
+// signal. Sales team can distinguish incoming chats by which email each
+// visitor came from because the source is already logged in Supabase
+// (leads.lead_source / lead_source_id). No lost attribution.
+export function whatsappChatUrl(lang: Lang = "en"): string {
+  const text = encodeURIComponent(WHATSAPP_PREFILL[lang]);
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${text}`;
+}
+
 // Public URL of the market report PDF. Placeholder until PLACES finalizes the
 // actual PDF and uploads it to Supabase Storage or elsewhere. When set, the
 // auto-reply includes a real download button; when unset (or set to the
@@ -901,7 +927,7 @@ function ctaPanel(opts: {
       <p style="margin:0 0 14px 0; font-size:14px; line-height:1.5; color:${bodyColor};">
         ${escapeHtml(t(opts.bodyKey, opts.lang))}
       </p>
-      <a href="${taggedCalendlyUrl({ campaign: opts.campaign, content: "talk_to_us" })}"
+      <a href="${whatsappChatUrl(opts.lang)}"
          style="display:inline-block; background:${btnBg}; color:#ffffff; padding:11px 22px; border-radius:999px; text-decoration:none; font-weight:600; font-size:14px;">
         ${escapeHtml(t(opts.buttonKey, opts.lang))} →
       </a>
@@ -1202,7 +1228,7 @@ export async function sendLeadWelcomeWithListings(opts: {
       <p style="margin:0 0 14px 0; font-size:14px; line-height:1.5; color:#171717;">
         ${escapeHtml(copy.ctaBody)}
       </p>
-      <a href="${taggedCalendlyUrl({ campaign: `email_welcome_${opts.source}`, content: "talk_to_us" })}"
+      <a href="${whatsappChatUrl(lang)}"
          style="display:inline-block; background:#171717; color:#ffffff; padding:11px 22px; border-radius:999px; text-decoration:none; font-weight:600; font-size:14px;">
         ${escapeHtml(t(T.common.talkToUs, lang))} →
       </a>
@@ -1224,6 +1250,169 @@ export async function sendLeadWelcomeWithListings(opts: {
       : lang === "ar"
         ? "مستشار من PLACES هيتابع طلبك قريباً."
         : "A PLACES advisor is following up on your submission shortly.";
+
+  const html = brandedShell({ preheader, body, lang });
+
+  return sendMail({
+    to: opts.toEmail,
+    subject: copy.subject(escapeHtml(first)),
+    html,
+    replyTo: "admin@places-egy.com",
+  });
+}
+
+// ── Day-2 + Day-5 nurture followups ─────────────────────────────────────────
+// Fired by the /api/admin/send-nurture-followups cron (server/nurture.ts) for
+// leads created ~48h ago (day_2) and ~5 days ago (day_5). Copy is user-approved
+// and lives inline here — do not swap for auto-translation.
+//
+// Both variants reuse brandedShell + officeCard + whatsappChatUrl so header,
+// footer, RTL, and WhatsApp prefill stay in sync with the welcome/digest
+// emails. Empty listings degrade gracefully: the CTA still lands.
+
+type NurtureDay = 2 | 5;
+
+type NurtureCopy = {
+  subject: (name: string) => string;
+  hookLabel: string;
+  headline: string;
+  body: string;
+  // Day-2: below-cards link to /listings. Day-5: link below the WhatsApp button.
+  browseLinkLabel: string;
+  // CTA button label (WhatsApp).
+  talkCta: string;
+  // Day-2 secondary CTA box copy (body text only — no label).
+  secondaryBody?: string;
+};
+
+const NURTURE_COPY: Record<NurtureDay, Record<Lang, NurtureCopy>> = {
+  2: {
+    en: {
+      subject: (n) => `Still exploring, ${n}? A few more options worth a look`,
+      hookLabel: "Fresh this week",
+      headline: "3 new offices we thought you'd want to see",
+      body: "We've added new inventory since we last spoke. Here are 3 fresh options — take a look.",
+      browseLinkLabel: "Browse all available offices →",
+      talkCta: "Talk to us",
+      secondaryBody:
+        "Want a curated shortlist? Reach out and a PLACES advisor will send one your way.",
+    },
+    ar: {
+      subject: (n) => `${n}، لسه بتدور؟ في مكاتب جديدة`,
+      hookLabel: "جديد الأسبوع",
+      headline: "مكاتب جديدة حبينا نعرضها عليك",
+      body: "مكاتب جديدة معروضة في السوق.. هل في حاجة منهم تناسبك؟",
+      browseLinkLabel: "شوف كل المكاتب المتاحة ←",
+      talkCta: "تواصل معنا",
+      secondaryBody: "تحب نجهزلك قائمة مكاتب تناسب مواصفاتك؟",
+    },
+  },
+  5: {
+    en: {
+      subject: (n) => `${n}, ready to talk it through?`,
+      hookLabel: "Meet your PLACES advisor",
+      headline: "A quick call could save you weeks of searching",
+      body: "Tell us your budget, size, and location — our advisor will pick 5 offices that fit.",
+      browseLinkLabel: "Or browse all available offices →",
+      talkCta: "Talk to us",
+    },
+    ar: {
+      subject: (n) => `${n}، مستعد نتكلم؟`,
+      hookLabel: "تواصل معنا",
+      headline: "مكالمة سريعة توفرلك أسابيع بحث",
+      body: "قول لنا ميزانيتك ومساحتك وموقعك المفضل، وهنختارلك 5 مكاتب تناسبك.",
+      browseLinkLabel: "أو استكشف كل المكاتب المتاحة ←",
+      talkCta: "تواصل معنا",
+    },
+  },
+};
+
+export async function sendNurtureFollowup(opts: {
+  toEmail: string;
+  toName: string;
+  listings: FavoritedListing[];
+  lang?: Lang;
+  day: NurtureDay;
+}): Promise<void> {
+  const lang: Lang = opts.lang ?? "en";
+  const first = firstNameOf(opts.toName);
+  const copy = NURTURE_COPY[opts.day][lang];
+  const campaign = `email_nurture_day_${opts.day}`;
+  const browseUrl = `https://places-egy.com/listings?utm_source=places-egy.com&utm_medium=email&utm_campaign=${campaign}&utm_content=browse_all`;
+
+  const listingCards = opts.listings.length
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:8px;">
+        ${opts.listings.map((l) => officeCard(l, lang, campaign)).join("")}
+      </table>
+      <p style="margin:4px 0 24px 0; font-size:12px; color:#94A3B8; text-align:center;">
+        <a href="${browseUrl}" style="color:#64748B; text-decoration:underline;">
+          ${escapeHtml(copy.browseLinkLabel)}
+        </a>
+      </p>`
+    : "";
+
+  // Day-2: cards on top, then secondary "reach out" panel (no label).
+  // Day-5: single big WhatsApp button on top, then optional 3 cards, then
+  // a plain text link back to /listings under the button.
+  const waHref = whatsappChatUrl(lang);
+  const isDay5 = opts.day === 5;
+
+  const day5PrimaryCta = `
+    <div style="margin:24px 0 12px 0; text-align:center;">
+      <a href="${waHref}"
+         style="display:inline-block; background:#E11D48; color:#ffffff; padding:14px 32px; border-radius:999px; text-decoration:none; font-weight:700; font-size:15px; box-shadow:0 4px 12px rgba(225,29,72,0.35);">
+        ${escapeHtml(copy.talkCta)} →
+      </a>
+    </div>
+    <p style="margin:0 0 24px 0; font-size:13px; color:#64748B; text-align:center;">
+      <a href="${browseUrl}" style="color:#64748B; text-decoration:underline;">
+        ${escapeHtml(copy.browseLinkLabel)}
+      </a>
+    </p>`;
+
+  const day2SecondaryCta = `
+    <div style="margin:24px 0 8px 0; padding:24px; background:#F8F5F1; border-radius:12px;">
+      <p style="margin:0 0 14px 0; font-size:14px; line-height:1.5; color:#171717;">
+        ${escapeHtml(copy.secondaryBody ?? "")}
+      </p>
+      <a href="${waHref}"
+         style="display:inline-block; background:#171717; color:#ffffff; padding:11px 22px; border-radius:999px; text-decoration:none; font-weight:600; font-size:14px;">
+        ${escapeHtml(copy.talkCta)} →
+      </a>
+    </div>`;
+
+  const body = `
+    <p style="margin:0 0 20px 0; font-size:16px; color:#171717;">${escapeHtml(t(T.common.hi, lang))} ${escapeHtml(first)}, 👋</p>
+
+    <p style="margin:0 0 6px 0; font-size:11px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:3px;">
+      ${escapeHtml(copy.hookLabel)}
+    </p>
+
+    <h2 style="margin:0 0 12px 0; font-size:22px; font-weight:700; color:#171717; line-height:1.3;">
+      ${escapeHtml(copy.headline)}
+    </h2>
+
+    <p style="margin:0 0 24px 0; font-size:15px; line-height:1.6; color:#64748B;">
+      ${escapeHtml(copy.body)}
+    </p>
+
+    ${isDay5 ? day5PrimaryCta + listingCards : listingCards + day2SecondaryCta}
+
+    <p style="margin:24px 0 8px 0; font-size:14px; line-height:1.6; color:#64748B;">
+      ${escapeHtml(t(T.common.reply, lang))}
+    </p>
+    <p style="margin:16px 0 0 0; font-size:14px; color:#171717;">
+      ${escapeHtml(t(T.common.warmly, lang))},<br>${escapeHtml(t(T.common.theTeam, lang))}
+    </p>
+  `;
+
+  const preheader = isAr(lang)
+    ? opts.day === 2
+      ? "مكاتب جديدة معروضة في السوق — شوفهم قبل ما يتحجزوا."
+      : "مكالمة سريعة مع مستشار PLACES — 5 مكاتب مختارة على مقاسك."
+    : opts.day === 2
+      ? "Fresh inventory since we last spoke — 3 offices worth a look."
+      : "A quick call could save you weeks of searching.";
 
   const html = brandedShell({ preheader, body, lang });
 
