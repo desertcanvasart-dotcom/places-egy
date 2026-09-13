@@ -131,8 +131,11 @@ export async function registerRoutes(
   //
   // The route is deliberately mounted BEFORE any auth or rate limiter
   // scope so images work for logged-out visitors + email recipients.
-  app.get("/img/:key(*)", async (req: Request, res: Response) => {
-    const key = req.params.key;
+  app.get("/img/{*key}", async (req: Request, res: Response) => {
+    // Express 5 wildcard segments come back as an array. Rejoin into a
+    // slash-separated path for the Supabase lookup below.
+    const rawKey = req.params.key;
+    const key = Array.isArray(rawKey) ? rawKey.join("/") : rawKey;
     // Reject path traversal + control chars up front.
     if (!key || key.includes("..") || /[\x00-\x1f]/.test(key)) {
       return res.status(400).send("Bad path");
