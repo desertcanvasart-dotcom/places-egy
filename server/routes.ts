@@ -112,6 +112,66 @@ export async function registerRoutes(
 ): Promise<Server> {
   registerProjectCoordsRoutes(app);
 
+  // GET /img/<supabase-key> — public image proxy that serves listings-
+  // images from the sending domain (places-egy.com) instead of the raw
+  // Supabase Storage host. Gmail + Yahoo spam filters penalize
+  // image-domain / sending-domain mismatches; this proxy lets our
+  // outbound emails reference images at places-egy.com so DKIM +
+  // reputation align.
+  //
+  // Cache-Control lets Cloudflare cache each image for a year (Supabase
+  // keys are immutable — the filename embeds a timestamp + random slug,
+  // so a new upload produces a new URL). After the first request per
+  // image, Railway sees zero further hits for that image.
+  //
+  // Path guardrails:
+  //   - Only serves objects under the `listings-images` bucket.
+  //   - Rejects path traversal + control characters.
+  //   - Rejects anything outside a small allowlist of image extensions.
+  //
+  // The route is deliberately mounted BEFORE any auth or rate limiter
+  // scope so images work for logged-out visitors + email recipients.
+  app.get("/img/:key(*)", async (req: Request, res: Response) => {
+    const key = req.params.key;
+    // Reject path traversal + control chars up front.
+    if (!key || key.includes("..") || /[\x00-\x1f]/.test(key)) {
+      return res.status(400).send("Bad path");
+    }
+    // Extension allowlist mirrors the upload-time whitelist so we never
+    // proxy anything the admin upload endpoint wouldn't have accepted.
+    const ext = key.split(".").pop()?.toLowerCase() ?? "";
+    if (!["jpg", "jpeg", "png", "webp", "gif", "avif"].includes(ext)) {
+      return res.status(400).send("Unsupported extension");
+    }
+    const supabaseHost = process.env.SUPABASE_URL;
+    if (!supabaseHost) {
+      return res.status(503).send("Supabase not configured");
+    }
+    const upstream = `${supabaseHost}/storage/v1/object/public/${SUPABASE_BUCKET}/${key}`;
+    try {
+      const upstreamRes = await fetch(upstream);
+      if (!upstreamRes.ok) {
+        return res.status(upstreamRes.status).send("Upstream error");
+      }
+      // Copy content-type + length verbatim so browsers render the
+      // image correctly regardless of format.
+      const contentType = upstreamRes.headers.get("content-type");
+      const contentLength = upstreamRes.headers.get("content-length");
+      if (contentType) res.setHeader("Content-Type", contentType);
+      if (contentLength) res.setHeader("Content-Length", contentLength);
+      // Aggressive caching at Cloudflare + browser. Keys are immutable,
+      // so we can pin `public, max-age=31536000, immutable` without risk.
+      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      // Buffer + send. Small (< 1MB typically) so streaming isn't
+      // strictly needed and Express handles buffered response cleanly.
+      const buf = Buffer.from(await upstreamRes.arrayBuffer());
+      return res.send(buf);
+    } catch (err) {
+      console.warn("[img-proxy] fetch failed:", err);
+      return res.status(502).send("Bad gateway");
+    }
+  });
+
   // GET /api/blog/posts?page=1&per_page=9&category=market-insights&lang=en|ar
   // The `lang` param is Polylang's language filter — exposed to the REST API
   // by our custom snippet in WP's Code Snippets plugin. Only "en" or "ar"

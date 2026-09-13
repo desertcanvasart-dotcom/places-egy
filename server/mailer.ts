@@ -62,6 +62,31 @@ export function whatsappChatUrl(lang: Lang = "en"): string {
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${text}`;
 }
 
+// Rewrite a Supabase Storage public URL so that images in emails load
+// from the same sending domain (places-egy.com) rather than
+// dgfzlouwonrxuieilqxb.supabase.co. Gmail + Yahoo spam filters penalize
+// image-domain / sending-domain mismatches; hosting from the sending
+// domain lifts sender reputation.
+//
+// The rewritten URL points at Express's /img/:key proxy, which
+// streams the image from Supabase Storage on demand. Cloudflare caches
+// aggressively (see /img/ route Cache-Control header) so after the first
+// hit per image, Railway sees near-zero traffic.
+//
+// Only applies to URLs from the listings-images bucket. Everything else
+// (external images, developer-survey PDFs, etc.) is returned unchanged.
+export function emailImageUrl(supabaseUrl: string): string {
+  if (!supabaseUrl) return supabaseUrl;
+  // Match Supabase Storage public-object URLs for the listings-images
+  // bucket. Anything not matching falls through untouched.
+  const match = supabaseUrl.match(
+    /\/storage\/v1\/object\/public\/listings-images\/(.+)$/,
+  );
+  if (!match) return supabaseUrl;
+  const key = match[1];
+  return `https://places-egy.com/img/${key}`;
+}
+
 // Public URL of the market report PDF. Placeholder until PLACES finalizes the
 // actual PDF and uploads it to Supabase Storage or elsewhere. When set, the
 // auto-reply includes a real download button; when unset (or set to the
@@ -131,9 +156,47 @@ export function escapeHtml(s: string | null | undefined): string {
     .replaceAll("'", "&#039;");
 }
 
+// Format the salutation line. When we have a real first name we render
+// "Hi Sarah, 👋". When firstNameOf() bailed (junk name), we render
+// "Hi, 👋" with just the wave — never "Hi , 👋" with an awkward gap.
+function greetingLine(hi: string, first: string, wave = true): string {
+  const emoji = wave ? " 👋" : "";
+  if (first) {
+    return `${escapeHtml(hi)} ${escapeHtml(first)},${emoji}`;
+  }
+  return `${escapeHtml(hi)},${emoji}`;
+}
+
+// Return a properly-cased first name — OR empty string when the input
+// looks like junk (bot-typed, single-letter, all-consonants, obvious
+// keyboard mash). Callers render "Hi 👋" without a name when this
+// returns "" so we never send "Hi Aaa" or "Hi Xxxxx" style greetings.
 function firstNameOf(name: string): string {
-  const first = name.trim().split(/\s+/)[0] ?? "";
-  return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
+  const raw = (name ?? "").trim();
+  if (!raw) return "";
+  const first = raw.split(/\s+/)[0] ?? "";
+  if (!isReasonableFirstName(first)) return "";
+  // Preserve any non-Latin script (Arabic, etc.) exactly — case rules
+  // only make sense for Latin. Latin first-letter uppercase, rest lower.
+  if (/^[a-zA-Z]/.test(first)) {
+    return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
+  }
+  return first;
+}
+
+// Reject names that are almost certainly not names. Errs on the side of
+// keeping real (unusual) names — only knocks out obvious junk.
+function isReasonableFirstName(s: string): boolean {
+  if (s.length < 2) return false;
+  // All-digits, or contains @ (someone pasted an email as name).
+  if (/^\d+$/.test(s)) return false;
+  if (s.includes("@")) return false;
+  // Same character repeated (Aaa, Xxxx, ....) — a classic bot/typo pattern.
+  if (/^(.)\1+$/i.test(s)) return false;
+  // Latin-only string with no vowels (unlikely to be a real name).
+  // Skip this check for non-Latin scripts where vowel rules differ.
+  if (/^[a-zA-Z]+$/.test(s) && !/[aeiouy]/i.test(s)) return false;
+  return true;
 }
 
 // ── i18n ────────────────────────────────────────────────────────────────────
@@ -614,7 +677,7 @@ export async function sendMarketReportReply(opts: {
       ];
 
   const body = `
-    <p style="margin:0 0 20px 0; font-size:16px; color:#171717;">${escapeHtml(t(T.common.hi, lang))} ${escapeHtml(first)}, 👋</p>
+    <p style="margin:0 0 20px 0; font-size:16px; color:#171717;">${greetingLine(t(T.common.hi, lang), first)}</p>
 
     <p style="margin:0 0 24px 0; font-size:15px; line-height:1.6; color:#171717;">
       ${escapeHtml(t(T.marketReport.intro, lang))}
@@ -845,7 +908,7 @@ function officeCard(l: FavoritedListing, lang: Lang, utmCampaign: string): strin
   const rtl = isAr(lang);
   const url = `https://places-egy.com${l.url_path}?utm_source=places-egy.com&utm_medium=email&utm_campaign=${utmCampaign}&utm_content=office_card_${l.id}`;
   const img = l.first_image_url
-    ? `<img src="${escapeHtml(l.first_image_url)}" alt="" style="width:100%; max-width:180px; height:130px; object-fit:cover; border-radius:8px; display:block;">`
+    ? `<img src="${escapeHtml(emailImageUrl(l.first_image_url))}" alt="" style="width:100%; max-width:180px; height:130px; object-fit:cover; border-radius:8px; display:block;">`
     : `<div style="width:180px; height:130px; background:#EAE4DA; border-radius:8px;"></div>`;
   const areaLine =
     l.area_sqm != null
@@ -1205,7 +1268,7 @@ export async function sendLeadWelcomeWithListings(opts: {
     : "";
 
   const body = `
-    <p style="margin:0 0 20px 0; font-size:16px; color:#171717;">${escapeHtml(t(T.common.hi, lang))} ${escapeHtml(first)}, 👋</p>
+    <p style="margin:0 0 20px 0; font-size:16px; color:#171717;">${greetingLine(t(T.common.hi, lang), first)}</p>
 
     <p style="margin:0 0 6px 0; font-size:11px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:3px;">
       ${escapeHtml(copy.hookLabel)}
@@ -1382,7 +1445,7 @@ export async function sendNurtureFollowup(opts: {
     </div>`;
 
   const body = `
-    <p style="margin:0 0 20px 0; font-size:16px; color:#171717;">${escapeHtml(t(T.common.hi, lang))} ${escapeHtml(first)}, 👋</p>
+    <p style="margin:0 0 20px 0; font-size:16px; color:#171717;">${greetingLine(t(T.common.hi, lang), first)}</p>
 
     <p style="margin:0 0 6px 0; font-size:11px; font-weight:700; color:#E11D48; text-transform:uppercase; letter-spacing:3px;">
       ${escapeHtml(copy.hookLabel)}
