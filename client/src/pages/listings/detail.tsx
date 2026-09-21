@@ -298,7 +298,7 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
               >
                 {formatLabel(listing.transaction_type)}
               </Badge>
-              <h1 className="text-3xl md:text-5xl font-serif font-bold text-primary leading-tight">
+              <h1 className="text-2xl md:text-4xl font-serif font-bold text-primary leading-tight">
                 {listing.title}
               </h1>
               <div className="flex items-center gap-2 md:gap-3 mt-3 text-muted-foreground flex-wrap">
