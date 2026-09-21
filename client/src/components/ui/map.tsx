@@ -15,6 +15,35 @@ import "maplibre-gl/dist/maplibre-gl.css";
 // (Google Places dropdown, marker updates, style changes) stops working.
 MapLibreGL.setWorkerUrl(maplibreWorkerUrl);
 
+// Bulletproof against the "stale bundle references a hashed worker file
+// that no longer exists after a rebuild" failure mode. Symptom: MapLibre
+// tries to load /assets/maplibre-gl-worker-<oldhash>.mjs, gets an HTML
+// 200 from the SPA catch-all, browser rejects as MIME mismatch, map
+// silently fails to initialize. Affected: anyone who visits mid-deploy
+// or whose browser held an old bundle across deploys.
+//
+// Recovery: on any module-script-MIME error for a /assets/ URL, force
+// one full reload with cache-bypass. sessionStorage guards against a
+// reload loop if the error somehow persists after the reload.
+if (typeof window !== "undefined") {
+  window.addEventListener("error", (event) => {
+    const msg = String(event.message ?? "");
+    const isModuleMimeError =
+      msg.includes("MIME type") ||
+      msg.includes("Failed to load module script");
+    if (!isModuleMimeError) return;
+    const src = String((event as ErrorEvent).filename ?? "");
+    if (!src.includes("/assets/")) return;
+    const RELOAD_KEY = "__map_asset_reload_at";
+    const last = Number(sessionStorage.getItem(RELOAD_KEY) ?? 0);
+    if (Date.now() - last < 10_000) return; // already tried recently
+    sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
+    // Force a full-cache-bypass reload — the new bundle will re-hydrate
+    // with the current asset hashes.
+    window.location.reload();
+  });
+}
+
 // Load the RTL text plugin so Arabic + Hebrew place-name labels on the map
 // render correctly (right-to-left with proper letter joining). Without this,
 // Arabic labels appear as disconnected reversed characters — every visitor
