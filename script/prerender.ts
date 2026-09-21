@@ -719,20 +719,20 @@ export async function prerender() {
   // the homepage canonical hardcoded).
   for (const meta of INDEX_ROUTES) {
     const html = injectMeta(shell, meta);
-    // Write BOTH the flat file (admin/business-park.html) AND the
-    // directory index (admin/business-park/index.html). The flat file
-    // is what serve-static's extensions:["html"] resolves for a URL
-    // without a trailing slash — without it, serve-static's directory-
-    // redirect fought our trailing-slash-strip middleware and produced
-    // an infinite 301 loop on every INDEX_ROUTES URL (blocked in GSC).
-    // Keeping the directory index too so any bookmarked /foo/ URL that
-    // slips past the redirect strip still works.
+    // Write ONLY the flat file (admin/business-park.html). Previously
+    // we wrote both this + a directory index (admin/business-park/
+    // index.html), but the directory existence made serve-static's
+    // extensions:["html"] resolver skip the flat file — it saw the
+    // directory first and (with redirect:false) fell through to the
+    // SPA catch-all, which served the generic index.html with homepage
+    // meta + canonical to "/". Result: every INDEX_ROUTES URL was
+    // serving the wrong meta, causing Google to treat them as duplicates
+    // of the homepage. Removing the directory index restores the
+    // extensions:["html"] fast path so /admin/business-park →
+    // admin/business-park.html serves cleanly on first byte.
     const flatOut = path.join(DIST, `${meta.route}.html`);
-    const indexOut = path.join(DIST, meta.route, "index.html");
     await mkdir(path.dirname(flatOut), { recursive: true });
     await writeFile(flatOut, html, "utf8");
-    await mkdir(path.dirname(indexOut), { recursive: true });
-    await writeFile(indexOut, html, "utf8");
     indexWritten++;
   }
 
