@@ -113,15 +113,17 @@ export function FilterSidebar({ filters, setFilters, listings, className }: Filt
         </Button>
       </div>
 
-      {/* Filter 1 — Transaction Type */}
+      {/* Filter 1 — Transaction Type. Three-way segmented control now
+          that income-property is a real option. Compact enough to still
+          fit horizontally on desktop; wraps naturally on narrow columns. */}
       <div className="space-y-3">
         <Label className="block mb-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">Transaction</Label>
-        <div className="flex gap-2 p-1 bg-secondary/50 rounded-lg">
-          {(["Sale", "Rent"] as const).map((type) => (
+        <div className="flex flex-wrap gap-2 p-1 bg-secondary/50 rounded-lg">
+          {(["Sale", "Rent", "Income Property"] as const).map((type) => (
             <button
               key={type}
               onClick={() => setTransactionType(type)}
-              className={`flex-1 text-sm font-medium py-2 rounded-full transition-all ${
+              className={`flex-1 min-w-20 text-sm font-medium py-2 px-2 rounded-full transition-all whitespace-nowrap ${
                 filters.transactionType === type
                   ? "bg-primary text-white shadow-sm"
                   : "text-muted-foreground hover:text-primary"
