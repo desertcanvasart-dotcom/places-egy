@@ -36,6 +36,10 @@ export const SUBTYPE_OPTIONS: EnumOption[] = [
   { value: "drive-through", label: "Drive Through" },
 ];
 
+// 2026-09-28: income-property added as a third transaction type. Auto-picks
+// up in admin dropdown + public FilterSidebar via TRANSACTION_TYPE_OPTIONS
+// references. DB enum extended via `ALTER TYPE transaction_type ADD VALUE
+// 'income-property'`.
 export const TRANSACTION_TYPE_OPTIONS: EnumOption[] = [
   { value: "sale", label: "Sale" },
   { value: "rent", label: "Rent" },
