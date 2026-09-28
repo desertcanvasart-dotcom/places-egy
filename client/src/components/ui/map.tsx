@@ -295,12 +295,21 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
     <MapContext.Provider value={contextValue}>
       <div
         ref={containerRef}
-        // touch-action: none prevents the browser from claiming trackpad
-        // pinch + touch-pinch as a system-level page zoom. Without it, a
-        // MacBook trackpad pinch on the map zooms the WHOLE page instead
-        // of the map view. overscroll-behavior blocks two-finger scroll
-        // from bubbling up and triggering back-navigation while dragging.
+        // Prevent the browser from claiming trackpad pinch as a page zoom.
+        // Three layers of defense:
+        //   1. touch-action:none — kills touchscreen pinch bubbling.
+        //   2. overscroll-behavior:contain — kills back-navigation from
+        //      two-finger scroll.
+        //   3. onWheelCapture below — kills Chrome/Safari trackpad pinch,
+        //      which fires as a wheel event with ctrlKey:true. Without
+        //      preventDefault, Chrome intercepts it as a system-level
+        //      page zoom BEFORE MapLibre's own scrollZoom handler runs.
+        //      MapLibre re-fires its own wheel handling internally so
+        //      map zoom still works normally.
         style={{ touchAction: "none", overscrollBehavior: "contain" }}
+        onWheelCapture={(e) => {
+          if (e.ctrlKey) e.preventDefault();
+        }}
         className={cn("relative h-full w-full", className)}
       >
         {loading && <DefaultLoader />}
