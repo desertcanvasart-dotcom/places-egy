@@ -15,7 +15,7 @@ import { RotateCcw } from "lucide-react";
 import { FURNISHING_OPTIONS } from "@/lib/enums";
 
 export type Filters = {
-  transactionType: "Sale" | "Rent" | null;
+  transactionType: "Sale" | "Rent" | "Income Property" | null;
   propertyType: "Admin" | "Commercial" | null;
   subtype: string[];
   location: string | null;
@@ -64,7 +64,7 @@ export function FilterSidebar({ filters, setFilters, listings, className }: Filt
 
   const subtypeOptions = ADMIN_SUBTYPES;
 
-  const setTransactionType = (type: "Sale" | "Rent") => {
+  const setTransactionType = (type: "Sale" | "Rent" | "Income Property") => {
     setFilters((prev) => ({
       ...prev,
       transactionType: prev.transactionType === type ? null : type,
