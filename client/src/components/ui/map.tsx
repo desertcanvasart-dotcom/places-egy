@@ -293,7 +293,16 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
 
   return (
     <MapContext.Provider value={contextValue}>
-      <div ref={containerRef} className={cn("relative h-full w-full", className)}>
+      <div
+        ref={containerRef}
+        // touch-action: none prevents the browser from claiming trackpad
+        // pinch + touch-pinch as a system-level page zoom. Without it, a
+        // MacBook trackpad pinch on the map zooms the WHOLE page instead
+        // of the map view. overscroll-behavior blocks two-finger scroll
+        // from bubbling up and triggering back-navigation while dragging.
+        style={{ touchAction: "none", overscrollBehavior: "contain" }}
+        className={cn("relative h-full w-full", className)}
+      >
         {loading && <DefaultLoader />}
         {mapInstance && children}
       </div>
