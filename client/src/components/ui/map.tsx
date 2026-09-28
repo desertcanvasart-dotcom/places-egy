@@ -210,6 +210,19 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
       ...viewport,
     });
 
+    // Zoom + fullscreen controls in the top-right corner. Chrome-Mac
+    // trackpad pinch triggers browser page-zoom (unblockable by JS),
+    // so users who instinctively pinch need a visible +/- button as
+    // an escape hatch. Free with MapLibre — no extra deps.
+    map.addControl(
+      new MapLibreGL.NavigationControl({
+        showCompass: false,
+        showZoom: true,
+        visualizePitch: false,
+      }),
+      "top-right",
+    );
+
     const styleDataHandler = () => {
       clearStyleTimeout();
       styleTimeoutRef.current = setTimeout(() => {
@@ -295,21 +308,13 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
     <MapContext.Provider value={contextValue}>
       <div
         ref={containerRef}
-        // Prevent the browser from claiming trackpad pinch as a page zoom.
-        // Three layers of defense:
-        //   1. touch-action:none — kills touchscreen pinch bubbling.
-        //   2. overscroll-behavior:contain — kills back-navigation from
-        //      two-finger scroll.
-        //   3. onWheelCapture below — kills Chrome/Safari trackpad pinch,
-        //      which fires as a wheel event with ctrlKey:true. Without
-        //      preventDefault, Chrome intercepts it as a system-level
-        //      page zoom BEFORE MapLibre's own scrollZoom handler runs.
-        //      MapLibre re-fires its own wheel handling internally so
-        //      map zoom still works normally.
+        // Prevents mobile touchscreen pinch from bubbling to page zoom +
+        // stops two-finger back-navigation while dragging the map.
+        // Cannot fix Chrome-Mac TRACKPAD pinch — that's a browser-level
+        // page zoom that fires before any JS listener; MapLibre docs
+        // acknowledge this. Users on Chrome Mac should use scroll-wheel
+        // or the built-in zoom controls to zoom the map.
         style={{ touchAction: "none", overscrollBehavior: "contain" }}
-        onWheelCapture={(e) => {
-          if (e.ctrlKey) e.preventDefault();
-        }}
         className={cn("relative h-full w-full", className)}
       >
         {loading && <DefaultLoader />}
