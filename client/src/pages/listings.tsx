@@ -56,8 +56,14 @@ function getInitialFilters(): Filters {
   if (location) {
     filters.location = location;
   }
-  if (transaction === "sale" || transaction === "rent") {
-    filters.transactionType = transaction === "sale" ? "Sale" : "Rent";
+  if (transaction === "sale" || transaction === "rent" || transaction === "income-property") {
+    // Store the human-readable label ("Sale" / "Rent" / "Income Property")
+    // for the filter chip UI. The comparison in the filter loop
+    // normalizes both sides to a DB-slug form ("income property" → the
+    // hyphenated DB value) so the chip stays pretty while the match
+    // stays correct.
+    filters.transactionType =
+      transaction === "sale" ? "Sale" : transaction === "rent" ? "Rent" : "Income Property";
   }
   if (developer) {
     filters.developer = developer;
@@ -170,7 +176,14 @@ export default function ListingsPage() {
         if (!haystack.includes(q)) return false;
       }
       // Transaction type (null = show all)
-      if (filters.transactionType && listing.transaction_type?.toLowerCase() !== filters.transactionType.toLowerCase()) {
+      // Normalize both sides to slug-form (lowercase + spaces → hyphens)
+      // so filter label "Income Property" matches DB value "income-property".
+      // Also correctly matches "Sale"/"Rent" against their identical slugs.
+      if (
+        filters.transactionType &&
+        listing.transaction_type?.toLowerCase().replace(/\s+/g, "-") !==
+          filters.transactionType.toLowerCase().replace(/\s+/g, "-")
+      ) {
         return false;
       }
       // Property type (null = show all)

@@ -39,6 +39,7 @@ export const SUBTYPE_OPTIONS: EnumOption[] = [
 export const TRANSACTION_TYPE_OPTIONS: EnumOption[] = [
   { value: "sale", label: "Sale" },
   { value: "rent", label: "Rent" },
+  { value: "income-property", label: "Income Property" },
 ];
 
 // Whether maintenance is included in the listing price. Displayed under the

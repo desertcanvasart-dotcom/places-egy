@@ -151,6 +151,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
               <Badge className={`
                 ${listing.transaction_type?.toLowerCase() === 'sale' ? 'bg-emerald-600' :
                   listing.transaction_type?.toLowerCase() === 'rent' ? 'bg-accent text-accent-foreground' :
+                  listing.transaction_type?.toLowerCase() === 'income-property' ? 'bg-blue-600' :
                   'bg-emerald-600'}
                 uppercase tracking-wider text-[10px] font-bold shadow-sm border-0
               `}>
@@ -257,7 +258,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
                 </>
               )}
               <div className="absolute top-4 left-4">
-                <Badge className={`${listing.transaction_type?.toLowerCase() === 'sale' ? 'bg-emerald-600' : listing.transaction_type?.toLowerCase() === 'rent' ? 'bg-accent text-accent-foreground' : 'bg-emerald-600'} uppercase tracking-wider text-[10px] font-bold shadow-sm border-0`}>
+                <Badge className={`${listing.transaction_type?.toLowerCase() === 'sale' ? 'bg-emerald-600' : listing.transaction_type?.toLowerCase() === 'rent' ? 'bg-accent text-accent-foreground' : listing.transaction_type?.toLowerCase() === 'income-property' ? 'bg-blue-600' : 'bg-emerald-600'} uppercase tracking-wider text-[10px] font-bold shadow-sm border-0`}>
                   {formatLabel(listing.transaction_type)}
                 </Badge>
               </div>
@@ -517,6 +518,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
               <Badge className={`
                 ${listing.transaction_type?.toLowerCase() === 'sale' ? 'bg-emerald-600' :
                   listing.transaction_type?.toLowerCase() === 'rent' ? 'bg-accent text-accent-foreground' :
+                  listing.transaction_type?.toLowerCase() === 'income-property' ? 'bg-blue-600' :
                   'bg-emerald-600'}
                 uppercase tracking-wider text-[10px] font-bold shadow-sm border-0
               `}>
