@@ -319,7 +319,7 @@ const ADMIN_SUBTYPES = [
     icon: Handshake,
   },
   {
-    href: "/services/income-generating-property",
+    href: "/listings?transaction=income-property&type=admin",
     title: "Income Property",
     tagline: "Rented units generating yields",
     icon: TrendingUp,
