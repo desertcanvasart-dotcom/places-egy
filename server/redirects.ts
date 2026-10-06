@@ -17,6 +17,11 @@ const PERMANENT_REDIRECTS: Record<string, string> = {
   "/my-favorites": "/saved",
   "/favorites": "/saved",
   "/wishlist": "/saved",
+  // Ghost URL that Google crawled from an old backlink / scraper. The
+  // SPA catch-all was serving a 200 with a blank shell → Google (correctly)
+  // flagged it as a soft 404 in GSC. 301 to the real blog hub preserves
+  // any inbound link equity + lands visitors somewhere useful.
+  "/blog-list": "/blog",
   // PLACES retired its commercial offering — all /commercial* paths now
   // route to the homepage so external links + indexed URLs land on a
   // useful page that reflects the new admin-only positioning.
