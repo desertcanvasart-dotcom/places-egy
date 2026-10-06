@@ -71,7 +71,8 @@ export async function fetchRecentListingsForWelcome(
     let q = supabaseAdmin
       .from("listings")
       .select("*")
-      .eq("property_type", "admin");
+      .eq("property_type", "admin")
+      .eq("is_test", false);
     if (tight && opts.subtype) q = q.eq("subtype", opts.subtype);
     if (tight && opts.location) q = q.eq("location", opts.location);
     if (opts.transactionType) q = q.eq("transaction_type", opts.transactionType);
@@ -128,6 +129,7 @@ export async function fetchListingForContext(
       .from("listings")
       .select("*")
       .eq("id", listingId)
+      .eq("is_test", false)
       .maybeSingle();
     if (error || !data) return null;
     return toFavoritedListing(data as Record<string, unknown> & { id: number });

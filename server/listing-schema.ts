@@ -38,6 +38,10 @@ export const listingInsertSchema = z
     // trips validation instead of silently landing a pin at the wrong spot.
     latitude: z.number().finite().min(-90).max(90).nullable().optional(),
     longitude: z.number().finite().min(-180).max(180).nullable().optional(),
+    // Admin-only "test" flag. True = hidden from public listings endpoints,
+    // sitemap, and prerendered meta (noindex emitted on detail page). Lets
+    // us test in production without triggering soft-404s in GSC on delete.
+    is_test: z.boolean().optional().default(false),
   })
   .strict();
 

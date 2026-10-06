@@ -66,7 +66,8 @@ async function loadPayload(accountId: number): Promise<{
   const { data: rawFavorites } = await supabaseAdmin
     .from("listings")
     .select("*")
-    .in("id", listingIds);
+    .in("id", listingIds)
+    .eq("is_test", false);
   const favMap = new Map(
     (rawFavorites ?? []).map((l: { id: number }) => [l.id, l]),
   );
@@ -79,6 +80,7 @@ async function loadPayload(accountId: number): Promise<{
   const { data: recent } = await supabaseAdmin
     .from("listings")
     .select("*")
+    .eq("is_test", false)
     .order("created_at", { ascending: false })
     .limit(20);
   const similar = ((recent ?? []) as Array<Record<string, unknown> & { id: number }>)

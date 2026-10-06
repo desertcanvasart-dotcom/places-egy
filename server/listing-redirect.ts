@@ -81,6 +81,7 @@ async function listingExists(id: number, now: number): Promise<boolean> {
     .from("listings")
     .select("id")
     .eq("id", id)
+    .eq("is_test", false)
     .maybeSingle();
 
   // On a query error, fail open (treat as existing) rather than risk redirecting

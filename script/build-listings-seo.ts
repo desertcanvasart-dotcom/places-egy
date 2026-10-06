@@ -93,12 +93,18 @@ async function fetchListings(): Promise<ListingRow[]> {
   // updated_at/created_at may not exist on the table — try with them first,
   // fall back to the guaranteed core fields on error so the build still ships.
   const coreFields = "id,title,property_type,location,area_sqm,subtype,transaction_type,description,currency,images";
-  const attempts = [
-    `${coreFields},updated_at,created_at`,
-    coreFields,
+  // is_test=eq.false — test listings must stay out of the sitemap AND the
+  // prerendered meta so Google never sees them. We try with the filter first;
+  // if the column doesn't exist yet (pre-migration) PostgREST 400s and we
+  // retry without it so the build still ships.
+  const attempts: Array<{ fields: string; filter: string }> = [
+    { fields: `${coreFields},updated_at,created_at`, filter: "&is_test=eq.false" },
+    { fields: coreFields, filter: "&is_test=eq.false" },
+    { fields: `${coreFields},updated_at,created_at`, filter: "" },
+    { fields: coreFields, filter: "" },
   ];
-  for (const fields of attempts) {
-    const endpoint = `${url}/rest/v1/listings?select=${fields}&property_type=eq.admin&order=id.desc`;
+  for (const { fields, filter } of attempts) {
+    const endpoint = `${url}/rest/v1/listings?select=${fields}&property_type=eq.admin${filter}&order=id.desc`;
     const res = await fetch(endpoint, {
       headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: "application/json" },
     });
@@ -111,7 +117,7 @@ async function fetchListings(): Promise<ListingRow[]> {
     }
     // 400 usually means a column we asked for doesn't exist. Try the next
     // attempt with fewer columns before giving up.
-    console.warn(`[listings-seo] Supabase 400 with fields=${fields}, retrying with fewer columns`);
+    console.warn(`[listings-seo] Supabase 400 with fields=${fields} filter=${filter}, retrying`);
   }
   throw new Error("Supabase /listings returned 400 for all column attempts");
 }

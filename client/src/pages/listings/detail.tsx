@@ -192,8 +192,15 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
     // Explicitly assert this listing is indexable — guarantees a detail page is
     // never left noindexed if the user arrived from a filtered /listings?… view
     // (which sets robots=noindex). Individual listings are exactly what we WANT
-    // indexed (each is in the sitemap + prerendered).
-    setMetaTag("robots", "index,follow");
+    // indexed (each is in the sitemap + prerendered). EXCEPT test listings:
+    // when admin flags one as is_test, emit a hard noindex so a leaked direct
+    // URL never gets indexed.
+    setMetaTag(
+      "robots",
+      (listing as Listing & { is_test?: boolean }).is_test
+        ? "noindex,nofollow,noarchive"
+        : "index,follow",
+    );
     setMetaTag("description", description);
     setMetaTag("og:title", title, "property");
     setMetaTag("og:description", description, "property");

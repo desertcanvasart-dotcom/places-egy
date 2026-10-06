@@ -37,4 +37,8 @@ export type Listing = {
   floor: number;
   latitude: number | null;
   longitude: number | null;
+  // Admin-only flag. True = hidden from public endpoints, sitemap and
+  // prerender, and emits noindex on the detail page. Lets admin test in
+  // production without a soft-404 cycle in GSC when the row is later deleted.
+  is_test?: boolean;
 };

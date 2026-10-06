@@ -9,6 +9,7 @@ import { ProjectPinInput } from "@/components/admin/ProjectPinInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -101,6 +102,7 @@ const EMPTY_FORM: ListingForm = {
   floor: 0,
   latitude: null,
   longitude: null,
+  is_test: false,
 };
 
 function LoginScreen({ onLogin }: { onLogin: () => void }) {
@@ -383,6 +385,17 @@ function ListingFormDialog({
               <Input type="number" value={form.parking ?? ""} onChange={(e) => set("parking", toNum(e.target.value))} placeholder="0" className="bg-white" />
             </div>
 
+            <div className="col-span-2 flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
+              <Checkbox
+                id="is_test"
+                checked={!!form.is_test}
+                onCheckedChange={(v) => set("is_test", v === true)}
+              />
+              <Label htmlFor="is_test" className="text-sm font-medium text-primary cursor-pointer">
+                Test listing — hidden from site + Google
+              </Label>
+            </div>
+
             <div className="col-span-2 space-y-1.5">
               <Label className="text-sm font-medium text-primary">Description</Label>
               <textarea
@@ -627,7 +640,14 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                         <td className="px-3 py-3 text-[11px] font-mono text-muted-foreground tabular-nums">
                           {idx + 1}
                         </td>
-                        <td className="px-4 py-3 font-medium text-primary max-w-[200px] truncate">{listing.title}</td>
+                        <td className="px-4 py-3 font-medium text-primary max-w-[200px] truncate">
+                          {listing.is_test && (
+                            <span className="mr-2 inline-block rounded bg-amber-200 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-900 align-middle">
+                              Test
+                            </span>
+                          )}
+                          {listing.title}
+                        </td>
                       <td className="px-4 py-3 text-muted-foreground">{formatLabel(listing.subtype)}</td>
                       <td className="px-4 py-3 text-muted-foreground">{listing.location}</td>
                       <td className="px-4 py-3 text-muted-foreground">{getEnumLabel(DEVELOPER_OPTIONS, listing.developer)}</td>
