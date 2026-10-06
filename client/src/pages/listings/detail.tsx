@@ -108,6 +108,7 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
       const { data, error } = await supabase
         .from<Listing>("listings")
         .select("*")
+        .eq('is_test', false)
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;
@@ -125,6 +126,7 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
       const { data, error } = await supabase
         .from<Listing>("listings")
         .select("*")
+        .eq('is_test', false)
         .eq("subtype", listing.subtype)
         .neq("id", listing.id)
         .limit(20);

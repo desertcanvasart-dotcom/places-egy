@@ -24,6 +24,7 @@ export default function BusinessPark() {
       const { data, error } = await supabase
         .from<Listing>("listings")
         .select("*")
+        .eq('is_test', false)
         .eq("subtype", "business-park")
         .order("id", { ascending: false })
         .limit(4);

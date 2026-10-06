@@ -62,7 +62,8 @@ export default function SavedListingsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from<Listing>("listings")
-        .select("*");
+        .select("*")
+        .eq('is_test', false);
       if (error) throw error;
       return (data ?? []) as Listing[];
     },

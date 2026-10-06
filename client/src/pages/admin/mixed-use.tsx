@@ -24,6 +24,7 @@ export default function MixedUseMall() {
       const { data, error } = await supabase
         .from<Listing>("listings")
         .select("*")
+        .eq('is_test', false)
         .eq("subtype", "mixed-use")
         .order("id", { ascending: false })
         .limit(4);

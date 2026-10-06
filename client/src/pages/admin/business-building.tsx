@@ -24,6 +24,7 @@ export default function BusinessBuilding() {
       const { data, error } = await supabase
         .from<Listing>("listings")
         .select("*")
+        .eq('is_test', false)
         .eq("subtype", "business-building")
         .order("id", { ascending: false })
         .limit(4);
