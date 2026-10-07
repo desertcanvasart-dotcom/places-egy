@@ -8,7 +8,6 @@ import { CountUp } from "@/components/ui/count-up";
 import { ServicesExplorer } from "@/components/ServicesExplorer";
 import { DeveloperStrip } from "@/components/DeveloperStrip";
 import { DealAnnouncementCarousel } from "@/components/DealAnnouncementCarousel";
-import { HomepageMap } from "@/components/HomepageMap";
 import { ListingCard } from "@/components/listings/ListingCard";
 import { ArrowRight, Building2, ClipboardList, BarChart3, ShieldCheck, CheckCircle2, Coins } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -205,15 +204,6 @@ export default function Home() {
             </div>
           </div>
         </section>
-      </FadeInSection>
-
-      {/* Master map. Renders every project we've saved coordinates for in
-          project_coordinates. Auto-updates when new pins are added via
-          the admin picker — React Query refetches on tab focus + on the
-          60s staleTime. If no coords are saved yet the whole section is
-          skipped (see HomepageMap's early-return guard). */}
-      <FadeInSection>
-        <HomepageMap />
       </FadeInSection>
 
       {/* Developer Logo Strip */}
