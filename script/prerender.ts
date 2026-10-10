@@ -305,6 +305,16 @@ const INDEX_ROUTES: RouteMeta[] = [
       "Browse every office project PLACES brokers across Cairo — business parks, corporate towers, and mixed-use developments. Find the right project for your company.",
     url: `${SITE}/projects`,
   },
+  // /blog hub — WordPress-sourced post list. Added to INDEX_ROUTES so the
+  // Cloudflare page-rule rewrite (/blog → /blog/index.html) resolves to a
+  // file with proper hub meta instead of the generic SPA shell.
+  {
+    route: "/blog",
+    title: "PLACES Blog — Cairo Office Market Insights, Guides & News",
+    description:
+      "Latest articles from PLACES on Cairo's admin-office market — rental trends, developer updates, buy-vs-rent analysis, and location deep-dives for business decision makers.",
+    url: `${SITE}/blog`,
+  },
 ];
 
 // Parse client/src/lib/location-content.ts for the 6 location slugs +
@@ -744,26 +754,32 @@ export async function prerender() {
     developerWritten++;
   }
 
-  // Also write dist/public/{listings,developers,guides}/index.html so the
-  // Cloudflare rewrite (and Express's own extensions:["html"] resolver)
-  // serves proper per-page meta instead of the raw SPA shell (which has
-  // the homepage canonical hardcoded).
+  // Routes with a Cloudflare page-rule rewrite: /listings → /listings/
+  // index.html at the edge, same for /developers and /blog. These three
+  // need BOTH the flat .html file (served by server/static.ts middleware
+  // for direct visitors + crawlers that bypass Cloudflare) AND the
+  // directory index.html (what Cloudflare's edge rewrite resolves to).
+  // Without the directory index, Cloudflare serves the stale generic
+  // index.html SPA shell with homepage canonical.
+  const CLOUDFLARE_REWRITTEN_ROUTES = new Set(["/listings", "/developers", "/blog"]);
+
   for (const meta of INDEX_ROUTES) {
     const html = injectMeta(shell, meta);
-    // Write ONLY the flat file (admin/business-park.html). Previously
-    // we wrote both this + a directory index (admin/business-park/
-    // index.html), but the directory existence made serve-static's
-    // extensions:["html"] resolver skip the flat file — it saw the
-    // directory first and (with redirect:false) fell through to the
-    // SPA catch-all, which served the generic index.html with homepage
-    // meta + canonical to "/". Result: every INDEX_ROUTES URL was
-    // serving the wrong meta, causing Google to treat them as duplicates
-    // of the homepage. Removing the directory index restores the
-    // extensions:["html"] fast path so /admin/business-park →
-    // admin/business-park.html serves cleanly on first byte.
     const flatOut = path.join(DIST, `${meta.route}.html`);
     await mkdir(path.dirname(flatOut), { recursive: true });
     await writeFile(flatOut, html, "utf8");
+
+    // If this route has a Cloudflare rewrite rule, ALSO write the
+    // directory-form index.html so the edge rewrite finds the right
+    // content. Only for the 3 routes above — don't resurrect the Sep 21
+    // redirect-loop bug for admin/business-park etc. that don't have CF
+    // rewrites.
+    if (CLOUDFLARE_REWRITTEN_ROUTES.has(meta.route)) {
+      const dirIndexOut = path.join(DIST, meta.route, "index.html");
+      await mkdir(path.dirname(dirIndexOut), { recursive: true });
+      await writeFile(dirIndexOut, html, "utf8");
+    }
+
     indexWritten++;
   }
 
