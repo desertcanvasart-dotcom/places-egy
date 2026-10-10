@@ -500,6 +500,111 @@ function injectJsonLd(html: string, jsonLd: string): string {
   return html.replace(/<\/head>/i, `${jsonLd}</head>`);
 }
 
+// Build Article JSON-LD for a WordPress blog post. AI engines (Perplexity,
+// ChatGPT, Claude, Google AI Overviews) use Article schema to decide which
+// source to cite — a post without it is often skipped in favor of a
+// competitor's structured article.
+function buildBlogArticleJsonLd(
+  post: BlogPostMeta,
+  url: string,
+  lang: "en" | "ar",
+): string {
+  const article = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "@id": `${url}#article`,
+    headline: post.title,
+    description: post.description,
+    url,
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+    datePublished: post.publishedAt,
+    dateModified: post.publishedAt,
+    inLanguage: lang,
+    author: {
+      "@type": "Organization",
+      "@id": `${SITE}/#organization`,
+      name: "PLACES",
+    },
+    publisher: {
+      "@type": "Organization",
+      "@id": `${SITE}/#organization`,
+      name: "PLACES",
+      logo: {
+        "@type": "ImageObject",
+        url: `${SITE}/opengraph.jpg`,
+      },
+    },
+    image: {
+      "@type": "ImageObject",
+      url: post.featuredImage ?? `${SITE}/opengraph.jpg`,
+    },
+  };
+  const encoded = JSON.stringify(article).replace(/<\/script/gi, "<\\/script");
+  return `<script type="application/ld+json">${encoded}</script>`;
+}
+
+// Enriched RealEstateAgent + LocalBusiness JSON-LD for the /contact page.
+// Pulls brand facts from the runtime schema in client/src/lib/schema.ts and
+// extends with openingHoursSpecification + areaServed so AI engines can
+// cite PLACES as a Cairo office advisory with concrete business hours.
+function buildContactJsonLd(): string {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "RealEstateAgent",
+    "@id": `${SITE}/#organization`,
+    name: "PLACES",
+    url: SITE,
+    logo: {
+      "@type": "ImageObject",
+      url: `${SITE}/opengraph.jpg`,
+      width: 1280,
+      height: 720,
+    },
+    image: `${SITE}/opengraph.jpg`,
+    telephone: "+201063618217",
+    email: "admin@places-egy.com",
+    description:
+      "PLACES specializes in administrative office real estate across Egypt — buy, lease, or resell with trusted developers.",
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: "Cairo",
+      addressRegion: "Cairo Governorate",
+      addressCountry: "EG",
+    },
+    areaServed: [
+      { "@type": "Place", name: "New Cairo" },
+      { "@type": "Place", name: "Sheikh Zayed" },
+      { "@type": "Place", name: "6th October" },
+      { "@type": "Place", name: "Downtown Cairo" },
+      { "@type": "Place", name: "Sheraton" },
+      { "@type": "Place", name: "Maadi" },
+    ],
+    openingHoursSpecification: [
+      {
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek: [
+          "Saturday",
+          "Sunday",
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+        ],
+        opens: "09:00",
+        closes: "18:00",
+      },
+    ],
+    sameAs: [
+      "https://www.instagram.com/places.egy",
+      "https://www.facebook.com/share/1CMGKrymLB/",
+      "https://www.linkedin.com/company/places-egy/",
+      "https://www.tiktok.com/@places.eg",
+    ],
+  };
+  const encoded = JSON.stringify(schema).replace(/<\/script/gi, "<\\/script");
+  return `<script type="application/ld+json">${encoded}</script>`;
+}
+
 // AST-based extraction of Q/A pairs per FAQ section from client/src/lib/faq.ts.
 // Regex isn't safe here because Q + A strings routinely contain quotes,
 // apostrophes, and multi-line prose. Walking the TypeScript AST is the only
@@ -763,8 +868,22 @@ export async function prerender() {
   // index.html SPA shell with homepage canonical.
   const CLOUDFLARE_REWRITTEN_ROUTES = new Set(["/listings", "/developers", "/blog"]);
 
+  // Pre-build the combined FAQ hub schema (all Q&As across all sections) so
+  // /faqs serves one giant FAQPage block — AI engines prefer a single
+  // aggregated source over N scattered pages.
+  const faqItemsBySlugForHub = await collectFaqItems();
+  const allFaqItems: FaqQAPair[] = Object.values(faqItemsBySlugForHub).flat();
+  const faqHubJsonLd = allFaqItems.length > 0 ? buildFaqJsonLd(allFaqItems) : null;
+
   for (const meta of INDEX_ROUTES) {
-    const html = injectMeta(shell, meta);
+    let html = injectMeta(shell, meta);
+    // Route-specific JSON-LD injections. /faqs gets the combined FAQPage;
+    // /contact gets the enriched RealEstateAgent with opening hours.
+    if (meta.route === "/faqs" && faqHubJsonLd) {
+      html = injectJsonLd(html, faqHubJsonLd);
+    } else if (meta.route === "/contact") {
+      html = injectJsonLd(html, buildContactJsonLd());
+    }
     const flatOut = path.join(DIST, `${meta.route}.html`);
     await mkdir(path.dirname(flatOut), { recursive: true });
     await writeFile(flatOut, html, "utf8");
@@ -820,7 +939,7 @@ export async function prerender() {
   // and lifts CTR meaningfully. The React runtime ALSO mounts faqSchema()
   // via SchemaMarkup; identical structure so Google dedupes cleanly.
   const faqSectionMetas = await collectFaqSectionMeta();
-  const faqItemsBySlug = await collectFaqItems();
+  const faqItemsBySlug = faqItemsBySlugForHub;
   let faqWritten = 0;
   for (const meta of faqSectionMetas) {
     // meta.route is "/faqs/<slug>", strip the "/faqs/" prefix to get the slug
@@ -879,7 +998,8 @@ export async function prerender() {
       alternates.push({ hreflang: "ar", url: `${SITE}/ar/blog/${post.otherLangSlug}` });
     }
     alternates.push({ hreflang: "x-default", url: `${SITE}/blog/${post.slug}` });
-    const html = injectMeta(shell, meta, { lang: "en", alternates });
+    let html = injectMeta(shell, meta, { lang: "en", alternates });
+    html = injectJsonLd(html, buildBlogArticleJsonLd(post, meta.url, "en"));
     const outPath = path.join(DIST, `${meta.route}.html`);
     await mkdir(path.dirname(outPath), { recursive: true });
     await writeFile(outPath, html, "utf8");
@@ -923,7 +1043,8 @@ export async function prerender() {
         alternates.push({ hreflang: "en", url: `${SITE}/blog/${post.otherLangSlug}` });
         alternates.push({ hreflang: "x-default", url: `${SITE}/blog/${post.otherLangSlug}` });
       }
-      const html = injectMeta(shell, meta, { lang: "ar", alternates });
+      let html = injectMeta(shell, meta, { lang: "ar", alternates });
+      html = injectJsonLd(html, buildBlogArticleJsonLd(post, meta.url, "ar"));
       const outPath = path.join(DIST, `${meta.route}.html`);
       await mkdir(path.dirname(outPath), { recursive: true });
       await writeFile(outPath, html, "utf8");
