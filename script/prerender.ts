@@ -274,6 +274,37 @@ const INDEX_ROUTES: RouteMeta[] = [
       "Office floors stacked above active retail and F&B — built-in foot traffic and premium branding. Browse mixed-use admin office listings across Cairo with PLACES.",
     url: `${SITE}/admin/mixed-use`,
   },
+  // Added 2026-10-10: these pages previously served homepage meta because
+  // they weren't in INDEX_ROUTES. High-intent trust pages — /why-places +
+  // /contact especially — were ranking for nothing.
+  {
+    route: "/why-places",
+    title: "Why PLACES — Cairo's Specialist Admin-Office Broker",
+    description:
+      "PLACES is Egypt's dedicated administrative-office real estate specialist. Verified inventory, developer-direct relationships, and transparent advisory for buyers, tenants, and investors.",
+    url: `${SITE}/why-places`,
+  },
+  {
+    route: "/services",
+    title: "Real Estate Services in Egypt — Leasing, Sales & Advisory | PLACES",
+    description:
+      "Full-service admin-office brokerage in Cairo: leasing, sales, property resale, primary-market advisory, and income-generating investment services. Trusted by 40+ companies.",
+    url: `${SITE}/services`,
+  },
+  {
+    route: "/contact",
+    title: "Contact PLACES — Talk to a Cairo Office Advisor",
+    description:
+      "Reach PLACES advisors directly. Admin-office specialists based in Cairo. Call, WhatsApp, or send a message to get a curated office shortlist in 24 hours.",
+    url: `${SITE}/contact`,
+  },
+  {
+    route: "/projects",
+    title: "Office Projects in Cairo — Business Parks, Buildings & Mixed-Use | PLACES",
+    description:
+      "Browse every office project PLACES brokers across Cairo — business parks, corporate towers, and mixed-use developments. Find the right project for your company.",
+    url: `${SITE}/projects`,
+  },
 ];
 
 // Parse client/src/lib/location-content.ts for the 6 location slugs +

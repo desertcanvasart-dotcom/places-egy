@@ -36,6 +36,41 @@ export function serveStatic(app: Express) {
 
   // If the build directory exists, serve it normally
   if (fs.existsSync(distPath)) {
+    // 🚨 CRITICAL hub-page resolver, mounted BEFORE express.static.
+    //
+    // Context: pages like /listings also have children at /listings/{id}-slug,
+    // which forces the prerender script to create a `listings/` DIRECTORY on
+    // disk. serve-static, when it sees /listings (no extension, no trailing
+    // slash), finds the DIRECTORY first and — with redirect:false — falls
+    // through to the SPA catch-all serving generic index.html. The
+    // prerendered flat file at dist/public/listings.html NEVER gets served.
+    //
+    // Result (bug confirmed in production Oct 10): every hub page in this
+    // list was returning the homepage title + canonical to "/". Google
+    // consolidated all ranking signal onto the homepage; the hubs were
+    // invisible in search. This is almost certainly why organic lead flow
+    // stalled since late September.
+    //
+    // Fix: for bare-path requests (no file extension, no trailing slash),
+    // try to serve the flat .html file BEFORE express.static sees it as a
+    // directory. If the flat file doesn't exist we fall through to the
+    // existing resolvers unchanged.
+    app.use((req, res, next) => {
+      if (req.method !== "GET" && req.method !== "HEAD") return next();
+      const urlPath = req.path;
+      // Only hit this for bare, no-extension paths. Skip assets, API, root.
+      if (urlPath === "/" || urlPath.includes(".") || urlPath.startsWith("/api/")) {
+        return next();
+      }
+      // Strip leading slash → relative to distPath, append .html.
+      const candidate = path.resolve(distPath, `${urlPath.slice(1)}.html`);
+      // Safety: candidate must be inside distPath (block path-traversal).
+      if (!candidate.startsWith(distPath + path.sep)) return next();
+      if (!fs.existsSync(candidate)) return next();
+      res.setHeader("Cache-Control", "no-cache");
+      res.sendFile(candidate);
+    });
+
     app.use(
       express.static(distPath, {
         // Serve build-time prerendered pages: a request for /developers/akoya
