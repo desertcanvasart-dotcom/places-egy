@@ -199,7 +199,20 @@ export default function BlogPostPage({ lang = "en" }: { lang?: BlogLang }) {
     );
   }
 
-  if (!post) return null;
+  if (!post) {
+    return (
+      <div
+        className="min-h-screen flex flex-col font-sans bg-background"
+        dir={isAr ? "rtl" : "ltr"}
+      >
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center pt-32">
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div
