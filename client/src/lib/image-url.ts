@@ -46,7 +46,10 @@ export function supabaseImage(url: string, variant: ImageVariant = "card"): stri
     SUPABASE_RENDER_PATH +
     url.slice(idx + SUPABASE_OBJECT_PATH.length);
   const sep = rendered.includes("?") ? "&" : "?";
-  return `${rendered}${sep}width=${preset.width}&quality=${preset.quality}&resize=cover`;
+  // format=webp drops ~30-40% size vs JPEG at same quality. Supabase
+  // falls back to JPEG for browsers that don't support WebP (basically
+  // just IE11, <1% of traffic). Modern browsers get WebP.
+  return `${rendered}${sep}width=${preset.width}&quality=${preset.quality}&resize=cover&format=webp`;
 }
 
 // onError handler for <img> tags using supabaseImage(). If the render endpoint
