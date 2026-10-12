@@ -20,6 +20,7 @@ import {
   fetchPost,
   fetchRelatedPosts,
   formatPostDate,
+  pickBlogImage,
   stripHtml,
   type BlogLang,
   type BlogPost,
@@ -270,7 +271,7 @@ export default function BlogPostPage({ lang = "en" }: { lang?: BlogLang }) {
           <div className="container mx-auto px-6 md:px-10 max-w-4xl">
             <div className="relative aspect-[16/9] rounded-2xl overflow-hidden bg-muted">
               <img
-                src={post.featuredImage.url}
+                src={pickBlogImage(post.featuredImage, "hero") ?? post.featuredImage.url}
                 alt={post.featuredImage.alt}
                 fetchPriority="high"
                 decoding="async"
@@ -345,10 +346,11 @@ export default function BlogPostPage({ lang = "en" }: { lang?: BlogLang }) {
                   <div className="relative aspect-[16/10] overflow-hidden bg-muted">
                     {p.featuredImage && (
                       <img
-                        src={p.featuredImage.url}
+                        src={pickBlogImage(p.featuredImage, "card") ?? p.featuredImage.url}
                         alt={p.featuredImage.alt}
                         loading="lazy"
                         decoding="async"
+                        fetchPriority="low"
                         className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     )}

@@ -20,6 +20,7 @@ import { BlogSlideUpMagnet } from "@/components/magnets/BlogSlideUpMagnet";
 import {
   fetchPosts,
   formatPostDate,
+  pickBlogImage,
   stripHtml,
   type BlogLang,
   type BlogPost,
@@ -377,7 +378,7 @@ function FeaturedCard({
       <div className="relative aspect-[4/3] md:aspect-auto md:h-full overflow-hidden bg-muted">
         {post.featuredImage && (
           <img
-            src={post.featuredImage.url}
+            src={pickBlogImage(post.featuredImage, "related") ?? post.featuredImage.url}
             alt={post.featuredImage.alt}
             loading="eager"
             decoding="async"
@@ -437,10 +438,11 @@ function PostCard({
       <div className="relative aspect-[16/10] overflow-hidden bg-muted">
         {post.featuredImage && (
           <img
-            src={post.featuredImage.url}
+            src={pickBlogImage(post.featuredImage, "card") ?? post.featuredImage.url}
             alt={post.featuredImage.alt}
             loading="lazy"
             decoding="async"
+            fetchpriority="low"
             className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         )}
