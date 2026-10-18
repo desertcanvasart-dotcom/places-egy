@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { cleanListingTitle } from "../client/src/lib/listing-text";
 
 // Whitelist of columns the admin API is allowed to write. Anything not in this
 // schema is silently dropped — prevents mass-assignment via req.body.
@@ -7,7 +8,7 @@ import { z } from "zod";
 // owns the `id` column; we never accept it from the client.
 export const listingInsertSchema = z
   .object({
-    title: z.string().min(1).max(300),
+    title: z.string().max(300).transform(cleanListingTitle).pipe(z.string().min(1)),
     property_type: z.string().max(100).optional(),
     subtype: z.string().max(100).optional(),
     developer: z.string().max(200).optional(),

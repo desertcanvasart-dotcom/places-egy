@@ -14,7 +14,9 @@ function safeDecode(s: string): string {
 async function fetchSlugs(lang: "en" | "ar"): Promise<Set<string>> {
   const api = process.env.WORDPRESS_API_URL;
   if (!api) return new Set();
-  const res = await fetch(`${api}/posts?lang=${lang}&per_page=100&_fields=slug`);
+  const res = await fetch(`${api}/posts?lang=${lang}&per_page=100&_fields=slug`, {
+    signal: AbortSignal.timeout(4000),
+  });
   if (!res.ok) throw new Error(`WP ${res.status}`);
   const posts = (await res.json()) as Array<{ slug: string }>;
   return new Set(posts.map((p) => safeDecode(p.slug)));
@@ -22,8 +24,17 @@ async function fetchSlugs(lang: "en" | "ar"): Promise<Set<string>> {
 
 async function getBlogSlugSets() {
   if (blogSlugCache && Date.now() - blogSlugCache.at < BLOG_SLUG_TTL_MS) return blogSlugCache;
-  const [en, ar] = await Promise.all([fetchSlugs("en"), fetchSlugs("ar")]);
-  blogSlugCache = { at: Date.now(), en, ar };
+  try {
+    const [en, ar] = await Promise.all([fetchSlugs("en"), fetchSlugs("ar")]);
+    blogSlugCache = { at: Date.now(), en, ar };
+  } catch {
+    // Keep serving stale sets (or none) for a minute rather than hitting WP on every request.
+    blogSlugCache = {
+      at: Date.now() - BLOG_SLUG_TTL_MS + 60_000,
+      en: blogSlugCache?.en ?? new Set(),
+      ar: blogSlugCache?.ar ?? new Set(),
+    };
+  }
   return blogSlugCache;
 }
 

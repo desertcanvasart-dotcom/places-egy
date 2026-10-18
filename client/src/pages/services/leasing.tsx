@@ -19,8 +19,11 @@ import {
 } from "lucide-react";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema, serviceSchema } from "@/lib/schema";
+import { useDocumentMeta } from "@/lib/use-document-meta";
+import { STATIC_PAGE_META } from "@/lib/page-meta";
 
 export default function Leasing() {
+  useDocumentMeta(STATIC_PAGE_META["/services/leasing"]);
   return (
     <div className="min-h-screen flex flex-col font-sans bg-background">
       <SchemaMarkup
