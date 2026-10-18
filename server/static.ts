@@ -63,7 +63,10 @@ export function serveStatic(app: Express) {
         return next();
       }
       // Strip leading slash → relative to distPath, append .html.
-      const candidate = path.resolve(distPath, `${urlPath.slice(1)}.html`);
+      // Prerendered Arabic files are named with WordPress's lowercase %xx
+      // escapes; browsers and Google often request uppercase (%D8).
+      const normalized = urlPath.replace(/%[0-9A-F]{2}/gi, (m) => m.toLowerCase());
+      const candidate = path.resolve(distPath, `${normalized.slice(1)}.html`);
       // Safety: candidate must be inside distPath (block path-traversal).
       if (!candidate.startsWith(distPath + path.sep)) return next();
       if (!fs.existsSync(candidate)) return next();
