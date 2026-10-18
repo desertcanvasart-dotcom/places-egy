@@ -150,6 +150,7 @@ const PERMANENT_REDIRECTS: Record<string, string> = {
   "/ar/blog/mixed-use-vs-business-park-2": "/ar/blog/بيزنس-بارك-و-المشروع-متعدد-الاستخداما",
   "/ar/blog/core-and-shell-offices-2": "/ar/blog/ما-هو-الكور-اند-شل",
   "/ar/blog/office-finishing-types-egypt-2": "/ar/blog/أنواع-تشطيب-المكاتب-مصر",
+  "/ar/blog/offices-mixed-use-buildings-pros-cons-2": "/ar/blog/مميزات-وعيوب-المباني-متعددة-الاستخدا",
 };
 
 // Prefix redirects for path roots that have moved. Anything matching the
