@@ -45,7 +45,7 @@ const COPY = {
   en: {
     breadcrumbHome: "Home",
     breadcrumbBlog: "Blog",
-    heading: "PLACES Insights",
+    heading: "PLACES Blog",
     subheading:
       "Market insights, investor guides, and location analysis for commercial and administrative real estate in Egypt — from the team that lives this market every day.",
     all: "All",
@@ -66,7 +66,7 @@ const COPY = {
   ar: {
     breadcrumbHome: "الرئيسية",
     breadcrumbBlog: "المدونة",
-    heading: "PLACES Insights",
+    heading: "PLACES Blog",
     subheading:
       "تحليلات ونصائح حول سوق العقارات الإدارية والتجارية في مصر — من فريق يعمل داخل السوق كل يوم.",
     all: "الكل",
@@ -93,8 +93,8 @@ export default function BlogIndexPage({ lang = "en" }: { lang?: BlogLang }) {
 
   useDocumentMeta({
     title: isAr
-      ? "PLACES Insights — تحليل سوق العقارات الإدارية في مصر"
-      : "PLACES Insights — Egyptian Office Real Estate Market Analysis",
+      ? "PLACES Blog — تحليل سوق العقارات الإدارية في مصر"
+      : "PLACES Blog — Egyptian Office Real Estate Market Analysis",
     description: t.subheading,
     url: `https://places-egy.com${basePath}`,
   });

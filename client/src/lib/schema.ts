@@ -317,7 +317,7 @@ export function blogIndexSchema(opts: {
     "@context": "https://schema.org",
     "@type": "Blog",
     "@id": `${BASE_URL}/blog#blog`,
-    name: "PLACES Insights",
+    name: "PLACES Blog",
     url: `${BASE_URL}/blog`,
     description:
       "Market insights, investor guides, and location analysis for administrative office real estate in Egypt.",
