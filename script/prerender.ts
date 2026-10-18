@@ -1130,9 +1130,12 @@ export async function prerender() {
       blogListBody("مدونة PLACES", hubMeta.description, arPosts, "/ar/blog"),
       "ar",
     );
+    // server/static.ts serves /ar/blog from ar/blog.html; the directory index
+    // alone fell through to the SPA shell (homepage canonical).
     const hubOut = path.join(DIST, "ar/blog", "index.html");
     await mkdir(path.dirname(hubOut), { recursive: true });
     await writeFile(hubOut, hubHtml, "utf8");
+    await writeFile(path.join(DIST, "ar", "blog.html"), hubHtml, "utf8");
     arBlogWritten++;
 
     for (const post of arPosts) {
