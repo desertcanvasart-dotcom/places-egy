@@ -17,6 +17,7 @@
 
 import { readFile, writeFile, mkdir } from "fs/promises";
 import path from "path";
+import { cleanListingTitle, listingSnippet } from "../client/src/lib/listing-text";
 
 const SITE_ORIGIN = "https://places-egy.com";
 const SITEMAP_PATH = path.resolve("dist/public/sitemap.xml");
@@ -67,9 +68,9 @@ function listingPath(l: ListingRow): string {
 // A human meta title/description for a listing, mirroring how the detail page
 // builds them so prerendered and runtime meta agree.
 function listingMeta(l: ListingRow): { title: string; description: string } {
-  const title = (l.title?.trim() || `Office in ${l.location ?? "Egypt"}`) + " | PLACES";
+  const title = (cleanListingTitle(l.title ?? "") || `Office in ${l.location ?? "Egypt"}`) + " | PLACES";
   const description =
-    l.description?.trim() ||
+    listingSnippet(l.description ?? "") ||
     [
       l.area_sqm ? `${l.area_sqm} sqm` : null,
       l.subtype ? l.subtype.replace(/[-_]/g, " ") : "office",

@@ -1,7 +1,10 @@
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { useDocumentMeta } from "@/lib/use-document-meta";
+import { STATIC_PAGE_META } from "@/lib/page-meta";
 
 export default function TermsOfService() {
+  useDocumentMeta(STATIC_PAGE_META["/terms-of-service"]);
   return (
     <div className="min-h-screen flex flex-col font-sans bg-background">
       <Navbar />

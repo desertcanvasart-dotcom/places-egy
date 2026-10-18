@@ -22,8 +22,11 @@ import {
 } from "lucide-react";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema, serviceSchema } from "@/lib/schema";
+import { useDocumentMeta } from "@/lib/use-document-meta";
+import { STATIC_PAGE_META } from "@/lib/page-meta";
 
 export default function PrimaryProperty() {
+  useDocumentMeta(STATIC_PAGE_META["/services/primary-property"]);
   const { data: saleListings = [] } = useQuery<Listing[]>({
     queryKey: ["primary-property-listings"],
     queryFn: async () => {

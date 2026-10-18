@@ -20,6 +20,7 @@ import { useScrollDepth } from "@/lib/use-scroll-depth";
 import { PriceGate, DerivedPriceLocked } from "@/components/PriceGate";
 import { UnlockPriceModal } from "@/components/UnlockPriceModal";
 import { usePriceUnlock } from "@/lib/price-unlock";
+import { cleanListingTitle, listingSnippet } from "@/lib/listing-text";
 import DOMPurify from "dompurify";
 import { marked } from "marked";
 import {
@@ -182,9 +183,9 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
   useEffect(() => {
     if (!listing) return;
 
-    const title = `${listing.title} — PLACES`;
+    const title = `${cleanListingTitle(listing.title ?? "")} | PLACES`;
     const description =
-      listing.description?.trim() ||
+      listingSnippet(listing.description ?? "") ||
       `${listing.area_sqm ? listing.area_sqm + " sqm " : ""}${formatLabel(listing.property_type)} for ${formatLabel(listing.transaction_type)} in ${formatLabel(listing.location)}.`;
     const url = `https://places-egy.com${listingUrl(listing)}`;
     const image = listing.images?.[0];

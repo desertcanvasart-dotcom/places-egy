@@ -22,8 +22,11 @@ import {
 } from "lucide-react";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema, serviceSchema } from "@/lib/schema";
+import { useDocumentMeta } from "@/lib/use-document-meta";
+import { STATIC_PAGE_META } from "@/lib/page-meta";
 
 export default function PropertyResale() {
+  useDocumentMeta(STATIC_PAGE_META["/services/property-resale"]);
   const { data: saleListings = [] } = useQuery<Listing[]>({
     queryKey: ["resale-listings"],
     queryFn: async () => {

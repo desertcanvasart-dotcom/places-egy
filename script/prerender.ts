@@ -1,6 +1,7 @@
 import { readFile, writeFile, mkdir, readdir } from "fs/promises";
 import path from "path";
 import ts from "typescript";
+import { STATIC_PAGE_META } from "../client/src/lib/page-meta";
 
 // Build-time "meta-only" prerender.
 //
@@ -969,8 +970,21 @@ export async function prerender() {
   const allFaqItems: FaqQAPair[] = Object.values(faqItemsBySlugForHub).flat();
   const faqHubJsonLd = allFaqItems.length > 0 ? buildFaqJsonLd(allFaqItems) : null;
 
-  for (const meta of INDEX_ROUTES) {
-    let html = injectMeta(shell, meta);
+  const staticRoutes: RouteMeta[] = Object.entries(STATIC_PAGE_META).map(([route, m]) => ({
+    route,
+    ...m,
+  }));
+  for (const meta of [...INDEX_ROUTES, ...staticRoutes]) {
+    let html =
+      meta.route === "/blog"
+        ? injectMeta(shell, meta, {
+            alternates: [
+              { hreflang: "en", url: `${SITE}/blog` },
+              { hreflang: "ar", url: `${SITE}/ar/blog` },
+              { hreflang: "x-default", url: `${SITE}/blog` },
+            ],
+          })
+        : injectMeta(shell, meta);
     // Route-specific JSON-LD injections. /faqs gets the combined FAQPage;
     // /contact gets the enriched RealEstateAgent with opening hours.
     if (meta.route === "/faqs" && faqHubJsonLd) {
