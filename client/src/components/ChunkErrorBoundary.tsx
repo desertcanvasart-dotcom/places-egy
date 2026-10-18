@@ -1,4 +1,5 @@
 import { Component, useEffect, type ReactNode } from "react";
+import { Loader2 } from "lucide-react";
 
 // Catches lazy-import chunk failures (React.lazy() promise rejections) AND
 // global unhandled promise rejections + resource load errors that stem from
@@ -14,7 +15,7 @@ import { Component, useEffect, type ReactNode } from "react";
 // reload the page. Fresh HTML → fresh chunks → everything works.
 
 type Props = { children: ReactNode };
-type State = { hasError: boolean };
+type State = { hasError: boolean; isChunk: boolean };
 
 const RELOAD_KEY = "chunk_error_reload_attempted";
 // 90s TTL — long enough to prevent a genuine crash-loop from spinning
@@ -117,10 +118,10 @@ function ChunkErrorBoundaryHooksBridge({ children }: { children: ReactNode }) {
 }
 
 class ChunkErrorBoundaryInner extends Component<Props, State> {
-  state: State = { hasError: false };
+  state: State = { hasError: false, isChunk: false };
 
-  static getDerivedStateFromError(): State {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, isChunk: isChunkLoadError(error) };
   }
 
   componentDidCatch(error: Error): void {
@@ -133,6 +134,16 @@ class ChunkErrorBoundaryInner extends Component<Props, State> {
 
   render(): ReactNode {
     if (this.state.hasError) {
+      // Chunk errors self-heal via window.location.replace in componentDidCatch.
+      // Show a neutral spinner for the ~hundreds of ms until the reload fires,
+      // instead of flashing a scary "something went wrong" message.
+      if (this.state.isChunk) {
+        return (
+          <div className="min-h-screen flex items-center justify-center bg-background">
+            <Loader2 className="h-6 w-6 animate-spin text-primary/60" />
+          </div>
+        );
+      }
       return (
         <div className="min-h-screen flex items-center justify-center px-6 bg-background">
           <div className="max-w-md text-center">

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Link, useLocation, useParams } from "wouter";
+import { Link, useLocation, useParams, useSearch } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -101,7 +101,10 @@ export default function BlogIndexPage({ lang = "en" }: { lang?: BlogLang }) {
 
   const [, setLocation] = useLocation();
   const params = useParams<{ category?: string }>();
-  const search = typeof window !== "undefined" ? window.location.search : "";
+  // useSearch() is reactive — wouter re-renders when ?page=N changes.
+  // Reading window.location.search directly won't re-trigger renders on
+  // query-only navigations, which broke "Older posts" pagination.
+  const search = useSearch();
   const page = readPageFromQuery(search);
   // Prefer path-based clean URL (/blog/category/foo) over legacy query string.
   // Path slugs are URL-encoded (Arabic slugs are %D8%A7%D9%84...) so decode
