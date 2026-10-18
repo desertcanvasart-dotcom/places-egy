@@ -167,6 +167,19 @@ const DECODED_REDIRECTS = new Map(
   Object.entries(PERMANENT_REDIRECTS).map(([k, v]) => [k.normalize("NFC"), v]),
 );
 
+// Emit lowercase %xx so the Location matches the canonical URLs (WP slug form).
+function canonicalEncode(target: string): string {
+  return encodeURI(safeDecodePath(target)).replace(/%[0-9A-F]{2}/g, (m) => m.toLowerCase());
+}
+
+function safeDecodePath(s: string): string {
+  try {
+    return decodeURI(s);
+  } catch {
+    return s;
+  }
+}
+
 function lookupRedirect(rawPath: string): string | undefined {
   let decoded: string;
   try {
@@ -191,7 +204,7 @@ export function registerRedirects(app: Express) {
       const target = lookupRedirect(req.path);
       if (target) {
         const query = req.url.slice(req.path.length);
-        res.redirect(301, target + query);
+        res.redirect(301, canonicalEncode(target) + query);
         return;
       }
       for (const { from, to } of PREFIX_REDIRECTS) {
@@ -296,7 +309,7 @@ export function registerRedirects(app: Express) {
       const { en, ar } = await getBlogSlugSets();
       if (ar.has(slug) && !en.has(slug)) {
         const query = req.url.slice(req.path.length);
-        return res.redirect(301, `/ar/blog/${m[1]}${query}`);
+        return res.redirect(301, canonicalEncode(`/ar/blog/${m[1]}`) + query);
       }
     } catch {
       // WP unreachable — fall through and serve normally.

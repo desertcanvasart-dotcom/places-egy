@@ -809,7 +809,19 @@ async function collectBlogPosts(lang: "en" | "ar"): Promise<BlogPostMeta[]> {
   const CMS = "https://cms.places-egy.com";
   const url = `${CMS}/wp-json/wp/v2/posts?lang=${lang}&per_page=100&_embed=true`;
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
+    // A single slow CMS response used to drop every post's prerender (homepage meta).
+    let res: Response | undefined;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        res = await fetch(url, { signal: AbortSignal.timeout(45000) });
+        if (res.ok) break;
+      } catch (err) {
+        if (attempt === 3) throw err;
+      }
+      console.warn(`[prerender] ${lang.toUpperCase()} blog fetch attempt ${attempt} failed — retrying`);
+      await new Promise((r) => setTimeout(r, 3000));
+    }
+    if (!res) throw new Error("no response");
     if (!res.ok) {
       console.warn(`[prerender] ${lang.toUpperCase()} blog fetch failed: HTTP ${res.status} — skipping`);
       return [];
