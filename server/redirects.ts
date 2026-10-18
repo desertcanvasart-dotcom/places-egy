@@ -98,15 +98,16 @@ const PERMANENT_REDIRECTS: Record<string, string> = {
   "/ar/blog/types-of-admin-offices-egypt-2": "/ar/blog/انواع-المكاتب-الادارية-مصر",
   "/ar/blog/business-parks-egypt-2": "/ar/blog/دليل-بيزنس-بارك-مصر",
   "/ar/blog/business-buildings-egypt-2": "/ar/blog/المبانى-الادارية-مصر",
-  "/ar/blog/ar-blog-new-capital-right-for-your-company": "/ar/blog/العاصمة-الادارية-للشركات",
-  "/ar/blog/ar-blog-business-park-vs-street-location": "/ar/blog/بيزنس-بارك-ام-مكتب-على-الشارع",
+  // Target posts no longer exist in WP — send to the hub instead of a dead end.
+  "/ar/blog/ar-blog-new-capital-right-for-your-company": "/ar/blog",
+  "/ar/blog/ar-blog-business-park-vs-street-location": "/ar/blog",
+  "/ar/blog/ar-blog-types-of-admin-offices-egypt": "/ar/blog/انواع-المكاتب-الادارية-مصر",
   "/ar/blog/ar-blog-mistakes-buying-office-new-cairo": "/ar/blog/اخطاء-شراء-مكتب-التجمع-الخامس",
   "/ar/blog/ar-blog-new-cairo-vs-administrative-capital-offices": "/ar/blog/التجمع-الخامس-ام-العاصمة-الادارية",
   "/ar/blog/أفضل-مناطق-المكاتب-الإدارية-في-القاهر": "/ar/blog/افضل-اماكن-المكاتب-التجمع-الخامس",
   "/ar/blog/ar-blog-new-cairo-vs-sheikh-zayed-offices": "/ar/blog/التجمع-الخامس-ام-الشيخ-زايد-للشركات",
   "/ar/blog/ar-blog-north-90-street-offices": "/ar/blog/مكاتب-التسعين-الشمالى",
   "/ar/blog/ar-blog-south-90-street-offices": "/ar/blog/مكاتب-التسعين-الجنوبى",
-  "/ar/blog/ready-to-move-vs-core-and-shell-offices-in-egypt-تختار-مكتب-جاهز-ولا-تجهزه-بنف": "/ar/blog/مكتب-جاهز-ام-كور-اند-شل",
 
   // English blog post renames (2026-09-11). Trimming redundant suffixes
   // and standardising on `offices-for-{rent,sale}-new-cairo` shape so
@@ -152,10 +153,32 @@ const PREFIX_REDIRECTS: { from: string; to: string }[] = [
   { from: "/resources/glossary", to: "/glossary" },
 ];
 
+// req.path arrives percent-encoded, but Arabic keys above are written as plain
+// Arabic — match on the decoded form so those entries actually fire.
+const DECODED_REDIRECTS = new Map(
+  Object.entries(PERMANENT_REDIRECTS).map(([k, v]) => [k.normalize("NFC"), v]),
+);
+
+function lookupRedirect(rawPath: string): string | undefined {
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(rawPath).normalize("NFC");
+  } catch {
+    decoded = rawPath;
+  }
+  const direct = DECODED_REDIRECTS.get(decoded);
+  if (direct) return direct;
+  // Legacy Polylang slugs sometimes leaked under /blog/ar-blog-* as well.
+  if (decoded.startsWith("/blog/ar-blog-")) {
+    return DECODED_REDIRECTS.get(`/ar${decoded}`) ?? `/ar${decoded}`;
+  }
+  return undefined;
+}
+
 export function registerRedirects(app: Express) {
   app.use((req, res, next) => {
     if (req.method === "GET" || req.method === "HEAD") {
-      const target = PERMANENT_REDIRECTS[req.path];
+      const target = lookupRedirect(req.path);
       if (target) {
         const query = req.url.slice(req.path.length);
         res.redirect(301, target + query);
