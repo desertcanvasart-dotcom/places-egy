@@ -126,6 +126,57 @@ function attr(value: string): string {
     .replace(/>/g, "&gt;");
 }
 
+function esc(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function headingFrom(title: string): string {
+  return title.replace(/\s*\|\s*PLACES\s*$/, "").replace(/\s+—\s+Egypt Office FAQs$/, "");
+}
+
+// WP content is authored in our own CMS, but strip anything executable anyway.
+function sanitizeWpHtml(html: string): string {
+  return html
+    .replace(/<(script|style|iframe|noscript|object|embed|form)\b[\s\S]*?<\/\1>/gi, "")
+    .replace(/<(script|iframe|object|embed)\b[^>]*\/?>/gi, "")
+    .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+    .replace(/(href|src)\s*=\s*(["'])\s*javascript:[^"']*\2/gi, '$1="#"');
+}
+
+const NAV_LINKS = {
+  en: [
+    ["/", "Home"], ["/listings", "Office listings"], ["/locations", "Locations"],
+    ["/developers", "Developers"], ["/guides", "Guides"], ["/blog", "Blog"],
+    ["/faqs", "FAQs"], ["/contact", "Contact"],
+  ],
+  ar: [
+    ["/", "PLACES"], ["/listings", "المكاتب المتاحة"], ["/ar/blog", "المدونة"], ["/contact", "تواصل معنا"],
+  ],
+} as const;
+
+// Hidden once JS runs (React replaces #root anyway) so visitors never see a
+// flash; crawlers that don't execute JS read the real page text.
+const PRERENDER_HEAD =
+  `<script>document.documentElement.classList.add("js")</script>` +
+  `<style>.js #prerender{display:none}</style>`;
+
+function injectBody(html: string, inner: string, lang: "en" | "ar" = "en"): string {
+  const nav = NAV_LINKS[lang]
+    .map(([href, label]) => `<li><a href="${href}">${esc(label)}</a></li>`)
+    .join("");
+  const block =
+    `<div id="prerender" dir="${lang === "ar" ? "rtl" : "ltr"}" class="container mx-auto px-5 md:px-10 max-w-3xl py-16">` +
+    `${inner}<nav><ul>${nav}</ul></nav></div>`;
+  // Function replacers: page text can contain "$" which String.replace would interpret.
+  return html
+    .replace(/<\/head>/i, () => `${PRERENDER_HEAD}\n</head>`)
+    .replace('<div id="root"></div>', () => `<div id="root">${block}</div>`);
+}
+
+function simpleBody(meta: RouteMeta): string {
+  return `<h1>${esc(headingFrom(meta.title))}</h1><p>${esc(meta.description)}</p>`;
+}
+
 // Rewrite the head tags of the shell HTML for one route's meta.
 // `lang` optional — when set to "ar" the <html> tag gets `dir="rtl" lang="ar"`
 // AND the og:locale is flipped to ar_EG, so the wire response matches the
@@ -746,6 +797,9 @@ interface BlogPostMeta {
   // via Polylang's translations pointer when available. Null when the
   // counterpart isn't published or Polylang doesn't expose it.
   otherLangSlug: string | null;
+  heading: string;
+  excerpt: string;
+  bodyHtml: string;
 }
 
 // Fetch a language's blog posts from WordPress at build time. Used for
@@ -767,6 +821,7 @@ async function collectBlogPosts(lang: "en" | "ar"): Promise<BlogPostMeta[]> {
       slug: string;
       title: { rendered: string };
       excerpt: { rendered: string };
+      content: { rendered: string };
       date: string;
       translations?: Record<string, number>;
       yoast_head_json?: { title?: string; description?: string };
@@ -814,6 +869,11 @@ async function collectBlogPosts(lang: "en" | "ar"): Promise<BlogPostMeta[]> {
         publishedAt: p.date,
         featuredImage: p._embedded?.["wp:featuredmedia"]?.[0]?.source_url ?? null,
         otherLangSlug: otherId ? otherSlugMap.get(otherId) ?? null : null,
+        heading: decodeEntitiesServer(p.title.rendered),
+        excerpt: decodeEntitiesServer(
+          p.excerpt.rendered.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim(),
+        ),
+        bodyHtml: sanitizeWpHtml(p.content?.rendered ?? ""),
       };
     });
   } catch (err) {
@@ -849,8 +909,30 @@ export async function prerender() {
   let developerWritten = 0;
   let indexWritten = 0;
 
+  // Fetched up front: the /blog hub (an INDEX_ROUTE) lists every post.
+  const [enPosts, arPosts] = await Promise.all([
+    collectBlogPosts("en"),
+    collectBlogPosts("ar"),
+  ]);
+  const faqSectionMetas = await collectFaqSectionMeta();
+
+  const blogListBody = (heading: string, intro: string, posts: BlogPostMeta[], base: string) =>
+    `<h1>${esc(heading)}</h1><p>${esc(intro)}</p><ul>` +
+    posts
+      .map(
+        (p) =>
+          `<li><h2><a href="${base}/${attr(p.slug)}">${esc(p.heading)}</a></h2><p>${esc(p.excerpt)}</p></li>`,
+      )
+      .join("") +
+    `</ul>`;
+
+  const blogPostBody = (p: BlogPostMeta) =>
+    `<article><h1>${esc(p.heading)}</h1>` +
+    `<p><time datetime="${attr(p.publishedAt)}">${esc(p.publishedAt.slice(0, 10))}</time></p>` +
+    `<div class="blog-content">${p.bodyHtml}</div></article>`;
+
   for (const meta of metas) {
-    const html = injectMeta(shell, meta);
+    const html = injectBody(injectMeta(shell, meta), simpleBody(meta));
     // Write dist/public/developers/<slug>.html — express.static resolves
     // /developers/<slug> to this file before the SPA catch-all.
     const outPath = path.join(DIST, `${meta.route}.html`);
@@ -884,6 +966,21 @@ export async function prerender() {
     } else if (meta.route === "/contact") {
       html = injectJsonLd(html, buildContactJsonLd());
     }
+
+    if (meta.route === "/blog" && enPosts.length > 0) {
+      html = injectBody(html, blogListBody("PLACES Blog", meta.description, enPosts, "/blog"));
+    } else if (meta.route === "/faqs") {
+      const sections = faqSectionMetas
+        .map((s) => {
+          const slug = s.route.replace(/^\/faqs\//, "");
+          const qs = (faqItemsBySlugForHub[slug] ?? []).map((it) => `<li>${esc(it.q)}</li>`).join("");
+          return `<section><h2><a href="${s.route}">${esc(headingFrom(s.title))}</a></h2><ul>${qs}</ul></section>`;
+        })
+        .join("");
+      html = injectBody(html, `<h1>${esc(headingFrom(meta.title))}</h1><p>${esc(meta.description)}</p>${sections}`);
+    } else {
+      html = injectBody(html, simpleBody(meta));
+    }
     const flatOut = path.join(DIST, `${meta.route}.html`);
     await mkdir(path.dirname(flatOut), { recursive: true });
     await writeFile(flatOut, html, "utf8");
@@ -915,7 +1012,7 @@ export async function prerender() {
   const guideMetas = await collectGuideMeta();
   let guideWritten = 0;
   for (const meta of guideMetas) {
-    let html = injectMeta(shell, meta);
+    let html = injectBody(injectMeta(shell, meta), simpleBody(meta));
     html = injectJsonLd(html, buildGuideJsonLd(meta));
     // Write dist/public/guides/<slug>.html — express.static resolves
     // /guides/<slug> to this file before the SPA catch-all thanks to
@@ -938,7 +1035,6 @@ export async function prerender() {
   // search result — which takes 3-4x the vertical space of a plain result
   // and lifts CTR meaningfully. The React runtime ALSO mounts faqSchema()
   // via SchemaMarkup; identical structure so Google dedupes cleanly.
-  const faqSectionMetas = await collectFaqSectionMeta();
   const faqItemsBySlug = faqItemsBySlugForHub;
   let faqWritten = 0;
   for (const meta of faqSectionMetas) {
@@ -946,7 +1042,18 @@ export async function prerender() {
     // for the items lookup.
     const slug = meta.route.replace(/^\/faqs\//, "");
     const items = faqItemsBySlug[slug] ?? [];
-    let html = injectMeta(shell, meta);
+    const qa = items
+      .map(
+        (it) =>
+          `<h2>${esc(it.q)}</h2>` +
+          it.a.split(/\n\s*\n/).map((para) => `<p>${esc(para.trim())}</p>`).join(""),
+      )
+      .join("");
+    let html = injectBody(
+      injectMeta(shell, meta),
+      `<h1>${esc(headingFrom(meta.title))}</h1><p>${esc(meta.description)}</p>${qa}` +
+        `<p><a href="/faqs">All FAQs</a></p>`,
+    );
     if (items.length > 0) {
       html = injectJsonLd(html, buildFaqJsonLd(items));
     }
@@ -963,7 +1070,7 @@ export async function prerender() {
   const locationMetas = await collectLocationMeta();
   let locationWritten = 0;
   for (const meta of locationMetas) {
-    const html = injectMeta(shell, meta);
+    const html = injectBody(injectMeta(shell, meta), simpleBody(meta));
     const outPath = path.join(DIST, `${meta.route}.html`);
     await mkdir(path.dirname(outPath), { recursive: true });
     await writeFile(outPath, html, "utf8");
@@ -975,10 +1082,6 @@ export async function prerender() {
   // hreflang alternates, and (for Arabic) <html lang="ar" dir="rtl">.
   // Fixes the "every /ar/blog/* serves homepage meta" bug and does the
   // same for English posts (previously also SPA-shell-only).
-  const [enPosts, arPosts] = await Promise.all([
-    collectBlogPosts("en"),
-    collectBlogPosts("ar"),
-  ]);
   let enBlogWritten = 0;
   let arBlogWritten = 0;
 
@@ -998,7 +1101,7 @@ export async function prerender() {
       alternates.push({ hreflang: "ar", url: `${SITE}/ar/blog/${post.otherLangSlug}` });
     }
     alternates.push({ hreflang: "x-default", url: `${SITE}/blog/${post.slug}` });
-    let html = injectMeta(shell, meta, { lang: "en", alternates });
+    let html = injectBody(injectMeta(shell, meta, { lang: "en", alternates }), blogPostBody(post), "en");
     html = injectJsonLd(html, buildBlogArticleJsonLd(post, meta.url, "en"));
     const outPath = path.join(DIST, `${meta.route}.html`);
     await mkdir(path.dirname(outPath), { recursive: true });
@@ -1015,14 +1118,18 @@ export async function prerender() {
         "أحدث المقالات والأدلة من PLACES عن سوق المكاتب الإدارية في مصر — القاهرة الجديدة، الشيخ زايد، 6 أكتوبر، والمناطق التجارية الرئيسية.",
       url: `${SITE}/ar/blog`,
     };
-    const hubHtml = injectMeta(shell, hubMeta, {
-      lang: "ar",
-      alternates: [
-        { hreflang: "ar", url: `${SITE}/ar/blog` },
-        { hreflang: "en", url: `${SITE}/blog` },
-        { hreflang: "x-default", url: `${SITE}/blog` },
-      ],
-    });
+    const hubHtml = injectBody(
+      injectMeta(shell, hubMeta, {
+        lang: "ar",
+        alternates: [
+          { hreflang: "ar", url: `${SITE}/ar/blog` },
+          { hreflang: "en", url: `${SITE}/blog` },
+          { hreflang: "x-default", url: `${SITE}/blog` },
+        ],
+      }),
+      blogListBody("مدونة PLACES", hubMeta.description, arPosts, "/ar/blog"),
+      "ar",
+    );
     const hubOut = path.join(DIST, "ar/blog", "index.html");
     await mkdir(path.dirname(hubOut), { recursive: true });
     await writeFile(hubOut, hubHtml, "utf8");
@@ -1043,7 +1150,7 @@ export async function prerender() {
         alternates.push({ hreflang: "en", url: `${SITE}/blog/${post.otherLangSlug}` });
         alternates.push({ hreflang: "x-default", url: `${SITE}/blog/${post.otherLangSlug}` });
       }
-      let html = injectMeta(shell, meta, { lang: "ar", alternates });
+      let html = injectBody(injectMeta(shell, meta, { lang: "ar", alternates }), blogPostBody(post), "ar");
       html = injectJsonLd(html, buildBlogArticleJsonLd(post, meta.url, "ar"));
       const outPath = path.join(DIST, `${meta.route}.html`);
       await mkdir(path.dirname(outPath), { recursive: true });
@@ -1053,6 +1160,6 @@ export async function prerender() {
   }
 
   console.log(
-    `prerendered ${developerWritten} developer pages + ${indexWritten} index shells + ${guideWritten} guides + ${faqWritten} FAQ sections + ${locationWritten} locations + ${enBlogWritten} EN blog + ${arBlogWritten} AR blog (meta-only)`,
+    `prerendered ${developerWritten} developer pages + ${indexWritten} index shells + ${guideWritten} guides + ${faqWritten} FAQ sections + ${locationWritten} locations + ${enBlogWritten} EN blog + ${arBlogWritten} AR blog (meta + body)`,
   );
 }
