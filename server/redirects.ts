@@ -142,6 +142,14 @@ const PERMANENT_REDIRECTS: Record<string, string> = {
   "/ar/blog/مكاتب-إدارية-للبيع-في-القاهرة-الجديدة": "/ar/blog/مكاتب-للبيع-التجمع-الخامس",
   "/ar/blog/مكاتب-إدارية-للبيع-في-القاهرة-الجديدة-2": "/ar/blog/مكاتب-للبيع-التجمع-الخامس",
   "/ar/blog/أشتري-ولا-أأجر-مكتب-لشركتي-دليل-عملي-ق": "/ar/blog/شراء-ام-ايجار-مكتب",
+
+  // `-2` Polylang-collision slugs renamed to Arabic in WP (2026-10-18).
+  // Post 193's target is truncated by WP's slug length limit — keep it exact.
+  "/ar/blog/mixed-use-buildings-egypt-2": "/ar/blog/المباني-متعددة-الاستخدامات",
+  "/ar/blog/business-building-vs-business-park-2": "/ar/blog/البيزنس-بارك-و-المبنى-الإداري",
+  "/ar/blog/mixed-use-vs-business-park-2": "/ar/blog/بيزنس-بارك-و-المشروع-متعدد-الاستخداما",
+  "/ar/blog/core-and-shell-offices-2": "/ar/blog/ما-هو-الكور-اند-شل",
+  "/ar/blog/office-finishing-types-egypt-2": "/ar/blog/أنواع-تشطيب-المكاتب-مصر",
 };
 
 // Prefix redirects for path roots that have moved. Anything matching the
@@ -168,9 +176,11 @@ function lookupRedirect(rawPath: string): string | undefined {
   }
   const direct = DECODED_REDIRECTS.get(decoded);
   if (direct) return direct;
-  // Legacy Polylang slugs sometimes leaked under /blog/ar-blog-* as well.
-  if (decoded.startsWith("/blog/ar-blog-")) {
-    return DECODED_REDIRECTS.get(`/ar${decoded}`) ?? `/ar${decoded}`;
+  // Old Arabic slugs also leaked under /blog/* (former sitemap bug).
+  if (decoded.startsWith("/blog/")) {
+    const viaAr = DECODED_REDIRECTS.get(`/ar${decoded}`);
+    if (viaAr) return viaAr;
+    if (decoded.startsWith("/blog/ar-blog-")) return `/ar${decoded}`;
   }
   return undefined;
 }
