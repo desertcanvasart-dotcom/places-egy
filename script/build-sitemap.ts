@@ -26,11 +26,12 @@ type WpPost = {
   translations?: Record<string, number>;
 };
 
-async function fetchAllPosts(lang?: "ar"): Promise<WpPost[]> {
+async function fetchAllPosts(lang: "en" | "ar"): Promise<WpPost[]> {
   const all: WpPost[] = [];
   let page = 1;
   const perPage = 100;
-  const langParam = lang ? `&lang=${lang}` : "";
+  // Polylang returns every language when lang is omitted, which put AR posts under /blog/.
+  const langParam = `&lang=${lang}`;
 
   // Loop until WP returns an empty page or signals we've passed the last page.
   while (true) {
@@ -234,7 +235,7 @@ export async function generateSitemap(): Promise<void> {
   let arPosts: WpPost[];
   try {
     [enPosts, arPosts] = await Promise.all([
-      fetchAllPosts(),
+      fetchAllPosts("en"),
       fetchAllPosts("ar"),
     ]);
   } catch (err) {

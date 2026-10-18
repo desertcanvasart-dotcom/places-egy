@@ -1,5 +1,32 @@
 import type { Express } from "express";
 
+const BLOG_SLUG_TTL_MS = 10 * 60 * 1000;
+let blogSlugCache: { at: number; en: Set<string>; ar: Set<string> } | null = null;
+
+function safeDecode(s: string): string {
+  try {
+    return decodeURIComponent(s).toLowerCase();
+  } catch {
+    return s.toLowerCase();
+  }
+}
+
+async function fetchSlugs(lang: "en" | "ar"): Promise<Set<string>> {
+  const api = process.env.WORDPRESS_API_URL;
+  if (!api) return new Set();
+  const res = await fetch(`${api}/posts?lang=${lang}&per_page=100&_fields=slug`);
+  if (!res.ok) throw new Error(`WP ${res.status}`);
+  const posts = (await res.json()) as Array<{ slug: string }>;
+  return new Set(posts.map((p) => safeDecode(p.slug)));
+}
+
+async function getBlogSlugSets() {
+  if (blogSlugCache && Date.now() - blogSlugCache.at < BLOG_SLUG_TTL_MS) return blogSlugCache;
+  const [en, ar] = await Promise.all([fetchSlugs("en"), fetchSlugs("ar")]);
+  blogSlugCache = { at: Date.now(), en, ar };
+  return blogSlugCache;
+}
+
 // Permanent (301) redirects for retired URLs — preserves SEO link equity
 // and keeps any external bookmarks landing on a useful page.
 const PERMANENT_REDIRECTS: Record<string, string> = {
@@ -221,6 +248,25 @@ export function registerRedirects(app: Express) {
           return;
         }
       }
+    }
+    next();
+  });
+
+  // Arabic posts were once listed in the sitemap under /blog/<slug>, where they
+  // serve the SPA shell with a homepage canonical. 301 them to /ar/blog/<slug>.
+  app.use(async (req, res, next) => {
+    if (req.method !== "GET" && req.method !== "HEAD") return next();
+    const m = req.path.match(/^\/blog\/([^/]+)$/);
+    if (!m) return next();
+    try {
+      const slug = safeDecode(m[1]);
+      const { en, ar } = await getBlogSlugSets();
+      if (ar.has(slug) && !en.has(slug)) {
+        const query = req.url.slice(req.path.length);
+        return res.redirect(301, `/ar/blog/${m[1]}${query}`);
+      }
+    } catch {
+      // WP unreachable — fall through and serve normally.
     }
     next();
   });
