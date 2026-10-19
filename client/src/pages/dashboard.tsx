@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase, type Listing } from "@/lib/supabase";
 import { DealsManager } from "@/components/admin/DealsManager";
@@ -22,7 +22,7 @@ import {
   DialogContent,
 } from "@/components/ui/dialog";
 import { Link } from "wouter";
-import { Plus, Pencil, Trash2, LogOut, X, Upload, Loader2, Home } from "lucide-react";
+import { Plus, Pencil, Trash2, LogOut, X, Upload, Loader2, Home, Search } from "lucide-react";
 import { humanizeError } from "@/lib/error-messages";
 
 import { adminFetch } from "@/lib/admin-fetch";
@@ -203,14 +203,25 @@ function SelectField({
   );
 }
 
+// Two listings are treated as duplicates when their titles match ignoring
+// case, punctuation and spacing.
+function titleKey(title: string | null | undefined): string {
+  return (title ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9؀-ۿ]+/g, " ")
+    .trim();
+}
+
 function ListingFormDialog({
   open,
   onClose,
   listing,
+  existing,
 }: {
   open: boolean;
   onClose: () => void;
   listing: ListingForm | null;
+  existing: Listing[];
 }) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<ListingForm>(EMPTY_FORM);
@@ -323,6 +334,16 @@ function ListingFormDialog({
             <div className="col-span-2 space-y-1.5">
               <Label className="text-sm font-medium text-primary">Title <span className="text-accent">*</span></Label>
               <Input value={form.title} onChange={(e) => set("title", e.target.value)} className="bg-white" />
+              {(() => {
+                const key = titleKey(form.title);
+                const matches = key ? existing.filter((l) => l.id !== form.id && titleKey(l.title) === key) : [];
+                return matches.length > 0 ? (
+                  <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-1.5">
+                    Another listing already has this title ({matches.map((m) => `#${m.id}`).join(", ")}).
+                    If it's a different unit, make the title more specific; if it's the same unit, edit that one instead.
+                  </p>
+                ) : null;
+              })()}
             </div>
 
             <SelectField label="Subtype" value={form.subtype} options={ENUM_OPTIONS.subtype} onChange={(v) => set("subtype", v)} />
@@ -507,6 +528,61 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
     },
   });
 
+  const [search, setSearch] = useState("");
+  const [onlyDuplicates, setOnlyDuplicates] = useState(false);
+
+  // listing id -> ids of other listings sharing its title
+  const duplicatesOf = useMemo(() => {
+    const groups = new Map<string, number[]>();
+    for (const l of listings) {
+      const key = titleKey(l.title);
+      if (!key) continue;
+      groups.set(key, [...(groups.get(key) ?? []), l.id]);
+    }
+    const out = new Map<number, number[]>();
+    groups.forEach((ids) => {
+      if (ids.length < 2) return;
+      for (const id of ids) out.set(id, ids.filter((x) => x !== id));
+    });
+    return out;
+  }, [listings]);
+
+  const filteredListings = useMemo(() => {
+    // Duplicates view: group copies next to each other.
+    const base = onlyDuplicates
+      ? listings
+          .filter((l) => duplicatesOf.has(l.id))
+          .sort((a, b) => titleKey(a.title).localeCompare(titleKey(b.title)) || b.id - a.id)
+      : listings;
+    const q = search.trim().toLowerCase();
+    if (!q) return base;
+    // "423" or "#423" matches that listing ID exactly, ahead of text matches.
+    const idQuery = q.replace(/^#/, "");
+    if (/^\d+$/.test(idQuery)) {
+      const exact = base.filter((l) => String(l.id) === idQuery);
+      if (exact.length > 0) return exact;
+    }
+    const terms = q.split(/\s+/);
+    return base.filter((l) => {
+      const haystack = [
+        l.id,
+        l.title,
+        l.location,
+        l.location_area,
+        l.project,
+        l.developer,
+        getEnumLabel(DEVELOPER_OPTIONS, l.developer),
+        l.subtype,
+        l.transaction_type,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .replace(/[-_]/g, " ");
+      return terms.every((t) => haystack.includes(t.replace(/[-_]/g, " ")));
+    });
+  }, [listings, search, onlyDuplicates, duplicatesOf]);
+
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
       await adminFetch(`/api/admin/listings/${id}`, { method: "DELETE" });
@@ -611,20 +687,61 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
             {/* Total-count pill so admin sees "how many do I have" at a glance
                 without counting rows. Same rolling-metric pattern as the /leads
                 dashboard summary shipped 523c2d6. */}
-            <div className="mb-3 flex items-center gap-2 text-xs">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/5 border border-border/40 px-3 py-1 font-medium text-primary">
-                {listings.length}
-                <span className="text-muted-foreground font-normal">
-                  {listings.length === 1 ? "listing" : "listings"} total
+            <div className="mb-3 flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="relative w-full sm:max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                <Input
+                  type="text"
+                  inputMode="search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onKeyDown={(e) => e.key === "Escape" && setSearch("")}
+                  placeholder="Search by ID, title, location, developer…"
+                  aria-label="Search listings"
+                  className="pl-9 pr-9 bg-white"
+                />
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() => setSearch("")}
+                    aria-label="Clear search"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/5"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/5 border border-border/40 px-3 py-1 text-xs font-medium text-primary">
+                  {search || onlyDuplicates ? `${filteredListings.length} of ${listings.length}` : listings.length}
+                  <span className="text-muted-foreground font-normal">
+                    {listings.length === 1 ? "listing" : "listings"}
+                    {search || onlyDuplicates ? "" : " total"}
+                  </span>
                 </span>
-              </span>
+                {duplicatesOf.size > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setOnlyDuplicates((v) => !v)}
+                    aria-pressed={onlyDuplicates}
+                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                      onlyDuplicates
+                        ? "bg-amber-500 border-amber-500 text-white"
+                        : "bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100"
+                    }`}
+                  >
+                    Duplicates ({duplicatesOf.size})
+                    {onlyDuplicates && <X className="w-3 h-3" />}
+                  </button>
+                )}
+              </div>
             </div>
             <div className="bg-white rounded-xl border border-border/40 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border/40 bg-primary/5">
-                      <th className="text-left px-3 py-3 font-medium text-primary w-10">#</th>
+                      <th className="text-left px-3 py-3 font-medium text-primary w-12">ID</th>
                       <th className="text-left px-4 py-3 font-medium text-primary">Title</th>
                       <th className="text-left px-4 py-3 font-medium text-primary">Subtype</th>
                       <th className="text-left px-4 py-3 font-medium text-primary">Location</th>
@@ -635,15 +752,37 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {listings.map((listing, idx) => (
+                    {filteredListings.length === 0 && (
+                      <tr>
+                        <td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">
+                          {search ? `No listings match "${search}".` : "No duplicates found."}{" "}
+                          <button
+                            type="button"
+                            onClick={() => { setSearch(""); setOnlyDuplicates(false); }}
+                            className="text-accent hover:underline"
+                          >
+                            Show all listings
+                          </button>
+                        </td>
+                      </tr>
+                    )}
+                    {filteredListings.map((listing) => (
                       <tr key={listing.id} className="border-b border-border/20 hover:bg-primary/[0.02] transition-colors">
                         <td className="px-3 py-3 text-[11px] font-mono text-muted-foreground tabular-nums">
-                          {idx + 1}
+                          {listing.id}
                         </td>
-                        <td className="px-4 py-3 font-medium text-primary max-w-[200px] truncate">
+                        <td className="px-4 py-3 font-medium text-primary max-w-[280px] truncate">
                           {listing.is_test && (
                             <span className="mr-2 inline-block rounded bg-amber-200 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-900 align-middle">
                               Test
+                            </span>
+                          )}
+                          {duplicatesOf.has(listing.id) && (
+                            <span
+                              title={`Same title as ${duplicatesOf.get(listing.id)!.map((id) => `#${id}`).join(", ")}`}
+                              className="mb-1 block w-fit rounded bg-amber-100 border border-amber-200 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800"
+                            >
+                              Duplicate of {duplicatesOf.get(listing.id)!.map((id) => `#${id}`).join(", ")}
                             </span>
                           )}
                           {listing.title}
@@ -683,6 +822,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
         open={formOpen}
         onClose={() => { setFormOpen(false); setEditListing(null); }}
         listing={editListing}
+        existing={listings}
       />
     </div>
   );
