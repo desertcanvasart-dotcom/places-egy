@@ -239,7 +239,8 @@ function ListingFormDialog({
 
   const saveMutation = useMutation({
     mutationFn: async (data: ListingForm) => {
-      const { id, ...rest } = data;
+      // updated_at is server-owned; the strict save schema would reject it.
+      const { id, updated_at: _updatedAt, ...rest } = data;
       if (id) {
         await adminFetch(`/api/admin/listings/${id}`, {
           method: "PATCH",
@@ -522,7 +523,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
       const { data, error } = await supabase
         .from<Listing>("listings")
         .select("*")
-        .order("id", { ascending: false });
+        .order("updated_at", { ascending: false });
       if (error) throw error;
       return data;
     },

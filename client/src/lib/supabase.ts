@@ -41,4 +41,6 @@ export type Listing = {
   // prerender, and emits noindex on the detail page. Lets admin test in
   // production without a soft-404 cycle in GSC when the row is later deleted.
   is_test?: boolean;
+  // Set on every admin save; the site sorts newest-first by this.
+  updated_at?: string;
 };

@@ -36,7 +36,7 @@ export default function PropertyResale() {
         .eq('is_test', false)
         .eq("property_type", "admin")
         .eq("transaction_type", "sale")
-        .order("id", { ascending: false })
+        .order("updated_at", { ascending: false })
         .limit(4);
       if (error) throw error;
       return data;

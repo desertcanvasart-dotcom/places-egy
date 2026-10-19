@@ -26,7 +26,7 @@ export default function MixedUseMall() {
         .select("*")
         .eq('is_test', false)
         .eq("subtype", "mixed-use")
-        .order("id", { ascending: false })
+        .order("updated_at", { ascending: false })
         .limit(4);
       if (error) throw error;
       return data;
