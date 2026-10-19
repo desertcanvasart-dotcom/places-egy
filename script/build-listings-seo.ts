@@ -91,7 +91,7 @@ async function fetchListings(): Promise<ListingRow[]> {
   }
   // Use the REST endpoint directly to avoid bundling the supabase client into
   // the build script. Select only the columns we need for URLs + meta.
-  // updated_at/created_at may not exist on the table — try with them first,
+  // updated_at may not exist on older schemas — try with it first,
   // fall back to the guaranteed core fields on error so the build still ships.
   const coreFields = "id,title,property_type,location,area_sqm,subtype,transaction_type,description,currency,images";
   // is_test=eq.false — test listings must stay out of the sitemap AND the
@@ -99,9 +99,9 @@ async function fetchListings(): Promise<ListingRow[]> {
   // if the column doesn't exist yet (pre-migration) PostgREST 400s and we
   // retry without it so the build still ships.
   const attempts: Array<{ fields: string; filter: string }> = [
-    { fields: `${coreFields},updated_at,created_at`, filter: "&is_test=eq.false" },
+    { fields: `${coreFields},updated_at`, filter: "&is_test=eq.false" },
     { fields: coreFields, filter: "&is_test=eq.false" },
-    { fields: `${coreFields},updated_at,created_at`, filter: "" },
+    { fields: `${coreFields},updated_at`, filter: "" },
     { fields: coreFields, filter: "" },
   ];
   for (const { fields, filter } of attempts) {
