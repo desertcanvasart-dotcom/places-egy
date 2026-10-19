@@ -939,7 +939,9 @@ export async function registerRoutes(
       if (!supabaseAdmin) {
         return res.status(503).json({ message: "Supabase not configured" });
       }
-      const parsed = listingInsertSchema.safeParse(req.body);
+      // updated_at is server-owned; older dashboard tabs may still send it.
+      const { updated_at: _ignored, ...body } = req.body ?? {};
+      const parsed = listingInsertSchema.safeParse(body);
       if (!parsed.success) {
         return res.status(400).json({ message: "Invalid listing payload" });
       }
@@ -965,13 +967,15 @@ export async function registerRoutes(
       if (!Number.isFinite(id)) {
         return res.status(400).json({ message: "Invalid id" });
       }
-      const parsed = listingUpdateSchema.safeParse(req.body);
+      // updated_at is server-owned; older dashboard tabs may still send it.
+      const { updated_at: _ignored, ...body } = req.body ?? {};
+      const parsed = listingUpdateSchema.safeParse(body);
       if (!parsed.success) {
         return res.status(400).json({ message: "Invalid listing payload" });
       }
       const { error, data } = await supabaseAdmin
         .from("listings")
-        .update(parsed.data)
+        .update({ ...parsed.data, updated_at: new Date().toISOString() })
         .eq("id", id)
         .select()
         .single();

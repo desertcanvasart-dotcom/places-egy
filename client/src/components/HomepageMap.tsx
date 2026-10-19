@@ -25,7 +25,7 @@ export function HomepageMap() {
         .select("*")
         .eq('is_test', false)
         .eq("property_type", "admin")
-        .order("id", { ascending: false });
+        .order("updated_at", { ascending: false });
       if (error) throw error;
       return data;
     },

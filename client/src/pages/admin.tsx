@@ -48,7 +48,7 @@ export default function AdminOffices() {
         .from<Listing>("listings")
         .select("*")
         .eq("property_type", "admin")
-        .order("id", { ascending: false })
+        .order("updated_at", { ascending: false })
         .limit(6);
       if (error) throw error;
       return data;

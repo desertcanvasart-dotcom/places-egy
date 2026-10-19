@@ -151,7 +151,7 @@ export default function ListingsPage() {
         .select("*")
         .eq('is_test', false)
         .eq("property_type", "admin")
-        .order("id", { ascending: false });
+        .order("updated_at", { ascending: false });
       if (error) throw error;
       return data;
     },
@@ -241,7 +241,10 @@ export default function ListingsPage() {
         return sorted.sort((a, b) => (a.area_sqm ?? 0) - (b.area_sqm ?? 0));
       case "newest":
       default:
-        return sorted.sort((a, b) => b.id - a.id);
+        // Recently edited listings surface first, like new ones.
+        return sorted.sort(
+          (a, b) => (b.updated_at ?? "").localeCompare(a.updated_at ?? "") || b.id - a.id,
+        );
     }
   }, [filteredListings, sortBy]);
 

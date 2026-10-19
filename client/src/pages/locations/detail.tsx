@@ -110,7 +110,7 @@ export default function LocationDetail() {
         .eq('is_test', false)
         .eq("property_type", "admin")
         .eq("location", content!.displayName)
-        .order("id", { ascending: false })
+        .order("updated_at", { ascending: false })
         .limit(4);
       if (error) throw error;
       return data ?? [];
