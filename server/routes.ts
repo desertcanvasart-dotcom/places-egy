@@ -1,3 +1,4 @@
+import { forgetListing } from "./listing-redirect";
 import type { Express, Request, Response } from "express";
 import { type Server } from "http";
 import multer from "multer";
@@ -980,6 +981,7 @@ export async function registerRoutes(
         .select()
         .single();
       if (error) return res.status(400).json({ message: error.message });
+      forgetListing(id);
       res.json(data);
     },
   );
@@ -1001,6 +1003,7 @@ export async function registerRoutes(
         .delete()
         .eq("id", id);
       if (error) return res.status(400).json({ message: error.message });
+      forgetListing(id);
       res.json({ ok: true });
     },
   );
