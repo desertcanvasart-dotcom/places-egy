@@ -43,4 +43,6 @@ export type Listing = {
   is_test?: boolean;
   // Set on every admin save; the site sorts newest-first by this.
   updated_at?: string;
+  // Publish time; null for listings created before 2026-10-20.
+  created_at?: string | null;
 };
