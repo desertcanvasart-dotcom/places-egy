@@ -203,6 +203,20 @@ function SelectField({
   );
 }
 
+const cairoDateTime = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Africa/Cairo",
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+  hour12: true,
+});
+
+function formatCairoDateTime(iso: string): string {
+  return cairoDateTime.format(new Date(iso));
+}
+
 // Two listings are treated as duplicates when their titles match ignoring
 // case, punctuation and spacing.
 function titleKey(title: string | null | undefined): string {
@@ -240,7 +254,7 @@ function ListingFormDialog({
   const saveMutation = useMutation({
     mutationFn: async (data: ListingForm) => {
       // updated_at is server-owned; the strict save schema would reject it.
-      const { id, updated_at: _updatedAt, ...rest } = data;
+      const { id, updated_at: _updatedAt, created_at: _createdAt, ...rest } = data;
       if (id) {
         await adminFetch(`/api/admin/listings/${id}`, {
           method: "PATCH",
@@ -749,13 +763,14 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                       <th className="text-left px-4 py-3 font-medium text-primary">Developer</th>
                       <th className="text-left px-4 py-3 font-medium text-primary">Price</th>
                       <th className="text-left px-4 py-3 font-medium text-primary">Transaction</th>
+                      <th className="text-left px-4 py-3 font-medium text-primary whitespace-nowrap">Created</th>
                       <th className="text-right px-4 py-3 font-medium text-primary">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredListings.length === 0 && (
                       <tr>
-                        <td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">
+                        <td colSpan={9} className="px-4 py-10 text-center text-muted-foreground">
                           {search ? `No listings match "${search}".` : "No duplicates found."}{" "}
                           <button
                             type="button"
@@ -793,6 +808,12 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                       <td className="px-4 py-3 text-muted-foreground">{getEnumLabel(DEVELOPER_OPTIONS, listing.developer)}</td>
                       <td className="px-4 py-3 text-muted-foreground">{listing.price?.toLocaleString()} {listingCurrency(listing)}</td>
                       <td className="px-4 py-3 text-muted-foreground">{formatLabel(listing.transaction_type)}</td>
+                      <td
+                        className="px-4 py-3 text-muted-foreground whitespace-nowrap tabular-nums"
+                        title={listing.created_at ? undefined : "Created before publish dates were recorded (Oct 20, 2026)"}
+                      >
+                        {listing.created_at ? formatCairoDateTime(listing.created_at) : "—"}
+                      </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
