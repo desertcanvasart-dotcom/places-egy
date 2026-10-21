@@ -25,7 +25,13 @@ const SUPABASE_RENDER_PATH = "/storage/v1/render/image/public/";
 // dropping 2-5MB phone photos to ~50-200KB per image. Real speed win over
 // serving originals. If the render endpoint ever starts returning 4xx
 // again, the onError fallback in components will still serve the raw file.
-const IMAGE_TRANSFORMS_ENABLED = true;
+//
+// 2026-10-21: switched OFF. Render transforms are billed per distinct source
+// image (100/month on Pro; we have ~3.5k photos). Listing photos now get
+// pre-sized WebP copies at upload (server/image-variants.ts), served as plain
+// objects below. Re-enable only as a fallback if prebuilt variants break.
+const IMAGE_TRANSFORMS_ENABLED = false;
+const PREBUILT_VARIANTS_ENABLED = true;
 
 export type ImageVariant = "thumb" | "card" | "full";
 
@@ -35,8 +41,18 @@ const VARIANT_PRESETS: Record<ImageVariant, { width: number; quality: number }> 
   full: { width: 1600, quality: 80 },
 };
 
+// Must match IMAGE_VARIANTS suffixes in server/image-variants.ts.
+const PREBUILT_SUFFIX: Record<ImageVariant, string> = { thumb: "w200", card: "w800", full: "w1600" };
+
+// Admin uploads are named "<unix-ms>-<6 chars>.<ext>" in listings-images.
+const LISTING_UPLOAD = /(\/listings-images\/\d{13}-[a-z0-9]{6})\.[a-z0-9]+$/i;
+
 export function supabaseImage(url: string, variant: ImageVariant = "card"): string {
   if (!url) return url;
+  if (PREBUILT_VARIANTS_ENABLED && url.includes(SUPABASE_OBJECT_PATH)) {
+    const m = url.match(LISTING_UPLOAD);
+    if (m) return url.slice(0, m.index) + `${m[1]}.${PREBUILT_SUFFIX[variant]}.webp`;
+  }
   if (!IMAGE_TRANSFORMS_ENABLED) return url;
   const idx = url.indexOf(SUPABASE_OBJECT_PATH);
   if (idx === -1) return url;

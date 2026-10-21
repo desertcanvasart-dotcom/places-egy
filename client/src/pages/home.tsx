@@ -55,14 +55,17 @@ export default function Home() {
   });
 
   const { data: listings = [] } = useQuery<Listing[]>({
-    queryKey: ["listings"],
+    // Own key + limit: the homepage shows 4 cards; fetching all listings
+    // here cost ~150 KB on the most-visited page.
+    queryKey: ["home-listings"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from<Listing>("listings")
         .select("*")
         .eq('is_test', false)
         .eq("property_type", "admin")
-        .order("updated_at", { ascending: false });
+        .order("updated_at", { ascending: false })
+        .limit(4);
       if (error) throw error;
       return data;
     },

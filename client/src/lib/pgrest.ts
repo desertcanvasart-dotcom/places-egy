@@ -15,6 +15,8 @@
 
 const BASE = import.meta.env.VITE_SUPABASE_URL;
 const KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Supabase's default API "max rows" setting.
+const PAGE_SIZE = 1000;
 
 // Array queries (via .then): success = non-null data, failure = null data + Error.
 // Call sites `if (error) throw error; return data;` get `data` narrowed to T[].
@@ -123,6 +125,28 @@ class Query<T> {
     }
 
     const data = (await res.json()) as T | T[];
+
+    // Supabase caps responses at 1000 rows ("max rows"). Unlimited list queries
+    // keep paging so the site never silently drops rows past 1000.
+    const unlimited = !this.single && !this.modifiers.some((m) => m.startsWith("limit="));
+    if (unlimited && Array.isArray(data) && data.length === PAGE_SIZE) {
+      const rows = [...data];
+      for (let offset = PAGE_SIZE; ; offset += PAGE_SIZE) {
+        try {
+          const next = await fetch(`${url}&limit=${PAGE_SIZE}&offset=${offset}`, { headers });
+          if (!next.ok) {
+            const body = await next.text();
+            return { data: null, error: new Error(`${next.status} ${next.statusText}: ${body.slice(0, 200)}`) };
+          }
+          const page = (await next.json()) as T[];
+          rows.push(...page);
+          if (page.length < PAGE_SIZE) break;
+        } catch (err) {
+          return { data: null, error: err instanceof Error ? err : new Error(String(err)) };
+        }
+      }
+      return { data: rows, error: null };
+    }
     return { data, error: null };
   }
 }
