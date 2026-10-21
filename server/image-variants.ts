@@ -31,7 +31,8 @@ export async function uploadVariants(
   let failed = 0;
   for (const v of IMAGE_VARIANTS) {
     try {
-      const out = await sharp(buffer)
+      // failOn "none": truncated uploads still convert, like browsers render them.
+      const out = await sharp(buffer, { failOn: "none" })
         .rotate() // apply EXIF orientation from phone photos
         .resize({ width: v.width, withoutEnlargement: true })
         .webp({ quality: v.quality })
