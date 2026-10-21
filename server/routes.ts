@@ -1,3 +1,4 @@
+import { uploadVariants } from "./image-variants";
 import { forgetListing } from "./listing-redirect";
 import type { Express, Request, Response } from "express";
 import { type Server } from "http";
@@ -1432,6 +1433,7 @@ export async function registerRoutes(
           upsert: false,
         });
       if (upErr) return res.status(400).json({ message: upErr.message });
+      await uploadVariants(supabaseAdmin, SUPABASE_BUCKET, fileName, file.buffer);
       const { data } = supabaseAdmin.storage
         .from(SUPABASE_BUCKET)
         .getPublicUrl(fileName);

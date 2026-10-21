@@ -111,7 +111,18 @@ async function fetchListings(): Promise<ListingRow[]> {
     });
     if (res.ok) {
       const rows = (await res.json()) as ListingRow[];
-      return Array.isArray(rows) ? rows : [];
+      if (!Array.isArray(rows)) return [];
+      // Supabase caps a response at 1000 rows; page through the rest.
+      for (let offset = rows.length; rows.length % 1000 === 0 && rows.length > 0; offset += 1000) {
+        const next = await fetch(`${endpoint}&limit=1000&offset=${offset}`, {
+          headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: "application/json" },
+        });
+        if (!next.ok) throw new Error(`Supabase /listings page at ${offset} returned ${next.status}`);
+        const page = (await next.json()) as ListingRow[];
+        rows.push(...page);
+        if (page.length < 1000) break;
+      }
+      return rows;
     }
     if (res.status !== 400) {
       throw new Error(`Supabase /listings returned ${res.status} ${res.statusText}`);
