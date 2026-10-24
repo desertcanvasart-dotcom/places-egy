@@ -3,7 +3,19 @@
 
 // Titles get pasted from WhatsApp, where *text* means bold.
 export function cleanListingTitle(title: string): string {
-  return title.replace(/\*+/g, "").replace(/\s+/g, " ").trim();
+  return title
+    .replace(/\*+/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/^[\s|]+|[\s|]+$/g, "")
+    .trim();
+}
+
+// "Rented · available from 1 Feb 2027" / "Rented · date to be confirmed".
+export function rentedLabel(l: { rental_end?: string | null }): string {
+  if (!l.rental_end) return "Rented · date to be confirmed";
+  const d = new Date(`${l.rental_end}T00:00:00`);
+  const date = d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  return `Rented · available from ${date}`;
 }
 
 // Descriptions are markdown; search snippets need plain text of ~155 chars.

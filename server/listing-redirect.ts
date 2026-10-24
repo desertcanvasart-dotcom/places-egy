@@ -82,7 +82,7 @@ function slugify(s: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-function canonicalListingPath(l: {
+export function canonicalListingPath(l: {
   id: number;
   title: string | null;
   property_type: string | null;

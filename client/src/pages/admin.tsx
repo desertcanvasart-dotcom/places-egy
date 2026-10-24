@@ -48,6 +48,7 @@ export default function AdminOffices() {
         .from<Listing>("listings")
         .select("*")
         .eq("property_type", "admin")
+        .neq("rental_status", "rented")
         .order("updated_at", { ascending: false })
         .limit(6);
       if (error) throw error;

@@ -6,7 +6,7 @@ import { cleanListingTitle } from "../client/src/lib/listing-text";
 //
 // Keep in sync with the `Listing` type in client/src/lib/supabase.ts. The DB
 // owns the `id` column; we never accept it from the client.
-export const listingInsertSchema = z
+const listingFields = z
   .object({
     title: z.string().max(300).transform(cleanListingTitle).pipe(z.string().min(1)),
     property_type: z.string().max(100).optional(),
@@ -43,9 +43,19 @@ export const listingInsertSchema = z
     // sitemap, and prerendered meta (noindex emitted on detail page). Lets
     // us test in production without triggering soft-404s in GSC on delete.
     is_test: z.boolean().optional().default(false),
+    // Rented listings stay visible with a badge; rental_end null = "date to be confirmed".
+    rental_status: z.enum(["available", "rented"]).optional(),
+    rental_start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+    rental_end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
   })
   .strict();
 
+const rentalDatesInOrder = (l: { rental_start?: string | null; rental_end?: string | null }) =>
+  !l.rental_end || !l.rental_start || l.rental_end >= l.rental_start;
+const rentalDatesMessage = { message: "Available-from date must be after the rented date" };
+
+export const listingInsertSchema = listingFields.refine(rentalDatesInOrder, rentalDatesMessage);
+
 // Updates use the same shape but every field is optional. `.strict()` still
 // rejects unknown keys.
-export const listingUpdateSchema = listingInsertSchema.partial();
+export const listingUpdateSchema = listingFields.partial().refine(rentalDatesInOrder, rentalDatesMessage);

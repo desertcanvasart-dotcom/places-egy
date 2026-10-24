@@ -20,7 +20,7 @@ import { useScrollDepth } from "@/lib/use-scroll-depth";
 import { PriceGate, DerivedPriceLocked } from "@/components/PriceGate";
 import { UnlockPriceModal } from "@/components/UnlockPriceModal";
 import { usePriceUnlock } from "@/lib/price-unlock";
-import { cleanListingTitle, listingSnippet } from "@/lib/listing-text";
+import { cleanListingTitle, listingSnippet, rentedLabel } from "@/lib/listing-text";
 import DOMPurify from "dompurify";
 import { marked } from "marked";
 import {
@@ -308,6 +308,11 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
               >
                 {formatLabel(listing.transaction_type)}
               </Badge>
+              {listing.rental_status === "rented" && (
+                <span className="inline-block mb-3 rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold tracking-wide text-white">
+                  {rentedLabel(listing)}
+                </span>
+              )}
               <h1 className="text-2xl md:text-4xl font-serif font-bold text-primary leading-tight">
                 {listing.title}
               </h1>

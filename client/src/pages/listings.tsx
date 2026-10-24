@@ -241,9 +241,12 @@ export default function ListingsPage() {
         return sorted.sort((a, b) => (a.area_sqm ?? 0) - (b.area_sqm ?? 0));
       case "newest":
       default:
-        // Recently edited listings surface first, like new ones.
+        // Available before rented; within each, recently edited first, like new ones.
         return sorted.sort(
-          (a, b) => (b.updated_at ?? "").localeCompare(a.updated_at ?? "") || b.id - a.id,
+          (a, b) =>
+            Number(a.rental_status === "rented") - Number(b.rental_status === "rented") ||
+            (b.updated_at ?? "").localeCompare(a.updated_at ?? "") ||
+            b.id - a.id,
         );
     }
   }, [filteredListings, sortBy]);

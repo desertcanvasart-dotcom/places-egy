@@ -20,6 +20,7 @@ import { trackEvent } from "@/lib/analytics";
 import { usePriceUnlock, priceRangeLabel } from "@/lib/price-unlock";
 import { UnlockPriceModal } from "@/components/UnlockPriceModal";
 import { Lock } from "lucide-react";
+import { rentedLabel } from "@/lib/listing-text";
 
 const PHONE = "01063618217";
 
@@ -147,7 +148,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
               decoding="async"
               className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
-            <div className="absolute top-3 left-3">
+            <div className="absolute top-3 left-3 flex flex-wrap items-start gap-1.5 max-w-[85%]">
               <Badge className={`
                 ${listing.transaction_type?.toLowerCase() === 'sale' ? 'bg-emerald-600' :
                   listing.transaction_type?.toLowerCase() === 'rent' ? 'bg-accent text-accent-foreground' :
@@ -157,6 +158,11 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
               `}>
                 {formatLabel(listing.transaction_type)}
               </Badge>
+              {listing.rental_status === "rented" && (
+                <Badge className="bg-slate-800/90 text-white tracking-wide text-[10px] font-semibold shadow-sm border-0">
+                  {rentedLabel(listing)}
+                </Badge>
+              )}
             </div>
             <FavoriteButton listingId={listing.id} overlay />
           </div>
@@ -257,10 +263,15 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
                   )}
                 </>
               )}
-              <div className="absolute top-4 left-4">
+              <div className="absolute top-4 left-4 flex flex-wrap items-start gap-1.5 max-w-[85%]">
                 <Badge className={`${listing.transaction_type?.toLowerCase() === 'sale' ? 'bg-emerald-600' : listing.transaction_type?.toLowerCase() === 'rent' ? 'bg-accent text-accent-foreground' : listing.transaction_type?.toLowerCase() === 'income-property' ? 'bg-blue-600' : 'bg-emerald-600'} uppercase tracking-wider text-[10px] font-bold shadow-sm border-0`}>
                   {formatLabel(listing.transaction_type)}
                 </Badge>
+                {listing.rental_status === "rented" && (
+                  <Badge className="bg-slate-800/90 text-white tracking-wide text-[10px] font-semibold shadow-sm border-0">
+                    {rentedLabel(listing)}
+                  </Badge>
+                )}
               </div>
             </div>
             <div className="px-6 pb-6 pt-4 space-y-4">
@@ -382,15 +393,21 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
             </div>
           )}
 
-          <div className="absolute top-4 left-4 flex gap-2">
+          <div className="absolute top-4 left-4 flex flex-wrap items-start gap-1.5 max-w-[85%]">
             <Badge className={`
               ${listing.transaction_type?.toLowerCase() === 'sale' ? 'bg-emerald-600' :
                 listing.transaction_type?.toLowerCase() === 'rent' ? 'bg-accent text-accent-foreground' :
+                listing.transaction_type?.toLowerCase() === 'income-property' ? 'bg-blue-600' :
                 'bg-emerald-600'}
               uppercase tracking-wider text-[10px] font-bold shadow-sm border-0
             `}>
               {formatLabel(listing.transaction_type)}
             </Badge>
+            {listing.rental_status === "rented" && (
+              <Badge className="bg-slate-800/90 text-white tracking-wide text-[10px] font-semibold shadow-sm border-0">
+                {rentedLabel(listing)}
+              </Badge>
+            )}
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-linear-to-t from-black/60 to-transparent opacity-60 pointer-events-none" />
         </div>
@@ -514,7 +531,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
               </>
             )}
 
-            <div className="absolute top-4 left-4">
+            <div className="absolute top-4 left-4 flex flex-wrap items-start gap-1.5 max-w-[85%]">
               <Badge className={`
                 ${listing.transaction_type?.toLowerCase() === 'sale' ? 'bg-emerald-600' :
                   listing.transaction_type?.toLowerCase() === 'rent' ? 'bg-accent text-accent-foreground' :
@@ -524,6 +541,11 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
               `}>
                 {formatLabel(listing.transaction_type)}
               </Badge>
+              {listing.rental_status === "rented" && (
+                <Badge className="bg-slate-800/90 text-white tracking-wide text-[10px] font-semibold shadow-sm border-0">
+                  {rentedLabel(listing)}
+                </Badge>
+              )}
             </div>
           </div>
 

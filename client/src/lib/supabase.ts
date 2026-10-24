@@ -45,4 +45,9 @@ export type Listing = {
   updated_at?: string;
   // Publish time; null for listings created before 2026-10-20.
   created_at?: string | null;
+  // Rent listings only. Rented listings stay visible with a badge;
+  // rental_end null while rented = "date to be confirmed".
+  rental_status?: "available" | "rented";
+  rental_start?: string | null;
+  rental_end?: string | null;
 };

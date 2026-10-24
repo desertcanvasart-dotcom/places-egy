@@ -36,6 +36,7 @@ export default function PropertyResale() {
         .eq('is_test', false)
         .eq("property_type", "admin")
         .eq("transaction_type", "sale")
+        .neq("rental_status", "rented")
         .order("updated_at", { ascending: false })
         .limit(4);
       if (error) throw error;

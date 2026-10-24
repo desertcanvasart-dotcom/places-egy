@@ -26,6 +26,7 @@ export default function BusinessPark() {
         .select("*")
         .eq('is_test', false)
         .eq("subtype", "business-park")
+        .neq("rental_status", "rented")
         .order("updated_at", { ascending: false })
         .limit(4);
       if (error) throw error;
