@@ -1,3 +1,4 @@
+import { syncListingToHotdesk, hotdeskMode, isHotdeskEligible, toHotdeskListing, hotdeskWarnings, type ListingRow } from "./hotdesk";
 import { uploadVariants } from "./image-variants";
 import { forgetListing } from "./listing-redirect";
 import type { Express, Request, Response } from "express";
@@ -953,6 +954,7 @@ export async function registerRoutes(
         .select()
         .single();
       if (error) return res.status(400).json({ message: error.message });
+      syncListingToHotdesk(data, data.id, "created");
       res.json(data);
     },
   );
@@ -983,6 +985,7 @@ export async function registerRoutes(
         .single();
       if (error) return res.status(400).json({ message: error.message });
       forgetListing(id);
+      syncListingToHotdesk(data, id, "updated");
       res.json(data);
     },
   );
@@ -1005,6 +1008,7 @@ export async function registerRoutes(
         .eq("id", id);
       if (error) return res.status(400).json({ message: error.message });
       forgetListing(id);
+      syncListingToHotdesk(null, id, "deleted");
       res.json({ ok: true });
     },
   );
@@ -1397,6 +1401,45 @@ export async function registerRoutes(
       const { error } = await supabaseAdmin.from("calendly_bookings").delete().eq("id", id);
       if (error) return res.status(400).json({ message: error.message });
       res.json({ ok: true });
+    },
+  );
+
+  // What Hotdesk would receive for every eligible (rent, non-test) listing,
+  // plus data problems to fix before launch. Read-only.
+  app.get(
+    "/api/admin/hotdesk/preview",
+    adminLimiter,
+    requireAdmin,
+    async (_req: Request, res: Response) => {
+      if (!supabaseAdmin) {
+        return res.status(503).json({ message: "Supabase not configured" });
+      }
+      const rows: ListingRow[] = [];
+      for (let from = 0; ; from += 1000) {
+        const { data, error } = await supabaseAdmin
+          .from("listings")
+          .select("*")
+          .order("updated_at", { ascending: false })
+          .range(from, from + 999);
+        if (error) return res.status(500).json({ message: error.message });
+        rows.push(...(data as ListingRow[]));
+        if (data.length < 1000) break;
+      }
+      const eligible = rows.filter(isHotdeskEligible);
+      const listings = eligible.map((l) => {
+        const payload = toHotdeskListing(l);
+        return { id: l.id, warnings: hotdeskWarnings(payload), payload };
+      });
+      res.json({
+        mode: hotdeskMode(),
+        totals: {
+          all: rows.length,
+          eligible: eligible.length,
+          rented: eligible.filter((l) => l.rental_status === "rented").length,
+          withWarnings: listings.filter((l) => l.warnings.length > 0).length,
+        },
+        listings,
+      });
     },
   );
 

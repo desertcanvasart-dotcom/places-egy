@@ -64,6 +64,7 @@ export default function Home() {
         .select("*")
         .eq('is_test', false)
         .eq("property_type", "admin")
+        .neq("rental_status", "rented")
         .order("updated_at", { ascending: false })
         .limit(4);
       if (error) throw error;

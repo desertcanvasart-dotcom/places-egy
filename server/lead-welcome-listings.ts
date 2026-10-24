@@ -82,6 +82,7 @@ export async function fetchRecentListingsForWelcome(
       if (idList) q = q.not("id", "in", `(${idList})`);
     }
     const { data, error } = await q
+      .neq("rental_status", "rented")
       .order("updated_at", { ascending: false })
       .limit(3);
     if (error) {

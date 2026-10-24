@@ -5,6 +5,7 @@ import { DealsManager } from "@/components/admin/DealsManager";
 import { ClientLogosManager } from "@/components/admin/ClientLogosManager";
 import { LeadsManager } from "@/components/admin/LeadsManager";
 import { AccountsManager } from "@/components/admin/AccountsManager";
+import { HotdeskManager } from "@/components/admin/HotdeskManager";
 import { ProjectPinInput } from "@/components/admin/ProjectPinInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,7 @@ import { Plus, Pencil, Trash2, LogOut, X, Upload, Loader2, Home, Search } from "
 import { humanizeError } from "@/lib/error-messages";
 
 import { adminFetch } from "@/lib/admin-fetch";
+import { rentedLabel } from "@/lib/listing-text";
 
 import {
   DEVELOPER_OPTIONS,
@@ -103,6 +105,9 @@ const EMPTY_FORM: ListingForm = {
   latitude: null,
   longitude: null,
   is_test: false,
+  rental_status: "available",
+  rental_start: null,
+  rental_end: null,
 };
 
 function LoginScreen({ onLogin }: { onLogin: () => void }) {
@@ -363,6 +368,47 @@ function ListingFormDialog({
 
             <SelectField label="Subtype" value={form.subtype} options={ENUM_OPTIONS.subtype} onChange={(v) => set("subtype", v)} />
             <SelectField label="Transaction Type" value={form.transaction_type} options={ENUM_OPTIONS.transaction_type} onChange={(v) => set("transaction_type", v)} />
+
+            {form.transaction_type === "rent" && (
+              <fieldset className="col-span-2 rounded-xl border border-border/60 bg-white px-4 py-3 space-y-3">
+                <legend className="px-1 text-sm font-medium text-primary">Availability</legend>
+                <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Availability">
+                  {(["available", "rented"] as const).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      role="radio"
+                      aria-checked={(form.rental_status ?? "available") === s}
+                      onClick={() => {
+                        set("rental_status", s);
+                        if (s === "rented" && !form.rental_start) set("rental_start", new Date().toISOString().slice(0, 10));
+                        if (s === "available") { set("rental_start", null); set("rental_end", null); }
+                      }}
+                      className={`h-9 px-4 rounded-full text-sm font-medium border transition-colors ${
+                        (form.rental_status ?? "available") === s
+                          ? s === "rented" ? "bg-slate-700 border-slate-700 text-white" : "bg-emerald-600 border-emerald-600 text-white"
+                          : "bg-white border-border/60 text-primary hover:bg-primary/5"
+                      }`}
+                    >
+                      {s === "available" ? "Available" : "Rented"}
+                    </button>
+                  ))}
+                </div>
+                {form.rental_status === "rented" && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="rental_start" className="text-sm font-medium text-primary">Rented since</Label>
+                      <Input id="rental_start" type="date" value={form.rental_start ?? ""} onChange={(e) => set("rental_start", e.target.value || null)} className="bg-white" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="rental_end" className="text-sm font-medium text-primary">Available again from</Label>
+                      <Input id="rental_end" type="date" value={form.rental_end ?? ""} min={form.rental_start ?? undefined} onChange={(e) => set("rental_end", e.target.value || null)} className="bg-white" />
+                      <p className="text-xs text-muted-foreground">Leave empty if unknown. Shows "date to be confirmed".</p>
+                    </div>
+                  </div>
+                )}
+              </fieldset>
+            )}
             <SelectField label="Developer (optional)" value={form.developer} options={ENUM_OPTIONS.developer} onChange={(v) => set("developer", v)} clearable />
             <SelectField label="Location" value={form.location} options={ENUM_OPTIONS.location} onChange={(v) => set("location", v)} />
             <div className="space-y-1.5">
@@ -530,7 +576,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
   const queryClient = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
   const [editListing, setEditListing] = useState<ListingForm | null>(null);
-  const [tab, setTab] = useState<"listings" | "deals" | "logos" | "leads" | "accounts">("listings");
+  const [tab, setTab] = useState<"listings" | "deals" | "logos" | "leads" | "accounts" | "hotdesk">("listings");
   const { data: listings = [], isLoading } = useQuery<Listing[]>({
     queryKey: ["admin-listings"],
     queryFn: async () => {
@@ -665,6 +711,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
             { key: "logos", label: "Clients" },
             { key: "leads", label: "Leads" },
             { key: "accounts", label: "Accounts" },
+            { key: "hotdesk", label: "Hotdesk" },
           ] as const).map(({ key, label }) => (
             <button
               key={key}
@@ -688,6 +735,8 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
           <LeadsManager />
         ) : tab === "accounts" ? (
           <AccountsManager />
+        ) : tab === "hotdesk" ? (
+          <HotdeskManager />
         ) : isLoading ? (
           <p className="text-muted-foreground text-center py-8 md:py-12">Loading listings...</p>
         ) : listings.length === 0 ? (
@@ -791,6 +840,11 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                           {listing.is_test && (
                             <span className="mr-2 inline-block rounded bg-amber-200 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-900 align-middle">
                               Test
+                            </span>
+                          )}
+                          {listing.rental_status === "rented" && (
+                            <span className="mb-1 block w-fit rounded bg-slate-700 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                              {rentedLabel(listing)}
                             </span>
                           )}
                           {duplicatesOf.has(listing.id) && (
