@@ -3,7 +3,11 @@
 
 // Titles get pasted from WhatsApp, where *text* means bold.
 export function cleanListingTitle(title: string): string {
-  return title.replace(/\*+/g, "").replace(/\s+/g, " ").trim();
+  return title
+    .replace(/\*+/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/^[\s|]+|[\s|]+$/g, "")
+    .trim();
 }
 
 // "Rented · available from 1 Feb 2027" / "Rented · date to be confirmed".
