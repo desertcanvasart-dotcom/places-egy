@@ -1,7 +1,14 @@
 import type { Express } from "express";
 
 const BLOG_SLUG_TTL_MS = 10 * 60 * 1000;
-let blogSlugCache: { at: number; en: Set<string>; ar: Set<string> } | null = null;
+type BlogSlugs = {
+  at: number;
+  en: Set<string>;
+  ar: Set<string>;
+  /** EN slug -> its Arabic translation's slug (decoded), from Polylang pairs. */
+  enToAr: Map<string, string>;
+};
+let blogSlugCache: BlogSlugs | null = null;
 
 function safeDecode(s: string): string {
   try {
@@ -11,28 +18,41 @@ function safeDecode(s: string): string {
   }
 }
 
-async function fetchSlugs(lang: "en" | "ar"): Promise<Set<string>> {
+type WpSlugRow = { id: number; slug: string; translations?: Record<string, number> };
+
+async function fetchSlugs(lang: "en" | "ar"): Promise<WpSlugRow[]> {
   const api = process.env.WORDPRESS_API_URL;
-  if (!api) return new Set();
-  const res = await fetch(`${api}/posts?lang=${lang}&per_page=100&_fields=slug`, {
+  if (!api) return [];
+  const res = await fetch(`${api}/posts?lang=${lang}&per_page=100&_fields=id,slug,translations`, {
     signal: AbortSignal.timeout(4000),
   });
   if (!res.ok) throw new Error(`WP ${res.status}`);
-  const posts = (await res.json()) as Array<{ slug: string }>;
-  return new Set(posts.map((p) => safeDecode(p.slug)));
+  return (await res.json()) as WpSlugRow[];
 }
 
-export async function getBlogSlugSets() {
+export async function getBlogSlugSets(): Promise<BlogSlugs> {
   if (blogSlugCache && Date.now() - blogSlugCache.at < BLOG_SLUG_TTL_MS) return blogSlugCache;
   try {
     const [en, ar] = await Promise.all([fetchSlugs("en"), fetchSlugs("ar")]);
-    blogSlugCache = { at: Date.now(), en, ar };
+    const arById = new Map(ar.map((p) => [p.id, safeDecode(p.slug)]));
+    const enToAr = new Map<string, string>();
+    for (const p of en) {
+      const arSlug = p.translations?.ar ? arById.get(p.translations.ar) : undefined;
+      if (arSlug) enToAr.set(safeDecode(p.slug), arSlug);
+    }
+    blogSlugCache = {
+      at: Date.now(),
+      en: new Set(en.map((p) => safeDecode(p.slug))),
+      ar: new Set(ar.map((p) => safeDecode(p.slug))),
+      enToAr,
+    };
   } catch {
     // Keep serving stale sets (or none) for a minute rather than hitting WP on every request.
     blogSlugCache = {
       at: Date.now() - BLOG_SLUG_TTL_MS + 60_000,
       en: blogSlugCache?.en ?? new Set(),
       ar: blogSlugCache?.ar ?? new Set(),
+      enToAr: blogSlugCache?.enToAr ?? new Map(),
     };
   }
   return blogSlugCache;
@@ -162,6 +182,15 @@ const PERMANENT_REDIRECTS: Record<string, string> = {
   "/ar/blog/core-and-shell-offices-2": "/ar/blog/ما-هو-الكور-اند-شل",
   "/ar/blog/office-finishing-types-egypt-2": "/ar/blog/أنواع-تشطيب-المكاتب-مصر",
   "/ar/blog/offices-mixed-use-buildings-pros-cons-2": "/ar/blog/مميزات-وعيوب-المباني-متعددة-الاستخدا",
+
+  // Wrong slugs linked from inside blog articles (scripts/blog-link-check.ts, 2026-10-28).
+  "/blog/business-park-vs-business-building": "/blog/business-building-vs-business-park",
+  "/blog/common-types-admin-offices-egypt": "/blog/types-of-admin-offices-egypt",
+  // No English version of this article exists; closest topic.
+  "/blog/ready-to-move-vs-core-and-shell-offices-egypt": "/blog/core-and-shell-offices",
+  "/ar/blog/ready-to-move-vs-core-and-shell-offices-egypt":
+    "/ar/blog/ready-to-move-vs-core-and-shell-offices-in-egypt-تختار-مكتب-جاهز-ولا-تجهزه-بنف",
+  "/ar/blog/business-park-mixed-use": "/ar/blog/بيزنس-بارك-و-المشروع-متعدد-الاستخداما",
 };
 
 // Prefix redirects for path roots that have moved. Anything matching the
@@ -322,6 +351,25 @@ export function registerRedirects(app: Express) {
       if (ar.has(slug) && !en.has(slug)) {
         const query = req.url.slice(req.path.length);
         return res.redirect(301, canonicalEncode(`/ar/blog/${m[1]}`) + query);
+      }
+    } catch {
+      // WP unreachable — fall through and serve normally.
+    }
+    next();
+  });
+
+  // /ar/blog/<english-slug> (a common hand-typed mistake) -> the Arabic twin.
+  app.use(async (req, res, next) => {
+    if (req.method !== "GET" && req.method !== "HEAD") return next();
+    const m = req.path.match(/^\/ar\/blog\/([^/]+)$/);
+    if (!m) return next();
+    try {
+      const slug = safeDecode(m[1]);
+      const { ar, enToAr } = await getBlogSlugSets();
+      const twin = !ar.has(slug) ? enToAr.get(slug) : undefined;
+      if (twin) {
+        const query = req.url.slice(req.path.length);
+        return res.redirect(301, canonicalEncode(`/ar/blog/${twin}`) + query);
       }
     } catch {
       // WP unreachable — fall through and serve normally.
