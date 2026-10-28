@@ -17,9 +17,7 @@ import { supabaseImage, supabaseImageOnError } from "@/lib/image-url";
 import { trackEvent } from "@/lib/analytics";
 import { openCalendly } from "@/lib/calendly";
 import { useScrollDepth } from "@/lib/use-scroll-depth";
-import { PriceGate, DerivedPriceLocked } from "@/components/PriceGate";
-import { UnlockPriceModal } from "@/components/UnlockPriceModal";
-import { usePriceUnlock } from "@/lib/price-unlock";
+import { ViewingRequestModal } from "@/components/ViewingRequestModal";
 import { cleanListingTitle, listingSnippet, rentedLabel } from "@/lib/listing-text";
 import DOMPurify from "dompurify";
 import { marked } from "marked";
@@ -32,6 +30,7 @@ import {
   Building2,
   Maximize,
   Calendar,
+  CalendarCheck,
   CarFront,
   Phone,
   MessageCircle,
@@ -83,12 +82,7 @@ export default function ListingDetailPage() {
 function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
   const [, setLocation] = useLocation();
   const [imageIndex, setImageIndex] = useState(0);
-  // Price-unlock modal open/close state. usePriceUnlock also drives the
-  // <PriceGate /> reveal — once the visitor submits and markUnlocked() fires,
-  // every gate on the page (hero price + price_per_meter row) flips to real
-  // values automatically.
-  const [unlockOpen, setUnlockOpen] = useState(false);
-  const { unlocked } = usePriceUnlock();
+  const [viewingOpen, setViewingOpen] = useState(false);
 
   useScrollDepth(`/listings/${idSlug}`);
 
@@ -341,15 +335,25 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
             <div className="flex flex-col items-start md:items-end shrink-0 gap-3">
               <FavoriteButton listingId={listing.id} size="lg" />
               {listing.price != null && (
-                <PriceGate
-                  price={listing.price}
-                  currency={listingCurrency(listing)}
-                  transactionType={listing.transaction_type}
-                  size="hero"
-                  listingId={listing.id}
-                  onUnlockClick={() => setUnlockOpen(true)}
-                />
+                <div className="md:text-right">
+                  <div className="flex items-baseline gap-1.5 md:justify-end">
+                    <span className="text-3xl md:text-4xl font-bold text-primary font-serif">
+                      {listing.price.toLocaleString()}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      {listingCurrency(listing)}
+                      {listing.transaction_type?.toLowerCase() === "rent" ? " / month" : ""}
+                    </span>
+                  </div>
+                </div>
               )}
+              <Button
+                type="button"
+                onClick={() => setViewingOpen(true)}
+                className="bg-accent hover:bg-accent/90 text-white rounded-full"
+              >
+                <CalendarCheck className="w-4 h-4 mr-2" /> Book a viewing
+              </Button>
             </div>
           </div>
         </div>
@@ -462,14 +466,9 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
                       icon={Building2}
                       label="Price per m²"
                       value={
-                        unlocked ? (
-                          `${listing.price_per_meter.toLocaleString()} ${listingCurrency(listing)}`
-                        ) : (
-                          <DerivedPriceLocked
-                            label="price per m²"
-                            onUnlockClick={() => setUnlockOpen(true)}
-                          />
-                        )
+                        (
+`${listing.price_per_meter.toLocaleString()} ${listingCurrency(listing)}`
+)
                       }
                     />
                   )}
@@ -623,13 +622,10 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
 
       <Footer />
       <CornerSlideMagnet />
-      {/* Price-unlock modal — opened by any <PriceGate onUnlockClick={...}>
-          or <DerivedPriceLocked> on this page. Renders nothing until open,
-          zero cost when locked visitor never interacts. */}
-      <UnlockPriceModal
+      <ViewingRequestModal
         listing={listing}
-        open={unlockOpen}
-        onClose={() => setUnlockOpen(false)}
+        open={viewingOpen}
+        onClose={() => setViewingOpen(false)}
       />
     </div>
   );
@@ -643,7 +639,7 @@ function DetailRow({
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   // ReactNode allowed so callers can pass a locked-state fallback component
-  // (like <DerivedPriceLocked />) in place of a raw string/number.
+  // (a React node) in place of a raw string/number.
   value: React.ReactNode;
 }) {
   if (value == null || value === "") return null;

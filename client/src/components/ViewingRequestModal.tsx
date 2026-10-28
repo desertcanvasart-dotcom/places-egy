@@ -1,22 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { X, Loader2, Check, Lock, MessageCircle } from "lucide-react";
+import { X, Loader2, Check, CalendarCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { submitLead, readUtmFromLocation } from "@/lib/leads";
 import { trackEvent } from "@/lib/analytics";
-import { usePriceUnlock } from "@/lib/price-unlock";
 import type { Listing } from "@/lib/supabase";
 
-// Modal that gates the exact price on listing detail + cards. Captures a
-// lead (name/email/phone) into the standard leads table via POST /api/leads —
-// same rate limit + honeypot + zod validation as every other lead form on the
-// site. On success, sets the localStorage unlock flag so this device sees
-// real prices on every listing forever.
-//
-// Deliberately does NOT create an account or set a session cookie. That path
-// carries account-takeover risk (fixed 2026-08-30 in POST /api/accounts) and
-// isn't needed for a device-local unlock. Pricing is public info once we
-// choose to reveal it — no need to attach it to a persistent identity.
+// "Book a viewing / Get a shortlist" request for one listing. Same fields and
+// POST /api/leads path (rate limit, honeypot, zod) as every other lead form.
 
 interface Props {
   listing: Listing | null; // The listing they clicked from — for context in the lead
@@ -24,8 +15,7 @@ interface Props {
   onClose: () => void;
 }
 
-export function UnlockPriceModal({ listing, open, onClose }: Props) {
-  const { markUnlocked } = usePriceUnlock();
+export function ViewingRequestModal({ listing, open, onClose }: Props) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -37,7 +27,7 @@ export function UnlockPriceModal({ listing, open, onClose }: Props) {
   // Auto-focus the first field when the modal opens.
   useEffect(() => {
     if (!open) return;
-    trackEvent("price_unlock_open", {
+    trackEvent("viewing_request_open", {
       listing_id: listing?.id ?? null,
     });
     const t = setTimeout(() => nameInputRef.current?.focus(), 100);
@@ -66,28 +56,25 @@ export function UnlockPriceModal({ listing, open, onClose }: Props) {
         email: email.trim(),
         phone: phone.trim(),
         locations: [],
-        lead_source: "price_unlock",
-        magnet: "price_unlock",
+        lead_source: "viewing_request",
         listing_id: listing?.id,
         page_url: typeof window !== "undefined" ? window.location.href : undefined,
         website, // honeypot
         ...readUtmFromLocation(),
       });
-      trackEvent("price_unlock_submit", {
+      trackEvent("viewing_request_submit", {
         listing_id: listing?.id ?? null,
       });
       setStatus("sent");
-      // Flip the unlock flag globally — every <PriceGate> on the page rerenders.
-      markUnlocked();
       // Auto-close after a beat so the visitor sees the confirmation.
       setTimeout(() => {
         onClose();
-        // Reset for next open (if any). markUnlocked already persists.
+        // Reset for next open (if any).
         setName("");
         setEmail("");
         setPhone("");
         setStatus("idle");
-      }, 1600);
+      }, 2200);
     } catch (err) {
       setErrorText((err as Error).message ?? "Something went wrong");
       setStatus("error");
@@ -100,7 +87,7 @@ export function UnlockPriceModal({ listing, open, onClose }: Props) {
     <div
       role="dialog"
       aria-modal="true"
-      aria-labelledby="price-unlock-title"
+      aria-labelledby="viewing-request-title"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/60 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={onClose}
     >
@@ -124,11 +111,11 @@ export function UnlockPriceModal({ listing, open, onClose }: Props) {
               <Check className="h-6 w-6 text-white" strokeWidth={3} />
             </div>
             <h3 className="font-serif text-xl font-bold text-primary mb-2">
-              Pricing unlocked
+              Request received
             </h3>
             <p className="text-sm text-muted-foreground">
-              Every listing on the site now shows exact pricing on this device.
-              A PLACES advisor will follow up shortly.
+              A PLACES advisor will contact you shortly to arrange the viewing
+              and send similar options.
             </p>
           </div>
         ) : (
@@ -137,21 +124,21 @@ export function UnlockPriceModal({ listing, open, onClose }: Props) {
             <div className="p-6 pb-4 border-b border-border/40">
               <div className="flex items-center gap-2 mb-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/10">
-                  <Lock className="h-4 w-4 text-accent" />
+                  <CalendarCheck className="h-4 w-4 text-accent" />
                 </div>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-accent">
-                  Unlock exact pricing
+                  Book a viewing
                 </p>
               </div>
               <h3
-                id="price-unlock-title"
+                id="viewing-request-title"
                 className="font-serif text-xl md:text-2xl font-bold text-primary leading-tight"
               >
-                See the full price and payment terms.
+                Book a viewing or get a shortlist.
               </h3>
               <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-                Instant access to exact pricing on this and every listing.
-                A PLACES advisor will follow up with the payment plan.
+                Tell us how to reach you. An advisor will arrange a viewing of
+                this office and send similar options that fit your needs.
               </p>
             </div>
 
@@ -177,14 +164,14 @@ export function UnlockPriceModal({ listing, open, onClose }: Props) {
 
               <div>
                 <label
-                  htmlFor="unlock-name"
+                  htmlFor="viewing-name"
                   className="block text-xs font-medium text-primary mb-1"
                 >
                   Name
                 </label>
                 <Input
                   ref={nameInputRef}
-                  id="unlock-name"
+                  id="viewing-name"
                   type="text"
                   required
                   autoComplete="name"
@@ -196,13 +183,13 @@ export function UnlockPriceModal({ listing, open, onClose }: Props) {
               </div>
               <div>
                 <label
-                  htmlFor="unlock-email"
+                  htmlFor="viewing-email"
                   className="block text-xs font-medium text-primary mb-1"
                 >
                   Email
                 </label>
                 <Input
-                  id="unlock-email"
+                  id="viewing-email"
                   type="email"
                   required
                   autoComplete="email"
@@ -214,13 +201,13 @@ export function UnlockPriceModal({ listing, open, onClose }: Props) {
               </div>
               <div>
                 <label
-                  htmlFor="unlock-phone"
+                  htmlFor="viewing-phone"
                   className="block text-xs font-medium text-primary mb-1"
                 >
                   Phone (WhatsApp works best)
                 </label>
                 <Input
-                  id="unlock-phone"
+                  id="viewing-phone"
                   type="tel"
                   required
                   autoComplete="tel"
@@ -239,12 +226,12 @@ export function UnlockPriceModal({ listing, open, onClose }: Props) {
                 {status === "sending" ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Unlocking…
+                    Sending…
                   </>
                 ) : (
                   <>
-                    <MessageCircle className="w-4 h-4 mr-2" />
-                    Unlock pricing
+                    <CalendarCheck className="w-4 h-4 mr-2" />
+                    Request a viewing
                   </>
                 )}
               </Button>

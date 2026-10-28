@@ -17,8 +17,6 @@ import { FavoriteButton } from "@/components/FavoriteButton";
 import { listingCurrency } from "@/lib/currency";
 import { supabaseImage, supabaseImageOnError } from "@/lib/image-url";
 import { trackEvent } from "@/lib/analytics";
-import { usePriceUnlock, priceRangeLabel } from "@/lib/price-unlock";
-import { UnlockPriceModal } from "@/components/UnlockPriceModal";
 import { Lock } from "lucide-react";
 import { cleanListingTitle, rentedLabel } from "@/lib/listing-text";
 
@@ -57,8 +55,6 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
   const [current, setCurrent] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalImage, setModalImage] = useState(0);
-  const [unlockOpen, setUnlockOpen] = useState(false);
-  const { unlocked } = usePriceUnlock();
 
   // Prefetch the next + previous modal image so arrow clicks render instantly
   // instead of waiting for a fresh network round-trip.
@@ -214,29 +210,15 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
             </div>
             <div className="flex items-center justify-between mt-auto">
               {listing.price != null && (
-                unlocked ? (
-                  <div className="flex items-baseline gap-1">
+                (
+<div className="flex items-baseline gap-1">
                     <span className="text-lg font-bold text-primary font-serif">
                       {listing.price.toLocaleString()}
                     </span>
                     <span className="text-xs text-muted-foreground">{listingCurrency(listing)}</span>
                     {listing.transaction_type?.toLowerCase() === "rent" && <span className="text-xs text-muted-foreground">/month</span>}
                   </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setUnlockOpen(true); }}
-                    className="group/gate text-left"
-                    aria-label="Unlock exact price"
-                  >
-                    <span className="text-sm font-bold text-primary font-serif block">
-                      {priceRangeLabel(listing.price, listingCurrency(listing), listing.transaction_type)}
-                    </span>
-                    <span className="text-[10px] text-accent font-semibold inline-flex items-center gap-1 group-hover/gate:underline">
-                      <Lock className="w-2.5 h-2.5" /> Unlock exact
-                    </span>
-                  </button>
-                )
+)
               )}
               <span className="text-xs text-accent font-medium opacity-0 group-hover:opacity-100 transition-opacity">
                 Quick view →
@@ -299,34 +281,21 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
                 </div>
                 <div className="text-right shrink-0">
                   {listing.price != null && (
-                    unlocked ? (
-                      <>
+                    (
+<>
                         <span className="text-2xl font-bold text-primary font-serif">{listing.price.toLocaleString()}</span>
                         <p className="text-xs text-muted-foreground">{listingCurrency(listing)}{listing.transaction_type?.toLowerCase() === "rent" ? "/month" : ""}</p>
                       </>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setUnlockOpen(true)}
-                        className="group/gate text-right"
-                      >
-                        <span className="text-xl font-bold text-primary font-serif block">
-                          {priceRangeLabel(listing.price, listingCurrency(listing), listing.transaction_type)}
-                        </span>
-                        <span className="text-[11px] text-accent font-semibold inline-flex items-center gap-1 group-hover/gate:underline mt-0.5">
-                          <Lock className="w-3 h-3" /> Unlock exact price
-                        </span>
-                      </button>
-                    )
+)
                   )}
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <DetailBlock icon={MapPin} label="Project" value={listing.project} />
                 <DetailBlock icon={Maximize} label="Area" value={listing.area_sqm ? `${listing.area_sqm} m²` : null} />
-                {listing.price_per_meter != null && <DetailBlock icon={Building2} label="Price/m²" value={unlocked ? `${listing.price_per_meter.toLocaleString()} ${listingCurrency(listing)}` : "🔒"} />}
+                {listing.price_per_meter != null && <DetailBlock icon={Building2} label="Price/m²" value={`${listing.price_per_meter.toLocaleString()} ${listingCurrency(listing)}`} />}
                 <DetailBlock icon={Building2} label="Handover condition" value={getEnumLabel(FURNISHING_OPTIONS, listing.furnishing)} />
-                {listing.maintenance_fees != null && listing.maintenance_status !== "included" && <DetailBlock icon={Building2} label="Maintenance Fees" value={unlocked ? `${listing.maintenance_fees.toLocaleString()} ${listingCurrency(listing)}` : "🔒"} />}
+                {listing.maintenance_fees != null && listing.maintenance_status !== "included" && <DetailBlock icon={Building2} label="Maintenance Fees" value={`${listing.maintenance_fees.toLocaleString()} ${listingCurrency(listing)}`} />}
                 {listing.maintenance_status && <DetailBlock icon={Building2} label="Maintenance" value={getEnumLabel(MAINTENANCE_STATUS_OPTIONS, listing.maintenance_status)} />}
                 {listing.floor != null && <DetailBlock icon={Building2} label="Floor" value={listing.floor} />}
                 {listing.delivery_date && <DetailBlock icon={Calendar} label="Delivery date" value={listing.delivery_date} />}
@@ -640,14 +609,6 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
           </div>
         </DialogContent>
       </Dialog>
-      {/* Price-unlock modal — opened by clicking any gated price in this
-          card OR its quick-view modal. Once submitted, unlocks all listings
-          site-wide for this device via the usePriceUnlock hook. */}
-      <UnlockPriceModal
-        listing={listing}
-        open={unlockOpen}
-        onClose={() => setUnlockOpen(false)}
-      />
     </>
   );
 }
