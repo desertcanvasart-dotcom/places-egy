@@ -463,7 +463,7 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
                       }
                     />
                   )}
-                  {listing.maintenance_fees != null && listing.maintenance_status !== "included" && (
+                  {!!listing.maintenance_fees && listing.maintenance_status !== "included" && (
                     <DetailRow
                       icon={Building2}
                       label="Maintenance Fees"
