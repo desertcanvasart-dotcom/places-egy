@@ -7,6 +7,14 @@ import { registerSitemapRoutes } from "./sitemap";
 // build-time files. On any error, fall through to the normal static/SPA path.
 export function registerSeoRoutes(app: Express, distPath: string): void {
   setDistPath(distPath);
+
+  // Cloudflare's page rule rewrites /listings to "//listings/index.html"
+  // (double slash), which no route matches. Collapse leading slashes first.
+  app.use((req, _res, next) => {
+    if (req.url.startsWith("//")) req.url = req.url.replace(/^\/+/, "/");
+    next();
+  });
+
   registerSitemapRoutes(app);
 
   const send = (render: (req: Request) => Promise<string | null>) =>
