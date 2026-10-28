@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { useLocation } from "wouter";
+import { Link, useLocation, useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -25,6 +25,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+// Matches the server-rendered /listings/page/N pages (server/seo/render.ts).
+const PAGE_SIZE = 48;
 
 type SortOption = "newest" | "price-low" | "price-high" | "area-large" | "area-small";
 
@@ -83,7 +86,7 @@ const LISTINGS_CANONICAL = "https://places-egy.com/listings";
 // when a filter has no results — which Google reports as soft 404s. We mark any
 // filtered view noindex,follow and canonicalize it to the clean /listings page,
 // so only /listings itself is indexed. The clean page gets a self-canonical.
-function useListingsIndexability() {
+function useListingsIndexability(page: number) {
   useEffect(() => {
     const hasParams = typeof window !== "undefined" && window.location.search.length > 1;
 
@@ -101,13 +104,13 @@ function useListingsIndexability() {
       canonical.setAttribute("rel", "canonical");
       document.head.appendChild(canonical);
     }
-    canonical.setAttribute("href", LISTINGS_CANONICAL);
+    canonical.setAttribute("href", page > 1 ? `${LISTINGS_CANONICAL}/page/${page}` : LISTINGS_CANONICAL);
 
     return () => {
       // Restore indexability when leaving so the next page isn't left noindexed.
       robots?.setAttribute("content", "index,follow");
     };
-  }, []);
+  }, [page]);
 }
 
 export default function ListingsPage() {
@@ -136,7 +139,8 @@ export default function ListingsPage() {
     }
   }, [wouterLocation]);
 
-  useListingsIndexability();
+  const routeParams = useParams<{ page?: string }>();
+  useListingsIndexability(Math.max(1, Number(routeParams.page) || 1));
 
   const { data: listings = [], isLoading, error } = useQuery<Listing[]>({
     queryKey: ["listings"],
@@ -250,6 +254,19 @@ export default function ListingsPage() {
         );
     }
   }, [filteredListings, sortBy]);
+
+  const page = Math.max(1, Number(routeParams.page) || 1);
+  const pageCount = Math.max(1, Math.ceil(sortedListings.length / PAGE_SIZE));
+  const pagedListings = sortedListings.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const [, navigate] = useLocation();
+  // Filters can shrink the result set below the current page.
+  useEffect(() => {
+    if (!isLoading && page > pageCount) navigate("/listings", { replace: true });
+  }, [isLoading, page, pageCount, navigate]);
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [page]);
+
 
   // Track search queries after the user stops typing for 800ms. Debouncing
   // avoids flooding GA4 with partial keystroke queries ("n", "ne", "new"…)
@@ -484,17 +501,23 @@ export default function ListingsPage() {
               </div>
             ) : sortedListings.length > 0 ? (
               viewMode === "grid" ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {sortedListings.map((listing) => (
-                    <ListingCard key={listing.id} listing={listing} />
-                  ))}
-                </div>
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {pagedListings.map((listing) => (
+                      <ListingCard key={listing.id} listing={listing} />
+                    ))}
+                  </div>
+                  <Pagination page={page} pageCount={pageCount} />
+                </>
               ) : viewMode === "list" ? (
-                <div className="space-y-3">
-                  {sortedListings.map((listing) => (
-                    <ListingCard key={listing.id} listing={listing} listView />
-                  ))}
-                </div>
+                <>
+                  <div className="space-y-3">
+                    {pagedListings.map((listing) => (
+                      <ListingCard key={listing.id} listing={listing} listView />
+                    ))}
+                  </div>
+                  <Pagination page={page} pageCount={pageCount} />
+                </>
               ) : (
                 // Map view — on desktop, show the map alongside a scrollable
                 // narrow card column. On mobile, the map takes the full width
@@ -534,5 +557,36 @@ export default function ListingsPage() {
       <Footer />
       <CornerSlideMagnet />
     </div>
+  );
+}
+
+function Pagination({ page, pageCount }: { page: number; pageCount: number }) {
+  if (pageCount <= 1) return null;
+  const href = (n: number) => (n === 1 ? "/listings" : `/listings/page/${n}`);
+  const linkClass = "min-w-9 h-9 px-3 inline-flex items-center justify-center rounded-full border text-sm font-medium transition-colors";
+  return (
+    <nav aria-label="Listings pages" className="mt-10 flex flex-wrap items-center justify-center gap-2">
+      {page > 1 && (
+        <Link href={href(page - 1)} rel="prev" className={`${linkClass} border-border/60 hover:bg-primary/5`}>
+          Previous
+        </Link>
+      )}
+      {Array.from({ length: pageCount }, (_, i) => i + 1).map((n) =>
+        n === page ? (
+          <span key={n} aria-current="page" className={`${linkClass} border-primary bg-primary text-white`}>
+            {n}
+          </span>
+        ) : (
+          <Link key={n} href={href(n)} className={`${linkClass} border-border/60 hover:bg-primary/5`}>
+            {n}
+          </Link>
+        ),
+      )}
+      {page < pageCount && (
+        <Link href={href(page + 1)} rel="next" className={`${linkClass} border-border/60 hover:bg-primary/5`}>
+          Next
+        </Link>
+      )}
+    </nav>
   );
 }

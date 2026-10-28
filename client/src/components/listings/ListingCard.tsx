@@ -170,7 +170,13 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
             <div>
               <div className="flex justify-between items-start gap-4 mb-1">
                 <h3 className="font-serif text-base font-semibold text-primary group-hover:text-accent transition-colors line-clamp-1">
-                  {listing.title}
+                  <Link
+                    href={listingUrl(listing)}
+                    onClick={(e) => { e.stopPropagation(); handleViewFullDetailsClick(); }}
+                    className="hover:underline"
+                  >
+                    {listing.title}
+                  </Link>
                 </h3>
                 {!hideSubtype && (
                   <span className="text-[10px] font-bold uppercase tracking-wider text-primary/60 bg-primary/5 border border-primary/10 px-2.5 py-1 rounded-full shrink-0">
@@ -429,7 +435,9 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
             )}
           </div>
           <h3 className="font-serif text-base font-semibold leading-tight group-hover:text-primary transition-colors line-clamp-2">
-            {listing.title}
+            <Link href={listingUrl(listing)} onClick={handleViewFullDetailsClick} className="hover:text-accent transition-colors">
+              {listing.title}
+            </Link>
           </h3>
           <div className="flex items-center gap-1.5 text-muted-foreground text-sm mt-0.5">
             <MapPin className="w-3.5 h-3.5" />
@@ -468,12 +476,21 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
           </div>
         </CardContent>
 
-        <CardFooter className="px-4 pb-3 pt-0">
-          <Button
-            onClick={() => setModalOpen(true)}
-            className="w-full bg-secondary hover:bg-primary hover:text-white text-secondary-foreground transition-all group-hover:translate-y-0 translate-y-2 opacity-0 group-hover:opacity-100 duration-300"
+        <CardFooter className="px-4 pb-3 pt-0 flex gap-2">
+          <Link
+            href={listingUrl(listing)}
+            onClick={handleViewFullDetailsClick}
+            className="flex-1 inline-flex items-center justify-center h-9 rounded-md bg-secondary hover:bg-primary hover:text-white text-secondary-foreground text-sm font-medium transition-colors"
           >
             View Details <ArrowUpRight className="ml-2 w-4 h-4" />
+          </Link>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setModalOpen(true)}
+            className="h-9 px-3 text-sm"
+          >
+            Quick view
           </Button>
         </CardFooter>
       </Card>

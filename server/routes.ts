@@ -1,3 +1,4 @@
+import { invalidateInventory } from "./seo/data";
 import { syncListingToHotdesk, hotdeskMode, isHotdeskEligible, toHotdeskListing, hotdeskWarnings, type ListingRow } from "./hotdesk";
 import { uploadVariants } from "./image-variants";
 import { forgetListing } from "./listing-redirect";
@@ -955,6 +956,7 @@ export async function registerRoutes(
         .single();
       if (error) return res.status(400).json({ message: error.message });
       syncListingToHotdesk(data, data.id, "created");
+      invalidateInventory();
       res.json(data);
     },
   );
@@ -986,6 +988,7 @@ export async function registerRoutes(
       if (error) return res.status(400).json({ message: error.message });
       forgetListing(id);
       syncListingToHotdesk(data, id, "updated");
+      invalidateInventory();
       res.json(data);
     },
   );
@@ -1009,6 +1012,7 @@ export async function registerRoutes(
       if (error) return res.status(400).json({ message: error.message });
       forgetListing(id);
       syncListingToHotdesk(null, id, "deleted");
+      invalidateInventory();
       res.json({ ok: true });
     },
   );

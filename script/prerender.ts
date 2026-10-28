@@ -1,6 +1,7 @@
 import { readFile, writeFile, mkdir, readdir } from "fs/promises";
 import path from "path";
 import ts from "typescript";
+import { attr, esc, injectBody, injectMeta } from "../server/seo/html";
 import { STATIC_PAGE_META } from "../client/src/lib/page-meta";
 
 // Build-time "meta-only" prerender.
@@ -118,19 +119,6 @@ export async function collectDeveloperMeta(): Promise<RouteMeta[]> {
   return metas;
 }
 
-// Escape a value for safe insertion into an HTML attribute.
-function attr(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/"/g, "&quot;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-
-function esc(value: string): string {
-  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-
 function headingFrom(title: string): string {
   return title.replace(/\s*\|\s*PLACES\s*$/, "").replace(/\s+—\s+Egypt Office FAQs$/, "");
 }
@@ -144,109 +132,10 @@ function sanitizeWpHtml(html: string): string {
     .replace(/(href|src)\s*=\s*(["'])\s*javascript:[^"']*\2/gi, '$1="#"');
 }
 
-const NAV_LINKS = {
-  en: [
-    ["/", "Home"], ["/listings", "Office listings"], ["/locations", "Locations"],
-    ["/developers", "Developers"], ["/guides", "Guides"], ["/blog", "Blog"],
-    ["/faqs", "FAQs"], ["/contact", "Contact"],
-  ],
-  ar: [
-    ["/", "PLACES"], ["/listings", "المكاتب المتاحة"], ["/ar/blog", "المدونة"], ["/contact", "تواصل معنا"],
-  ],
-} as const;
-
-// Hidden once JS runs (React replaces #root anyway) so visitors never see a
-// flash; crawlers that don't execute JS read the real page text.
-const PRERENDER_HEAD =
-  `<script>document.documentElement.classList.add("js")</script>` +
-  `<style>.js #prerender{display:none}</style>`;
-
-function injectBody(html: string, inner: string, lang: "en" | "ar" = "en"): string {
-  const nav = NAV_LINKS[lang]
-    .map(([href, label]) => `<li><a href="${href}">${esc(label)}</a></li>`)
-    .join("");
-  const block =
-    `<div id="prerender" dir="${lang === "ar" ? "rtl" : "ltr"}" class="container mx-auto px-5 md:px-10 max-w-3xl py-16">` +
-    `${inner}<nav><ul>${nav}</ul></nav></div>`;
-  // Function replacers: page text can contain "$" which String.replace would interpret.
-  return html
-    .replace(/<\/head>/i, () => `${PRERENDER_HEAD}\n</head>`)
-    .replace('<div id="root"></div>', () => `<div id="root">${block}</div>`);
-}
-
 function simpleBody(meta: RouteMeta): string {
   return `<h1>${esc(headingFrom(meta.title))}</h1><p>${esc(meta.description)}</p>`;
 }
 
-// Rewrite the head tags of the shell HTML for one route's meta.
-// `lang` optional — when set to "ar" the <html> tag gets `dir="rtl" lang="ar"`
-// AND the og:locale is flipped to ar_EG, so the wire response matches the
-// actual page language before React hydrates.
-// `alternates` optional — an array of {hreflang, url} pairs to emit as
-// <link rel="alternate"> tags so Google can pair EN and AR versions.
-function injectMeta(
-  shell: string,
-  meta: RouteMeta,
-  opts: { lang?: "en" | "ar"; alternates?: Array<{ hreflang: string; url: string }> } = {},
-): string {
-  let html = shell;
-  const t = attr(meta.title);
-  const d = attr(meta.description);
-  const u = attr(meta.url);
-  const lang = opts.lang ?? "en";
-  const isAr = lang === "ar";
-
-  html = html.replace(/<title>[\s\S]*?<\/title>/, `<title>${t}</title>`);
-  html = html.replace(
-    /<meta\s+name="description"\s+content="[^"]*"\s*\/>/,
-    `<meta name="description" content="${d}" />`,
-  );
-  html = html.replace(
-    /<link\s+rel="canonical"\s+href="[^"]*"\s*\/>/,
-    `<link rel="canonical" href="${u}" />`,
-  );
-  html = html.replace(
-    /<meta\s+property="og:title"\s+content="[^"]*"\s*\/>/,
-    `<meta property="og:title" content="${t}" />`,
-  );
-  html = html.replace(
-    /<meta\s+property="og:description"\s+content="[^"]*"\s*\/>/,
-    `<meta property="og:description" content="${d}" />`,
-  );
-  html = html.replace(
-    /<meta\s+property="og:url"\s+content="[^"]*"\s*\/>/,
-    `<meta property="og:url" content="${u}" />`,
-  );
-
-  // For Arabic pages, flip <html lang="…" dir="…"> so the browser + crawler
-  // renders RTL from the very first byte. og:locale flips too.
-  if (isAr) {
-    html = html.replace(/<html\b[^>]*>/i, `<html lang="ar" dir="rtl">`);
-    if (/og:locale/i.test(html)) {
-      html = html.replace(
-        /<meta\s+property="og:locale"\s+content="[^"]*"\s*\/>/i,
-        `<meta property="og:locale" content="ar_EG" />`,
-      );
-    } else {
-      html = html.replace(
-        /<\/head>/i,
-        `<meta property="og:locale" content="ar_EG" />\n</head>`,
-      );
-    }
-  }
-
-  // hreflang alternates — inject just before </head>. When Google sees
-  // matching pairs on both language versions it treats them as translations
-  // of each other instead of duplicate content.
-  if (opts.alternates && opts.alternates.length > 0) {
-    const tags = opts.alternates
-      .map((a) => `<link rel="alternate" hreflang="${attr(a.hreflang)}" href="${attr(a.url)}" />`)
-      .join("\n");
-    html = html.replace(/<\/head>/i, `${tags}\n</head>`);
-  }
-
-  return html;
-}
 
 // Per-page meta for the two "index" URLs that Cloudflare rewrites to
 // serve from /listings/index.html and /developers/index.html. Without

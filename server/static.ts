@@ -1,3 +1,4 @@
+import { registerSeoRoutes } from "./seo/routes";
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
@@ -36,6 +37,8 @@ export function serveStatic(app: Express) {
 
   // If the build directory exists, serve it normally
   if (fs.existsSync(distPath)) {
+    registerSeoRoutes(app, distPath);
+
     // 🚨 CRITICAL hub-page resolver, mounted BEFORE express.static.
     //
     // Context: pages like /listings also have children at /listings/{id}-slug,

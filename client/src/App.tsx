@@ -225,6 +225,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/listings" component={ListingsPage} />
+      <Route path="/listings/page/:page" component={ListingsPage} />
       <Route path="/listings/:idSlug" component={ListingDetailPage} />
       <Route path="/why-places" component={WhyPlaces} />
       <Route path="/admin/business-building" component={BusinessBuilding} />
