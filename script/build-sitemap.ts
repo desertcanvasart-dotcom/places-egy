@@ -16,7 +16,7 @@ const BLOG_PRIORITY = "0.6";
 const GUIDE_CHANGEFREQ = "monthly";
 const GUIDE_PRIORITY = "0.8"; // evergreen SEO content — higher than blog
 
-type WpPost = {
+export type WpPost = {
   id: number;
   slug: string;
   modified: string;
@@ -26,7 +26,7 @@ type WpPost = {
   translations?: Record<string, number>;
 };
 
-async function fetchAllPosts(lang: "en" | "ar"): Promise<WpPost[]> {
+export async function fetchAllPosts(lang: "en" | "ar"): Promise<WpPost[]> {
   const all: WpPost[] = [];
   let page = 1;
   const perPage = 100;
@@ -66,7 +66,7 @@ async function fetchAllPosts(lang: "en" | "ar"): Promise<WpPost[]> {
 // `lang` sets the URL prefix ("" for EN → /blog/, "/ar" for AR → /ar/blog/).
 // `translationSlugs` is a Map<postId, slug> lookup for the OTHER language,
 // so a post can point at its counterpart.
-function buildPostEntries(
+export function buildPostEntries(
   posts: WpPost[],
   opts: {
     lang: "en" | "ar";

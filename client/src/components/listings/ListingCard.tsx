@@ -20,7 +20,7 @@ import { trackEvent } from "@/lib/analytics";
 import { usePriceUnlock, priceRangeLabel } from "@/lib/price-unlock";
 import { UnlockPriceModal } from "@/components/UnlockPriceModal";
 import { Lock } from "lucide-react";
-import { rentedLabel } from "@/lib/listing-text";
+import { cleanListingTitle, rentedLabel } from "@/lib/listing-text";
 
 const PHONE = "01063618217";
 
@@ -104,7 +104,8 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
     touchStartX.current = null;
   };
 
-  const whatsappMessage = encodeURIComponent(`Hi, I'm interested in the ${listing.title} listing on PLACES.`);
+  const displayTitle = cleanListingTitle(listing.title ?? "");
+  const whatsappMessage = encodeURIComponent(`Hi, I'm interested in the ${displayTitle} listing on PLACES.`);
 
   const listingEventParams = {
     listing_id: listing.id,
@@ -132,6 +133,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
   const handleViewFullDetailsClick = () =>
     trackEvent("view_full_details_click", listingEventParams);
 
+
   if (listView) {
     return (
       <>
@@ -143,7 +145,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
             <img
               src={supabaseImage(images[0], "card")}
               onError={supabaseImageOnError(images[0])}
-              alt={listing.title}
+              alt={displayTitle}
               loading="lazy"
               decoding="async"
               className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -170,7 +172,13 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
             <div>
               <div className="flex justify-between items-start gap-4 mb-1">
                 <h3 className="font-serif text-base font-semibold text-primary group-hover:text-accent transition-colors line-clamp-1">
-                  {listing.title}
+                  <Link
+                    href={listingUrl(listing)}
+                    onClick={(e) => { e.stopPropagation(); handleViewFullDetailsClick(); }}
+                    className="hover:underline"
+                  >
+                    {displayTitle}
+                  </Link>
                 </h3>
                 {!hideSubtype && (
                   <span className="text-[10px] font-bold uppercase tracking-wider text-primary/60 bg-primary/5 border border-primary/10 px-2.5 py-1 rounded-full shrink-0">
@@ -247,7 +255,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
                 </div>
               ) : (
                 <>
-                  <img src={supabaseImage(images[modalImage], "full")} onError={supabaseImageOnError(images[modalImage])} alt={listing.title} fetchPriority="high" decoding="async" className="w-full h-full object-cover transition-all duration-500" />
+                  <img src={supabaseImage(images[modalImage], "full")} onError={supabaseImageOnError(images[modalImage])} alt={displayTitle} fetchPriority="high" decoding="async" className="w-full h-full object-cover transition-all duration-500" />
                   {hasMultiple && (
                     <>
                       <button onClick={() => setModalImage((c: number) => (c === 0 ? images.length - 1 : c - 1))} className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white opacity-0 group-hover/modal:opacity-100 transition-opacity hover:bg-black/60"><ChevronLeft className="w-5 h-5" /></button>
@@ -277,7 +285,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
             <div className="px-6 pb-6 pt-4 space-y-4">
               <div className="flex justify-between items-start gap-4">
                 <div>
-                  <h2 className="text-xl font-serif font-bold text-primary">{listing.title}</h2>
+                  <h2 className="text-xl font-serif font-bold text-primary">{displayTitle}</h2>
                   <div className="flex items-center gap-3 mt-1.5">
                     <span className="flex items-center gap-1.5 text-muted-foreground text-sm">
                       <MapPin className="w-3.5 h-3.5" />
@@ -350,7 +358,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
           <img
             src={supabaseImage(images[current], "card")}
             onError={supabaseImageOnError(images[current])}
-            alt={listing.title}
+            alt={displayTitle}
             loading="lazy"
             decoding="async"
             className="object-cover w-full h-full transition-all duration-500 group-hover:scale-105"
@@ -429,7 +437,9 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
             )}
           </div>
           <h3 className="font-serif text-base font-semibold leading-tight group-hover:text-primary transition-colors line-clamp-2">
-            {listing.title}
+            <Link href={listingUrl(listing)} onClick={handleViewFullDetailsClick} className="hover:text-accent transition-colors">
+              {displayTitle}
+            </Link>
           </h3>
           <div className="flex items-center gap-1.5 text-muted-foreground text-sm mt-0.5">
             <MapPin className="w-3.5 h-3.5" />
@@ -468,12 +478,21 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
           </div>
         </CardContent>
 
-        <CardFooter className="px-4 pb-3 pt-0">
-          <Button
-            onClick={() => setModalOpen(true)}
-            className="w-full bg-secondary hover:bg-primary hover:text-white text-secondary-foreground transition-all group-hover:translate-y-0 translate-y-2 opacity-0 group-hover:opacity-100 duration-300"
+        <CardFooter className="px-4 pb-3 pt-0 flex gap-2">
+          <Link
+            href={listingUrl(listing)}
+            onClick={handleViewFullDetailsClick}
+            className="flex-1 inline-flex items-center justify-center h-9 rounded-md bg-secondary hover:bg-primary hover:text-white text-secondary-foreground text-sm font-medium transition-colors"
           >
             View Details <ArrowUpRight className="ml-2 w-4 h-4" />
+          </Link>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setModalOpen(true)}
+            className="h-9 px-3 text-sm"
+          >
+            Quick view
           </Button>
         </CardFooter>
       </Card>
@@ -492,7 +511,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
                 <img
                   src={supabaseImage(images[modalImage], "full")}
                   onError={supabaseImageOnError(images[modalImage])}
-                  alt={listing.title}
+                  alt={displayTitle}
                   fetchPriority="high"
                   decoding="async"
                   className="w-full h-full object-cover transition-all duration-500"
@@ -554,7 +573,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
             {/* Title + location + price */}
             <div className="flex justify-between items-start gap-4">
               <div>
-                <h2 className="text-xl font-serif font-bold text-primary">{listing.title}</h2>
+                <h2 className="text-xl font-serif font-bold text-primary">{displayTitle}</h2>
                 <div className="flex items-center gap-3 mt-1.5">
                   <span className="flex items-center gap-1.5 text-muted-foreground text-sm">
                     <MapPin className="w-3.5 h-3.5" />

@@ -1,10 +1,11 @@
 // Shared by the listing page, the build-time listing prerender, and the admin
 // save path. Keep free of "@/" imports: scripts and the server import it directly.
 
-// Titles get pasted from WhatsApp, where *text* means bold.
+// Titles get pasted from WhatsApp (*bold*) or Markdown (# heading).
 export function cleanListingTitle(title: string): string {
   return title
-    .replace(/\*+/g, "")
+    .replace(/^\s*#+\s*/, "")
+    .replace(/[*`~]+/g, "")
     .replace(/\s+/g, " ")
     .replace(/^[\s|]+|[\s|]+$/g, "")
     .trim();
