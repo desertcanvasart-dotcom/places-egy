@@ -86,22 +86,24 @@ export function listingIssues(l: CheckableListing): ListingIssue[] {
     });
   }
 
-  // Condition in title vs condition field
+  // Condition in title vs condition field. "Flexi Finished" (finishing to the
+  // tenant's choice) is a semi-finished unit, so it isn't a "finished" claim.
   const cond = l.furnishing ?? "";
-  if (UNFINISHED_IN_TITLE.test(title) && FINISHED_VALUES.has(cond)) {
+  const condTitle = title.replace(/\bflexi[\s-]*finish(?:ed|ing)\b/gi, "");
+  if (UNFINISHED_IN_TITLE.test(condTitle) && FINISHED_VALUES.has(cond)) {
     issues.push({
       rule: "title says unfinished, condition says finished",
       field: "title/furnishing",
       current: CONDITION_LABEL[cond] ?? cond,
-      conflicting: `title: ${title.match(UNFINISHED_IN_TITLE)?.[0]}`,
+      conflicting: `title: ${condTitle.match(UNFINISHED_IN_TITLE)?.[0]}`,
       fix: "Set condition to Core & Shell / Semi-Finished, or fix the title",
     });
-  } else if (!UNFINISHED_IN_TITLE.test(title) && FINISHED_IN_TITLE.test(title) && UNFINISHED_VALUES.has(cond)) {
+  } else if (!UNFINISHED_IN_TITLE.test(condTitle) && FINISHED_IN_TITLE.test(condTitle) && UNFINISHED_VALUES.has(cond)) {
     issues.push({
       rule: "title says finished, condition says unfinished",
       field: "title/furnishing",
       current: CONDITION_LABEL[cond] ?? cond,
-      conflicting: `title: ${title.match(FINISHED_IN_TITLE)?.[0]}`,
+      conflicting: `title: ${condTitle.match(FINISHED_IN_TITLE)?.[0]}`,
       fix: "Set condition to Finished / Fully Finished, or fix the title",
     });
   }

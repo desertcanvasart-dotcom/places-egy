@@ -33,6 +33,7 @@ import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema, placeSchema } from "@/lib/schema";
 import { useDocumentMeta } from "@/lib/use-document-meta";
 import NotFound from "@/pages/not-found";
+import { DEALS, eligibleLandingPages } from "@/lib/landing-pages";
 
 function formatLabel(value: string | null | undefined): string {
   if (!value) return "";
@@ -119,14 +120,14 @@ export default function LocationDetail() {
   });
 
   // Meta-only query for derived sections (projects / developers / types)
-  type ListingMeta = Pick<Listing, "project" | "developer" | "property_type" | "subtype">;
+  type ListingMeta = Pick<Listing, "id" | "project" | "developer" | "property_type" | "subtype" | "transaction_type" | "location" | "rental_status">;
   const { data: allMeta = [] } = useQuery<ListingMeta[]>({
     queryKey: ["location-meta", content?.displayName],
     enabled: !!content,
     queryFn: async () => {
       const { data, error } = await supabase
         .from<Listing>("listings")
-        .select("project, developer, property_type, subtype")
+        .select("id, project, developer, property_type, subtype, transaction_type, location, rental_status")
         .eq('is_test', false)
         .eq("property_type", "admin")
         .eq("location", content!.displayName);
@@ -182,6 +183,12 @@ export default function LocationDetail() {
     }
     return out;
   }, [allMeta]);
+
+  // Live "Offices for Rent in {location}"-style pages for this location.
+  const landingPages = useMemo(
+    () => (content ? eligibleLandingPages(allMeta).filter((p) => p.loc.slug === content.slug) : []),
+    [allMeta, content],
+  );
 
   if (!content) return <NotFound />;
 
@@ -244,6 +251,17 @@ export default function LocationDetail() {
               <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
           </a>
+          {landingPages.length > 0 && (
+            <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+              {landingPages.map((p) => (
+                <li key={p.path}>
+                  <Link href={p.path} className="text-white/90 underline underline-offset-4 decoration-white/40 hover:decoration-white">
+                    {DEALS[p.deal].heading(content.displayName)} ({p.count})
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </section>
 

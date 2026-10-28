@@ -86,6 +86,7 @@ const WealthPage = lazy(() => import("@/pages/developers/wealth"));
 const Locations = lazy(() => import("@/pages/locations"));
 const ProjectsPage = lazy(() => import("@/pages/projects"));
 const LocationDetail = lazy(() => import("@/pages/locations/detail"));
+const LandingPage = lazy(() => import("@/pages/landing"));
 const AdminPage = lazy(() => import("@/pages/dashboard"));
 const PrivacyPolicy = lazy(() => import("@/pages/privacy-policy"));
 const TermsOfService = lazy(() => import("@/pages/terms-of-service"));
@@ -302,6 +303,10 @@ function Router() {
 
       {/* Location detail pages — dynamic template */}
       <Route path="/locations/:slug" component={LocationDetail} />
+      {/* Search landing pages; the server 404s any page under the unit minimum. */}
+      <Route path="/rent/:location" component={LandingPage} />
+      <Route path="/buy/:location" component={LandingPage} />
+      <Route path="/income-property/:location" component={LandingPage} />
 
       {/* Route categories to Listings Page for prototype */}
       <Route path="/admin/:type" component={ListingsPage} />

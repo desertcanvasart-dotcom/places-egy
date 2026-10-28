@@ -1,5 +1,5 @@
 import type { Express, Request, Response, NextFunction } from "express";
-import { renderDeveloper, renderHome, renderListing, renderListingsIndex, renderLocation, setDistPath } from "./render";
+import { renderDeveloper, renderHome, renderLanding, renderListing, renderListingsIndex, renderLocation, renderNotFound, setDistPath } from "./render";
 import { getListingById } from "./data";
 import { registerSitemapRoutes } from "./sitemap";
 
@@ -52,4 +52,17 @@ export function registerSeoRoutes(app: Express, distPath: string): void {
   );
   app.get("/locations/:slug", send((req) => renderLocation(String(req.params.slug))));
   app.get("/developers/:slug", send((req) => renderDeveloper(String(req.params.slug))));
+  // Search landing pages (/rent/new-cairo, /buy/new-cairo, …). A page exists only
+  // while it has enough available units; otherwise it's a real 404.
+  app.get(["/rent/:loc", "/buy/:loc", "/income-property/:loc"], async (req, res, next) => {
+    try {
+      const html = await renderLanding(req.path.split("/")[1], String(req.params.loc));
+      res.setHeader("Cache-Control", "no-cache");
+      if (html === null) return res.status(404).type("html").send(renderNotFound("404"));
+      res.type("html").send(html);
+    } catch (err) {
+      console.warn(`[seo] render failed for ${req.path}:`, err);
+      next();
+    }
+  });
 }
