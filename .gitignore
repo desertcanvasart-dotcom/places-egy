@@ -9,3 +9,7 @@ vite.config.ts.*
 _originals/
 client/public/images/_originals/
 PLACES assets/
+
+# Local data reports and backups (not source)
+listing-data-issues.csv
+listing-title-backup-*.json

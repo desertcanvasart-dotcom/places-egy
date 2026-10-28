@@ -18,6 +18,7 @@ import { trackEvent } from "@/lib/analytics";
 import { openCalendly } from "@/lib/calendly";
 import { useScrollDepth } from "@/lib/use-scroll-depth";
 import { ViewingRequestModal } from "@/components/ViewingRequestModal";
+import { rankSimilar } from "@/lib/similar-listings";
 import { cleanListingTitle, listingSnippet, rentedLabel } from "@/lib/listing-text";
 import DOMPurify from "dompurify";
 import { marked } from "marked";
@@ -111,44 +112,31 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
     },
   });
 
-  // Pool of same-subtype listings to rank as "similar" candidates. Subtype is
-  // the broadest meaningful similarity dimension; project/developer/location
-  // matches are layered on top via the scoring step below.
+  // Every listing with the same transaction type (card fields only), cached
+  // across listing pages; ranked by rankSimilar (area, location, price).
   const { data: similarPool = [] } = useQuery<Listing[]>({
-    queryKey: ["similar-listings", listing?.id, listing?.subtype],
+    queryKey: ["similar-pool", listing?.transaction_type],
+    staleTime: 5 * 60 * 1000,
     queryFn: async () => {
-      if (!listing?.subtype) return [];
+      if (!listing?.transaction_type) return [];
       const { data, error } = await supabase
         .from<Listing>("listings")
-        .select("*")
-        .eq('is_test', false)
-        .eq("subtype", listing.subtype)
-        .neq("id", listing.id)
-        .limit(20);
+        .select(
+          "id,title,transaction_type,property_type,subtype,developer,project,location,location_area,price,currency,area_sqm,furnishing,images,rental_status,rental_end,updated_at,price_per_meter,maintenance_fees,maintenance_status,floor,parking,delivery_date",
+        )
+        .eq("is_test", false)
+        .eq("property_type", "admin")
+        .eq("transaction_type", listing.transaction_type);
       if (error) throw error;
       return data ?? [];
     },
-    enabled: !!listing?.subtype,
+    enabled: !!listing?.transaction_type,
   });
 
-  // Rank candidates by closeness to the current listing — same project beats
-  // same developer beats same location. Ties broken by id (newest first).
-  const similarListings = useMemo<Listing[]>(() => {
-    if (!listing) return [];
-    const score = (l: Listing) => {
-      let s = 0;
-      if (l.project && listing.project && l.project === listing.project) s += 10;
-      if (l.developer && listing.developer && l.developer === listing.developer) s += 5;
-      if (l.location && listing.location && l.location === listing.location) s += 2;
-      return s;
-    };
-    return [...similarPool]
-      .sort((a, b) => {
-        const diff = score(b) - score(a);
-        return diff !== 0 ? diff : b.id - a.id;
-      })
-      .slice(0, 4);
-  }, [similarPool, listing]);
+  const similarListings = useMemo<Listing[]>(
+    () => (listing ? rankSimilar(listing, similarPool, 4) : []),
+    [similarPool, listing],
+  );
 
   // Listing not found → soft redirect to /listings (replace history so the
   // bad URL doesn't trap the back button).

@@ -5,6 +5,7 @@ import path from "path";
 import { FURNISHING_OPTIONS, getEnumLabel } from "../../client/src/lib/enums";
 import { cleanListingTitle, listingSnippet, rentedLabel } from "../../client/src/lib/listing-text";
 import { listingSchema } from "../../client/src/lib/schema";
+import { rankSimilar } from "../../client/src/lib/similar-listings";
 import { LOCATION_CONTENT } from "../../client/src/lib/location-content";
 
 const LOCATIONS = Object.values(LOCATION_CONTENT);
@@ -149,35 +150,8 @@ export async function renderDeveloper(slug: string): Promise<string | null> {
   return injectBody(base, intro + `<h2>Available offices (${rows.length})</h2>` + listingLinks(rows) + locationNav());
 }
 
-// Same transaction type, area within ±30% (widened until 4 results), same
-// location first, then closest price. Excludes the listing itself and rented units.
 export function similarListings(l: SeoListing, all: SeoListing[], limit = 6): SeoListing[] {
-  const pool = all.filter(
-    (o) => o.id !== l.id && o.transaction_type === l.transaction_type && o.rental_status !== "rented",
-  );
-  const area = Number(l.area_sqm) || 0;
-  let band = 0.3;
-  let picked = pool;
-  if (area > 0) {
-    while (band <= 2) {
-      picked = pool.filter((o) => {
-        const a = Number(o.area_sqm) || 0;
-        return a > 0 && Math.abs(a - area) <= area * band;
-      });
-      if (picked.length >= 4) break;
-      band += 0.3;
-    }
-    if (picked.length < 4) picked = pool;
-  }
-  const price = Number(l.price) || 0;
-  return [...picked]
-    .sort(
-      (a, b) =>
-        Number(b.location === l.location) - Number(a.location === l.location) ||
-        (a.currency === l.currency ? 0 : 1) - (b.currency === l.currency ? 0 : 1) ||
-        Math.abs((Number(a.price) || 0) - price) - Math.abs((Number(b.price) || 0) - price),
-    )
-    .slice(0, limit);
+  return rankSimilar(l, all, limit);
 }
 
 function descriptionParagraphs(markdown: string): string {
