@@ -165,8 +165,14 @@ export function listingSchema(listing: {
   }
 
   // Build the canonical URL inline rather than importing listingUrl to keep
-  // schema.ts dependency-free. Mirrors the format in lib/listings.ts.
-  const titleSlug = listing.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  // schema.ts dependency-free. Must match slugify() in lib/faq.ts exactly.
+  const titleSlug = listing.title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
   const url = `${BASE_URL}/listings/${listing.id}${titleSlug ? `-${titleSlug}` : ""}`;
 
   return {

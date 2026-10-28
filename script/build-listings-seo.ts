@@ -216,19 +216,7 @@ export async function buildListingsSeo(): Promise<void> {
     console.warn("[listings-seo] sitemap injection failed:", err instanceof Error ? err.message : err);
   }
 
-  // 2. Per-listing meta prerender
-  try {
-    const shell = await readFile(path.join(DIST, "index.html"), "utf-8");
-    let written = 0;
-    for (const { row, path: p } of withPaths) {
-      const html = injectListingMeta(shell, row, `${SITE_ORIGIN}${p}`);
-      const outPath = path.join(DIST, `${p}.html`);
-      await mkdir(path.dirname(outPath), { recursive: true });
-      await writeFile(outPath, html, "utf-8");
-      written++;
-    }
-    console.log(`[listings-seo] prerendered ${written} listing pages (meta-only)`);
-  } catch (err) {
-    console.warn("[listings-seo] prerender failed:", err instanceof Error ? err.message : err);
-  }
+  // Per-listing HTML is rendered on request (server/seo/render.ts) so new
+  // listings never fall back to the homepage shell between deploys.
+
 }

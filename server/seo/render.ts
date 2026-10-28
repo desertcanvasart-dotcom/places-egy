@@ -3,11 +3,12 @@
 import { readFileSync, existsSync } from "fs";
 import path from "path";
 import { FURNISHING_OPTIONS, getEnumLabel } from "../../client/src/lib/enums";
-import { cleanListingTitle } from "../../client/src/lib/listing-text";
+import { cleanListingTitle, listingSnippet, rentedLabel } from "../../client/src/lib/listing-text";
+import { listingSchema } from "../../client/src/lib/schema";
 import { LOCATION_CONTENT } from "../../client/src/lib/location-content";
 
 const LOCATIONS = Object.values(LOCATION_CONTENT);
-import { esc, injectBody, injectMeta, prerenderInner, type PageMeta } from "./html";
+import { esc, injectBody, injectJsonLd, injectMeta, prerenderInner, type PageMeta } from "./html";
 import { getInventory, type SeoListing } from "./data";
 
 export const SITE = "https://places-egy.com";
@@ -146,4 +147,92 @@ export async function renderDeveloper(slug: string): Promise<string | null> {
   const rows = (await getInventory()).filter((l) => l.developer === slug);
   const intro = prerenderInner(base) ?? "";
   return injectBody(base, intro + `<h2>Available offices (${rows.length})</h2>` + listingLinks(rows) + locationNav());
+}
+
+// Same transaction type, area within ±30% (widened until 4 results), same
+// location first, then closest price. Excludes the listing itself and rented units.
+export function similarListings(l: SeoListing, all: SeoListing[], limit = 6): SeoListing[] {
+  const pool = all.filter(
+    (o) => o.id !== l.id && o.transaction_type === l.transaction_type && o.rental_status !== "rented",
+  );
+  const area = Number(l.area_sqm) || 0;
+  let band = 0.3;
+  let picked = pool;
+  if (area > 0) {
+    while (band <= 2) {
+      picked = pool.filter((o) => {
+        const a = Number(o.area_sqm) || 0;
+        return a > 0 && Math.abs(a - area) <= area * band;
+      });
+      if (picked.length >= 4) break;
+      band += 0.3;
+    }
+    if (picked.length < 4) picked = pool;
+  }
+  const price = Number(l.price) || 0;
+  return [...picked]
+    .sort(
+      (a, b) =>
+        Number(b.location === l.location) - Number(a.location === l.location) ||
+        (a.currency === l.currency ? 0 : 1) - (b.currency === l.currency ? 0 : 1) ||
+        Math.abs((Number(a.price) || 0) - price) - Math.abs((Number(b.price) || 0) - price),
+    )
+    .slice(0, limit);
+}
+
+function descriptionParagraphs(markdown: string): string {
+  const paras = markdown
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .split(/\n\s*\n/)
+    .map((p) =>
+      p
+        .replace(/^\s{0,3}(#{1,6}|[-*+]|\d+[.)])\s+/gm, "")
+        .replace(/[*_`~>#|]+/g, "")
+        .replace(/\s+/g, " ")
+        .trim(),
+    )
+    .filter(Boolean);
+  return paras.map((p) => `<p>${esc(p)}</p>`).join("");
+}
+
+export async function renderListing(l: SeoListing): Promise<string> {
+  const all = await getInventory();
+  const title = listingTitle(l);
+  const condition = l.furnishing ? getEnumLabel(FURNISHING_OPTIONS, l.furnishing) || l.furnishing : null;
+  const locSlug = locationSlugFor(l.location);
+  const photo = (l.images ?? []).find(Boolean);
+  const url = `${SITE}${l.path}`;
+
+  const meta: PageMeta = {
+    title: `${title} | PLACES`,
+    description:
+      listingSnippet(l.description ?? "") ||
+      `${title}: ${[l.location, l.area_sqm ? `${l.area_sqm} m²` : null, formatPrice(l)].filter(Boolean).join(", ")}.`,
+    url,
+    image: photo,
+  };
+
+  const rows: Array<[string, string]> = [
+    ["Price", esc(formatPrice(l))],
+    ["Area", l.area_sqm ? `${esc(Number(l.area_sqm).toLocaleString("en-US"))} m²` : "On request"],
+    ["Location", locSlug ? `<a href="/locations/${locSlug}">${esc(l.location ?? "")}</a>` : esc(l.location ?? "")],
+    ...(l.location_area ? ([["Area / district", esc(l.location_area)]] as Array<[string, string]>) : []),
+    ...(condition ? ([["Condition", esc(condition)]] as Array<[string, string]>) : []),
+    ["Transaction", esc(l.transaction_type === "income-property" ? "Income property" : l.transaction_type === "sale" ? "For sale" : "For rent")],
+    ...(l.rental_status === "rented" ? ([["Availability", esc(rentedLabel(l))]] as Array<[string, string]>) : []),
+  ];
+
+  const similar = similarListings(l, all);
+  const body =
+    `<article><h1>${esc(title)}</h1>` +
+    (photo ? `<img src="${esc(photo)}" alt="${esc(title)}" width="1200" height="800">` : "") +
+    `<dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>` +
+    (descriptionParagraphs(l.description ?? "") || `<p>${esc(meta.description)}</p>`) +
+    `</article>` +
+    (locSlug ? `<p><a href="/locations/${locSlug}">More offices in ${esc(l.location ?? "")}</a></p>` : "") +
+    (similar.length ? `<h2>Similar units</h2>${listingLinks(similar)}` : "") +
+    `<p><a href="/listings">Browse all listings</a></p>`;
+
+  return injectBody(injectJsonLd(injectMeta(shell(), meta), listingSchema({ ...l, title })), body);
 }

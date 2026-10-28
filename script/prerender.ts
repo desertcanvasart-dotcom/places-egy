@@ -129,7 +129,9 @@ function sanitizeWpHtml(html: string): string {
     .replace(/<(script|style|iframe|noscript|object|embed|form)\b[\s\S]*?<\/\1>/gi, "")
     .replace(/<(script|iframe|object|embed)\b[^>]*\/?>/gi, "")
     .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
-    .replace(/(href|src)\s*=\s*(["'])\s*javascript:[^"']*\2/gi, '$1="#"');
+    .replace(/(href|src)\s*=\s*(["'])\s*javascript:[^"']*\2/gi, '$1="#"')
+    // The page template supplies the one <h1>; headings inside the article start at h2.
+    .replace(/<(\/?)h1\b/gi, "<$1h2");
 }
 
 function simpleBody(meta: RouteMeta): string {
