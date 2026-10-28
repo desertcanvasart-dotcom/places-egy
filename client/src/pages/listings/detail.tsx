@@ -263,7 +263,7 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
   const images = listing.images?.length ? listing.images : [FALLBACK_IMAGE];
   const hasMultiple = images.length > 1;
   const whatsappMessage = encodeURIComponent(
-    `Hi, I'm interested in the ${listing.title} listing on PLACES.`,
+    `Hi, I'm interested in the ${cleanListingTitle(listing.title ?? "")} listing on PLACES.`,
   );
 
   const listingEventParams = {
@@ -284,7 +284,7 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
         schema={breadcrumbSchema([
           { name: "Home", url: "/" },
           { name: "Listings", url: "/listings" },
-          { name: listing.title, url: listingUrl(listing) },
+          { name: cleanListingTitle(listing.title ?? ""), url: listingUrl(listing) },
         ])}
       />
       <SchemaMarkup schema={listingSchema(listing)} />
@@ -298,7 +298,7 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
             <ChevronRightIcon className="w-3.5 h-3.5" />
             <Link href="/listings" className="hover:text-primary transition-colors">Listings</Link>
             <ChevronRightIcon className="w-3.5 h-3.5" />
-            <span className="text-primary line-clamp-1">{listing.title}</span>
+            <span className="text-primary line-clamp-1">{cleanListingTitle(listing.title ?? "")}</span>
           </nav>
 
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
@@ -314,7 +314,7 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
                 </span>
               )}
               <h1 className="text-2xl md:text-4xl font-serif font-bold text-primary leading-tight">
-                {listing.title}
+                {cleanListingTitle(listing.title ?? "")}
               </h1>
               <div className="flex items-center gap-2 md:gap-3 mt-3 text-muted-foreground flex-wrap">
                 <div className="flex items-center gap-2 shrink-0">
@@ -362,7 +362,7 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
             <img
               src={supabaseImage(images[imageIndex], "full")}
               onError={supabaseImageOnError(images[imageIndex])}
-              alt={listing.title}
+              alt={cleanListingTitle(listing.title ?? "")}
               fetchPriority="high"
               decoding="async"
               className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
