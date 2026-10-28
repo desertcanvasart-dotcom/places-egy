@@ -55,6 +55,11 @@ const FIXES: Fix[] = [
   { id: 579, field: "area_sqm", from: 480, to: 400, why: "title/description 400 SQM; 480,000 ÷ 1,200 = 400" },
   // Condition
   { id: 571, field: "furnishing", from: "finished", to: "semi-finished", why: "title and description say White Box" },
+  // "Finished after N months": condition = what the tenant receives (approved 2026-10-28; #334 already did this).
+  { id: 161, field: "furnishing", from: "semi-finished", to: "fully-finished", why: "title: Fully Finished After 3 Months" },
+  { id: 224, field: "furnishing", from: "semi-finished", to: "finished", why: "title: Finished After 4 Months" },
+  { id: 229, field: "furnishing", from: "semi-finished", to: "finished", why: "title: Finished After 3 Months" },
+  { id: 285, field: "furnishing", from: "semi-finished", to: "finished", why: "title: Finished After 3 Weeks" },
 ];
 
 const url = process.env.SUPABASE_URL;
