@@ -1,10 +1,11 @@
-import { useState, useMemo, useEffect } from "react";
-import { Link, useLocation, useParams } from "wouter";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { Link, useLocation, useParams, useSearch } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { CornerSlideMagnet } from "@/components/magnets/CornerSlideMagnet";
 import { FilterSidebar, DEFAULT_FILTERS, PRICE_MIN, PRICE_MAX, type Filters } from "@/components/listings/FilterSidebar";
+import { buildListingsSearch, parseListingsSearch, type ListingsUrlState, type SortOption, type ViewMode } from "@/lib/listing-filters-url";
 import { ListingCard } from "@/components/listings/ListingCard";
 import { ListingsMap } from "@/components/listings/ListingsMap";
 import { supabase, type Listing } from "@/lib/supabase";
@@ -29,8 +30,6 @@ import {
 // Matches the server-rendered /listings/page/N pages (server/seo/render.ts).
 const PAGE_SIZE = 48;
 
-type SortOption = "newest" | "price-low" | "price-high" | "area-large" | "area-small";
-
 const SORT_LABELS: Record<SortOption, string> = {
   "newest": "Newest First",
   "price-low": "Price: Low to High",
@@ -39,46 +38,6 @@ const SORT_LABELS: Record<SortOption, string> = {
   "area-small": "Area: Small to Large",
 };
 
-function getInitialFilters(): Filters {
-  if (typeof window === "undefined") return DEFAULT_FILTERS;
-  const params = new URLSearchParams(window.location.search);
-  const filters = { ...DEFAULT_FILTERS };
-  const type = params.get("type");
-  const subtype = params.get("subtype");
-  const location = params.get("location");
-  const transaction = params.get("transaction");
-  const developer = params.get("developer");
-  // Note: legacy ?type=commercial URLs are silently ignored after the
-  // positioning shift to admin-only. The query below also enforces admin.
-  if (type === "admin") {
-    filters.propertyType = "Admin";
-  }
-  if (subtype) {
-    filters.subtype = [subtype];
-  }
-  if (location) {
-    filters.location = location;
-  }
-  if (transaction === "sale" || transaction === "rent" || transaction === "income-property") {
-    // Store the human-readable label ("Sale" / "Rent" / "Income Property")
-    // for the filter chip UI. The comparison in the filter loop
-    // normalizes both sides to a DB-slug form ("income property" → the
-    // hyphenated DB value) so the chip stays pretty while the match
-    // stays correct.
-    filters.transactionType =
-      transaction === "sale" ? "Sale" : transaction === "rent" ? "Rent" : "Income Property";
-  }
-  if (developer) {
-    filters.developer = developer;
-  }
-  return filters;
-}
-
-function getInitialQuery(): string {
-  if (typeof window === "undefined") return "";
-  return new URLSearchParams(window.location.search).get("q") ?? "";
-}
-
 const LISTINGS_CANONICAL = "https://places-egy.com/listings";
 
 // Faceted-navigation SEO: filtered/search views of /listings (any ?query) are
@@ -86,9 +45,9 @@ const LISTINGS_CANONICAL = "https://places-egy.com/listings";
 // when a filter has no results — which Google reports as soft 404s. We mark any
 // filtered view noindex,follow and canonicalize it to the clean /listings page,
 // so only /listings itself is indexed. The clean page gets a self-canonical.
-function useListingsIndexability(page: number) {
+function useListingsIndexability(page: number, search: string) {
   useEffect(() => {
-    const hasParams = typeof window !== "undefined" && window.location.search.length > 1;
+    const hasParams = search.length > 0;
 
     let robots = document.head.querySelector<HTMLMetaElement>('meta[name="robots"]');
     if (!robots) {
@@ -110,37 +69,53 @@ function useListingsIndexability(page: number) {
       // Restore indexability when leaving so the next page isn't left noindexed.
       robots?.setAttribute("content", "index,follow");
     };
-  }, [page]);
+  }, [page, search]);
 }
 
 export default function ListingsPage() {
-  const [filters, setFilters] = useState<Filters>(getInitialFilters);
-  const [searchQuery, setSearchQuery] = useState(getInitialQuery);
-  const [sortBy, setSortBy] = useState<SortOption>("newest");
-  const [viewMode, setViewMode] = useState<"grid" | "list" | "map">("grid");
+  // Filters, search, sort and view live in the query string (P1-3), so a
+  // filtered view can be shared, bookmarked and restored with Back.
+  const search = useSearch();
+  const [initial] = useState<ListingsUrlState>(() =>
+    parseListingsSearch(typeof window === "undefined" ? "" : window.location.search),
+  );
+  const [filters, setFilters] = useState<Filters>(initial.filters);
+  const [searchQuery, setSearchQuery] = useState(initial.q);
+  const [sortBy, setSortBy] = useState<SortOption>(initial.sort);
+  const [viewMode, setViewMode] = useState<ViewMode>(initial.view);
+  const urlState: ListingsUrlState = { filters, q: searchQuery, sort: sortBy, view: viewMode };
+  const urlStateRef = useRef(urlState);
+  urlStateRef.current = urlState;
 
-  // Sync searchQuery + viewMode from the URL every time wouter's location
-  // changes. When a visitor clicks a project pin on the map, we navigate
-  // to /listings?q=<project> via client-side routing — the component
-  // doesn't remount, so without this effect the useState initializers
-  // never re-run and the query is silently ignored. We also switch to
-  // grid view on navigation-with-query so the user actually SEES the
-  // filtered units rather than staying in map view.
-  const [wouterLocation] = useLocation();
+  // The query string changed from outside (map pin -> ?q=<project>, navbar
+  // links, Back/Forward): adopt it. Our own writes below round-trip to the
+  // same string and are skipped.
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const q = params.get("q") ?? "";
-    const project = params.get("project") ?? "";
-    const effective = q || project;
-    if (effective) {
-      setSearchQuery(effective);
-      setViewMode("grid");
-    }
-  }, [wouterLocation]);
+    const next = parseListingsSearch(search);
+    if (buildListingsSearch(next) === buildListingsSearch(urlStateRef.current)) return;
+    setFilters(next.filters);
+    setSearchQuery(next.q);
+    setSortBy(next.sort);
+    setViewMode(next.view);
+  }, [search]);
 
   const routeParams = useParams<{ page?: string }>();
-  useListingsIndexability(Math.max(1, Number(routeParams.page) || 1));
+  useListingsIndexability(Math.max(1, Number(routeParams.page) || 1), search);
+
+  // Write state changes back to the URL (replace, so typing doesn't flood
+  // history). Anything but a view switch sends the visitor back to page 1.
+  const [, navigate] = useLocation();
+  const resultsKey = buildListingsSearch({ ...urlState, view: "grid" });
+  const lastResultsKey = useRef(resultsKey);
+  useEffect(() => {
+    const next = buildListingsSearch(urlState, window.location.search);
+    const resetPage = resultsKey !== lastResultsKey.current;
+    lastResultsKey.current = resultsKey;
+    const path = resetPage ? "/listings" : window.location.pathname;
+    if (path === window.location.pathname && next === window.location.search) return;
+    navigate(path + next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters, searchQuery, sortBy, viewMode]);
 
   const { data: listings = [], isLoading, error } = useQuery<Listing[]>({
     queryKey: ["listings"],
@@ -220,6 +195,13 @@ export default function ListingsPage() {
           return false;
         }
       }
+      // Area (m²). Units without an area are hidden once either bound is set.
+      if (filters.areaMin != null || filters.areaMax != null) {
+        const a = listing.area_sqm ?? 0;
+        if (!a) return false;
+        if (filters.areaMin != null && a < filters.areaMin) return false;
+        if (filters.areaMax != null && a > filters.areaMax) return false;
+      }
       // Furnishing (multi, no selection = no filter)
       if (filters.furnishing.length > 0 && !filters.furnishing.some(f => f.toLowerCase() === listing.furnishing?.toLowerCase())) {
         return false;
@@ -258,10 +240,9 @@ export default function ListingsPage() {
   const page = Math.max(1, Number(routeParams.page) || 1);
   const pageCount = Math.max(1, Math.ceil(sortedListings.length / PAGE_SIZE));
   const pagedListings = sortedListings.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const [, navigate] = useLocation();
   // Filters can shrink the result set below the current page.
   useEffect(() => {
-    if (!isLoading && page > pageCount) navigate("/listings", { replace: true });
+    if (!isLoading && page > pageCount) navigate("/listings" + window.location.search, { replace: true });
   }, [isLoading, page, pageCount, navigate]);
   useEffect(() => {
     window.scrollTo({ top: 0 });
@@ -298,6 +279,8 @@ export default function ListingsPage() {
       furnishing: filters.furnishing.join(",") || null,
       price_min: filters.priceRange[0],
       price_max: filters.priceRange[1],
+      area_min: filters.areaMin,
+      area_max: filters.areaMax,
       sort_by: sortBy,
       view_mode: viewMode,
       result_count: sortedListings.length,
@@ -314,6 +297,13 @@ export default function ListingsPage() {
     if (filters.location) chips.push({ label: filters.location, clear: () => setFilters((p) => ({ ...p, location: null })) });
     if (filters.developer) chips.push({ label: DEVELOPER_DISPLAY_NAMES[filters.developer] ?? filters.developer, clear: () => setFilters((p) => ({ ...p, developer: null })) });
     filters.furnishing.forEach((f) => chips.push({ label: getEnumLabel(FURNISHING_OPTIONS, f), clear: () => setFilters((p) => ({ ...p, furnishing: p.furnishing.filter((x) => x !== f) })) }));
+    if (filters.areaMin != null || filters.areaMax != null) {
+      const label =
+        filters.areaMin != null && filters.areaMax != null ? `${filters.areaMin}–${filters.areaMax} m²`
+        : filters.areaMin != null ? `${filters.areaMin}+ m²`
+        : `Up to ${filters.areaMax} m²`;
+      chips.push({ label, clear: () => setFilters((p) => ({ ...p, areaMin: null, areaMax: null })) });
+    }
     if (filters.priceRange[0] > PRICE_MIN || filters.priceRange[1] < PRICE_MAX) chips.push({ label: `${(filters.priceRange[0] / 1000000).toFixed(1)}M – ${(filters.priceRange[1] / 1000000).toFixed(1)}M EGP`, clear: () => setFilters((p) => ({ ...p, priceRange: [PRICE_MIN, PRICE_MAX] })) });
     return chips;
   })();
@@ -507,7 +497,7 @@ export default function ListingsPage() {
                       <ListingCard key={listing.id} listing={listing} />
                     ))}
                   </div>
-                  <Pagination page={page} pageCount={pageCount} />
+                  <Pagination page={page} pageCount={pageCount} search={search} />
                 </>
               ) : viewMode === "list" ? (
                 <>
@@ -516,7 +506,7 @@ export default function ListingsPage() {
                       <ListingCard key={listing.id} listing={listing} listView />
                     ))}
                   </div>
-                  <Pagination page={page} pageCount={pageCount} />
+                  <Pagination page={page} pageCount={pageCount} search={search} />
                 </>
               ) : (
                 // Map view — on desktop, show the map alongside a scrollable
@@ -560,9 +550,10 @@ export default function ListingsPage() {
   );
 }
 
-function Pagination({ page, pageCount }: { page: number; pageCount: number }) {
+function Pagination({ page, pageCount, search }: { page: number; pageCount: number; search: string }) {
   if (pageCount <= 1) return null;
-  const href = (n: number) => (n === 1 ? "/listings" : `/listings/page/${n}`);
+  const qs = search ? `?${search}` : "";
+  const href = (n: number) => (n === 1 ? "/listings" : `/listings/page/${n}`) + qs;
   const linkClass = "min-w-9 h-9 px-3 inline-flex items-center justify-center rounded-full border text-sm font-medium transition-colors";
   return (
     <nav aria-label="Listings pages" className="mt-10 flex flex-wrap items-center justify-center gap-2">

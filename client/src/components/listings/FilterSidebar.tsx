@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -22,6 +23,8 @@ export type Filters = {
   priceRange: [number, number];
   furnishing: string[];
   developer: string | null;
+  areaMin: number | null;
+  areaMax: number | null;
 };
 
 export const PRICE_MIN = 0;
@@ -36,6 +39,8 @@ export const DEFAULT_FILTERS: Filters = {
   priceRange: [PRICE_MIN, PRICE_MAX],
   furnishing: [],
   developer: null,
+  areaMin: null,
+  areaMax: null,
 };
 
 const ADMIN_SUBTYPES = ["Business Park", "Business Building", "Mixed Use"];
@@ -95,6 +100,11 @@ export function FilterSidebar({ filters, setFilters, listings, className }: Filt
 
   const setPriceRange = (range: number[]) => {
     setFilters((prev) => ({ ...prev, priceRange: [range[0], range[1]] as [number, number] }));
+  };
+
+  const setArea = (key: "areaMin" | "areaMax", raw: string) => {
+    const n = Number(raw.replace(/[^\d.]/g, ""));
+    setFilters((prev) => ({ ...prev, [key]: raw.trim() === "" || !Number.isFinite(n) ? null : n }));
   };
 
   // Use slug values (matching Supabase) — labels are the user-visible text.
@@ -198,6 +208,36 @@ export function FilterSidebar({ filters, setFilters, listings, className }: Filt
         </div>
       </div>
 
+
+      <Separator />
+
+      {/* Area (m²) — numeric min/max */}
+      <div className="space-y-3">
+        <Label className="block mb-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">Area (m²)</Label>
+        <div className="flex items-center gap-2">
+          <Input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            placeholder="Min"
+            aria-label="Minimum area in square metres"
+            className="bg-white"
+            value={filters.areaMin ?? ""}
+            onChange={(e) => setArea("areaMin", e.target.value)}
+          />
+          <span className="text-muted-foreground">–</span>
+          <Input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            placeholder="Max"
+            aria-label="Maximum area in square metres"
+            className="bg-white"
+            value={filters.areaMax ?? ""}
+            onChange={(e) => setArea("areaMax", e.target.value)}
+          />
+        </div>
+      </div>
 
       <Separator />
 
