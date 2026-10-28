@@ -136,3 +136,36 @@ export function listingIssues(l: CheckableListing): ListingIssue[] {
 
   return issues;
 }
+
+const TITLE_CONDITION: Record<string, string> = {
+  "core-shell": "Core & Shell",
+  "semi-finished": "Semi-Finished",
+  finished: "Finished",
+  "fully-finished": "Fully Finished",
+  furnished: "Furnished",
+  serviced: "Serviced",
+};
+
+// Title built from the structured fields, so title and fields can't disagree:
+// "Office for Rent in Mivida The Place | 114 SQM | Finished"
+export function suggestedTitle(l: {
+  transaction_type?: string | null;
+  project?: string | null;
+  location_area?: string | null;
+  location?: string | null;
+  area_sqm?: number | null;
+  furnishing?: string | null;
+}): string {
+  const deal =
+    l.transaction_type === "income-property" ? "Income Property for Sale"
+    : l.transaction_type === "sale" ? "Office for Sale"
+    : "Office for Rent";
+  const place = l.project?.trim() || l.location_area?.trim() || l.location?.trim();
+  return [
+    place ? `${deal} in ${place}` : deal,
+    l.area_sqm ? `${Number(l.area_sqm).toLocaleString("en-US")} SQM` : null,
+    l.furnishing ? TITLE_CONDITION[l.furnishing] ?? null : null,
+  ]
+    .filter(Boolean)
+    .join(" | ");
+}

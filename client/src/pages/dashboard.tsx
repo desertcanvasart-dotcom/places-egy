@@ -28,6 +28,7 @@ import { humanizeError } from "@/lib/error-messages";
 
 import { adminFetch } from "@/lib/admin-fetch";
 import { rentedLabel } from "@/lib/listing-text";
+import { listingIssues, suggestedTitle } from "@/lib/listing-checks";
 
 import {
   DEVELOPER_OPTIONS,
@@ -245,8 +246,11 @@ function ListingFormDialog({
   const queryClient = useQueryClient();
   const [form, setForm] = useState<ListingForm>(EMPTY_FORM);
   const [uploading, setUploading] = useState(false);
+  const [issuesChecked, setIssuesChecked] = useState(false);
+  const issues = useMemo(() => listingIssues(form), [form]);
 
   useEffect(() => {
+    setIssuesChecked(false);
     if (listing) {
       setForm(listing);
     } else {
@@ -353,7 +357,18 @@ function ListingFormDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2 space-y-1.5">
               <Label className="text-sm font-medium text-primary">Title <span className="text-accent">*</span></Label>
-              <Input value={form.title} onChange={(e) => set("title", e.target.value)} className="bg-white" />
+              <div className="flex gap-2">
+                <Input value={form.title} onChange={(e) => set("title", e.target.value)} className="bg-white" />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="shrink-0"
+                  onClick={() => set("title", suggestedTitle(form))}
+                  title={`Build the title from the fields: ${suggestedTitle(form)}`}
+                >
+                  Generate title
+                </Button>
+              </div>
               {(() => {
                 const key = titleKey(form.title);
                 const matches = key ? existing.filter((l) => l.id !== form.id && titleKey(l.title) === key) : [];
@@ -554,13 +569,31 @@ function ListingFormDialog({
             </div>
           )}
 
+          {issues.length > 0 && (
+            <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 space-y-2">
+              <p className="font-semibold">Check before saving</p>
+              <ul className="list-disc pl-5 space-y-1 text-xs">
+                {issues.map((i) => (
+                  <li key={i.rule}>
+                    <span className="font-medium">{i.rule}</span>
+                    {i.conflicting ? ` (${i.conflicting})` : ""}. {i.fix}
+                  </li>
+                ))}
+              </ul>
+              <label className="flex items-center gap-2 text-xs font-medium">
+                <Checkbox checked={issuesChecked} onCheckedChange={(v) => setIssuesChecked(v === true)} />
+                I've checked these and want to save anyway
+              </label>
+            </div>
+          )}
+
           <div className="flex gap-3 pt-2">
             <Button onClick={onClose} variant="outline" className="flex-1">
               Cancel
             </Button>
             <Button
               onClick={() => saveMutation.mutate(form)}
-              disabled={saveMutation.isPending || !form.title.trim() || form.price == null}
+              disabled={saveMutation.isPending || !form.title.trim() || form.price == null || (issues.length > 0 && !issuesChecked)}
               className="flex-1 bg-primary text-white"
             >
               {saveMutation.isPending ? "Saving..." : isEditing ? "Update" : "Create"}
