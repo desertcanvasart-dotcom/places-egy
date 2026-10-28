@@ -12,7 +12,7 @@ import { breadcrumbSchema, listingSchema } from "@/lib/schema";
 import { supabase, type Listing } from "@/lib/supabase";
 import { DEVELOPER_OPTIONS, FURNISHING_OPTIONS, MAINTENANCE_STATUS_OPTIONS, getEnumLabel } from "@/lib/enums";
 import { listingUrl, parseListingId } from "@/lib/listings";
-import { listingCurrency } from "@/lib/currency";
+import { formatEgpShort, listingCurrency, priceInEgp, USD_EGP_RATE } from "@/lib/currency";
 import { supabaseImage, supabaseImageOnError } from "@/lib/image-url";
 import { trackEvent } from "@/lib/analytics";
 import { openCalendly } from "@/lib/calendly";
@@ -333,6 +333,9 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
                       {listing.transaction_type?.toLowerCase() === "rent" ? " / month" : ""}
                     </span>
                   </div>
+                  {listingCurrency(listing) === "USD" && priceInEgp(listing) != null && (
+                    <p className="text-xs text-muted-foreground mt-1">≈ {formatEgpShort(priceInEgp(listing)!)} at {USD_EGP_RATE} EGP/USD</p>
+                  )}
                 </div>
               )}
               <Button

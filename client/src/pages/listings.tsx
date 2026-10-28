@@ -4,12 +4,13 @@ import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { CornerSlideMagnet } from "@/components/magnets/CornerSlideMagnet";
-import { FilterSidebar, DEFAULT_FILTERS, PRICE_MIN, PRICE_MAX, type Filters } from "@/components/listings/FilterSidebar";
+import { FilterSidebar, DEFAULT_FILTERS, type Filters } from "@/components/listings/FilterSidebar";
 import { buildListingsSearch, parseListingsSearch, type ListingsUrlState, type SortOption, type ViewMode } from "@/lib/listing-filters-url";
 import { ListingCard } from "@/components/listings/ListingCard";
 import { ListingsMap } from "@/components/listings/ListingsMap";
 import { supabase, type Listing } from "@/lib/supabase";
 import { FURNISHING_OPTIONS, getEnumLabel } from "@/lib/enums";
+import { formatEgpShort, priceInEgp } from "@/lib/currency";
 import { DEVELOPER_DISPLAY_NAMES } from "@/lib/projects";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { breadcrumbSchema, itemListSchema } from "@/lib/schema";
@@ -184,16 +185,13 @@ export default function ListingsPage() {
           return false;
         }
       }
-      // Price range. Only apply the filter when the user has actually moved
-      // the slider away from defaults; otherwise a listing with a missing or
-      // very-high price would be silently hidden on the default view.
-      const [minPrice, maxPrice] = filters.priceRange;
-      const priceFilterActive = minPrice > PRICE_MIN || maxPrice < PRICE_MAX;
-      if (priceFilterActive) {
-        const p = listing.price ?? 0;
-        if (p < minPrice || p > maxPrice) {
-          return false;
-        }
+      // Budget, compared in EGP so USD listings are matched at the configured
+      // rate. Unpriced listings are hidden once a bound is set.
+      if (filters.priceMin != null || filters.priceMax != null) {
+        const p = priceInEgp(listing);
+        if (p == null) return false;
+        if (filters.priceMin != null && p < filters.priceMin) return false;
+        if (filters.priceMax != null && p > filters.priceMax) return false;
       }
       // Area (m²). Units without an area are hidden once either bound is set.
       if (filters.areaMin != null || filters.areaMax != null) {
@@ -218,9 +216,9 @@ export default function ListingsPage() {
     const sorted = [...filteredListings];
     switch (sortBy) {
       case "price-low":
-        return sorted.sort((a, b) => (a.price ?? 0) - (b.price ?? 0));
+        return sorted.sort((a, b) => (priceInEgp(a) ?? Infinity) - (priceInEgp(b) ?? Infinity));
       case "price-high":
-        return sorted.sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
+        return sorted.sort((a, b) => (priceInEgp(b) ?? -1) - (priceInEgp(a) ?? -1));
       case "area-large":
         return sorted.sort((a, b) => (b.area_sqm ?? 0) - (a.area_sqm ?? 0));
       case "area-small":
@@ -277,8 +275,8 @@ export default function ListingsPage() {
       location: filters.location ?? null,
       developer: filters.developer ?? null,
       furnishing: filters.furnishing.join(",") || null,
-      price_min: filters.priceRange[0],
-      price_max: filters.priceRange[1],
+      price_min: filters.priceMin,
+      price_max: filters.priceMax,
       area_min: filters.areaMin,
       area_max: filters.areaMax,
       sort_by: sortBy,
@@ -304,7 +302,14 @@ export default function ListingsPage() {
         : `Up to ${filters.areaMax} m²`;
       chips.push({ label, clear: () => setFilters((p) => ({ ...p, areaMin: null, areaMax: null })) });
     }
-    if (filters.priceRange[0] > PRICE_MIN || filters.priceRange[1] < PRICE_MAX) chips.push({ label: `${(filters.priceRange[0] / 1000000).toFixed(1)}M – ${(filters.priceRange[1] / 1000000).toFixed(1)}M EGP`, clear: () => setFilters((p) => ({ ...p, priceRange: [PRICE_MIN, PRICE_MAX] })) });
+    if (filters.priceMin != null || filters.priceMax != null) {
+      const per = filters.transactionType === "Rent" ? "/month" : "";
+      const label =
+        filters.priceMin != null && filters.priceMax != null ? `${formatEgpShort(filters.priceMin)} – ${formatEgpShort(filters.priceMax)}${per}`
+        : filters.priceMin != null ? `${formatEgpShort(filters.priceMin)}+${per}`
+        : `Up to ${formatEgpShort(filters.priceMax!)}${per}`;
+      chips.push({ label, clear: () => setFilters((p) => ({ ...p, priceMin: null, priceMax: null })) });
+    }
     return chips;
   })();
 

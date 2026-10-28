@@ -14,7 +14,7 @@ import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { listingSchema } from "@/lib/schema";
 import { listingUrl } from "@/lib/listings";
 import { FavoriteButton } from "@/components/FavoriteButton";
-import { listingCurrency } from "@/lib/currency";
+import { formatEgpShort, listingCurrency, priceInEgp } from "@/lib/currency";
 import { supabaseImage, supabaseImageOnError } from "@/lib/image-url";
 import { trackEvent } from "@/lib/analytics";
 import { Lock } from "lucide-react";
@@ -217,6 +217,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
                     </span>
                     <span className="text-xs text-muted-foreground">{listingCurrency(listing)}</span>
                     {listing.transaction_type?.toLowerCase() === "rent" && <span className="text-xs text-muted-foreground">/month</span>}
+                    <EgpHint listing={listing} />
                   </div>
 )
               )}
@@ -285,6 +286,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
 <>
                         <span className="text-2xl font-bold text-primary font-serif">{listing.price.toLocaleString()}</span>
                         <p className="text-xs text-muted-foreground">{listingCurrency(listing)}{listing.transaction_type?.toLowerCase() === "rent" ? "/month" : ""}</p>
+                        <EgpHint listing={listing} block />
                       </>
 )
                   )}
@@ -443,6 +445,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
               </span>
               <span className="text-xs text-muted-foreground">{listingCurrency(listing)}</span>
               {listing.transaction_type?.toLowerCase() === "rent" && <span className="text-xs text-muted-foreground">/month</span>}
+                    <EgpHint listing={listing} />
             </div>
           </div>
         </CardContent>
@@ -565,6 +568,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
                 <p className="text-xs text-muted-foreground">
                   {listingCurrency(listing)}{listing.transaction_type?.toLowerCase() === "rent" ? "/month" : ""}
                 </p>
+                <EgpHint listing={listing} block />
               </div>
             </div>
 
@@ -611,4 +615,13 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
       </Dialog>
     </>
   );
+}
+
+// "≈ EGP 1.1M" under USD prices, so they can be compared with EGP listings.
+function EgpHint({ listing, block }: { listing: Listing; block?: boolean }) {
+  if (listingCurrency(listing) !== "USD") return null;
+  const egp = priceInEgp(listing);
+  if (egp == null) return null;
+  const text = `≈ ${formatEgpShort(egp)}`;
+  return block ? <p className="text-[11px] text-muted-foreground">{text}</p> : <span className="text-[11px] text-muted-foreground ml-1">{text}</span>;
 }
