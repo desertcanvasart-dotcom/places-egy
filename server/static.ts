@@ -1,4 +1,6 @@
 import { registerSeoRoutes } from "./seo/routes";
+import { isKnownRoute, loadKnownRoutes } from "./seo/known-routes";
+import { renderNotFound } from "./seo/render";
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
@@ -122,8 +124,17 @@ export function serveStatic(app: Express) {
         },
       })
     );
-    app.use("/{*path}", (_req, res) => {
+    const routesLoaded = loadKnownRoutes(path.resolve(distPath, ".."));
+    if (!routesLoaded) console.warn("[seo] dist/known-routes.json missing; unknown paths will return 200");
+
+    app.use("/{*path}", async (req, res) => {
       res.setHeader("Cache-Control", "no-cache");
+      // app.use() strips the mount path from req.path, so read the original URL.
+      const urlPath = new URL(req.originalUrl, "http://localhost").pathname;
+      // Missing static files (anything with an extension) get a plain 404.
+      if (path.extname(urlPath)) return res.status(404).type("text").send("Not found");
+      const known = req.method === "GET" || req.method === "HEAD" ? await isKnownRoute(urlPath) : false;
+      if (known === false) return res.status(404).type("html").send(renderNotFound("404"));
       res.sendFile(path.resolve(distPath, "index.html"));
     });
   } else {

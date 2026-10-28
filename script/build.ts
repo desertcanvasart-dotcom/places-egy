@@ -1,6 +1,6 @@
 import { build as esbuild } from "esbuild";
 import { build as viteBuild } from "vite";
-import { rm, readFile, copyFile, mkdir } from "fs/promises";
+import { rm, readFile, writeFile, copyFile, mkdir } from "fs/promises";
 import { generateSitemap } from "./build-sitemap";
 import { prerender } from "./prerender";
 import { buildListingsSeo } from "./build-listings-seo";
@@ -83,6 +83,12 @@ async function buildAll() {
   // listing meta from Supabase. Runs after prerender() (same dist/index.html
   // shell) and never fails the build if Supabase is unreachable.
   await buildListingsSeo();
+
+  // Exact SPA routes for the server's 404 check (server/seo/known-routes.ts).
+  const appSource = await readFile("client/src/App.tsx", "utf-8");
+  const routes = [...appSource.matchAll(/<Route\s+path="([^"]+)"/g)].map((m) => m[1]);
+  await writeFile("dist/known-routes.json", JSON.stringify(routes, null, 2));
+  console.log(`[routes] wrote ${routes.length} known routes`);
 
   console.log("building server...");
   const pkg = JSON.parse(await readFile("package.json", "utf-8"));

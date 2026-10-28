@@ -22,7 +22,7 @@ async function fetchSlugs(lang: "en" | "ar"): Promise<Set<string>> {
   return new Set(posts.map((p) => safeDecode(p.slug)));
 }
 
-async function getBlogSlugSets() {
+export async function getBlogSlugSets() {
   if (blogSlugCache && Date.now() - blogSlugCache.at < BLOG_SLUG_TTL_MS) return blogSlugCache;
   try {
     const [en, ar] = await Promise.all([fetchSlugs("en"), fetchSlugs("ar")]);

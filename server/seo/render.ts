@@ -236,3 +236,22 @@ export async function renderListing(l: SeoListing): Promise<string> {
 
   return injectBody(injectJsonLd(injectMeta(shell(), meta), listingSchema({ ...l, title })), body);
 }
+
+// 404 / 410 page: noindex, no canonical, with ways back into the site.
+export function renderNotFound(kind: "404" | "410" = "404"): string {
+  const gone = kind === "410";
+  const title = gone ? "This listing is no longer available | PLACES" : "Page not found | PLACES";
+  const heading = gone ? "This listing is no longer available" : "We couldn't find that page";
+  const lead = gone
+    ? "The office you're looking for has been rented, sold or withdrawn. Similar spaces are available below."
+    : "The page may have moved, or the link may be mistyped. Try a search or browse our offices.";
+  const html = injectMeta(shell(), { title, description: lead, url: null, robots: "noindex, follow" });
+  return injectBody(
+    html,
+    `<h1>${heading}</h1><p>${lead}</p>` +
+      `<form action="/listings" method="get" role="search"><label for="q">Search offices</label> ` +
+      `<input id="q" name="q" type="search" placeholder="Area, project or developer"> <button type="submit">Search</button></form>` +
+      `<p><a href="/listings">Browse all listings</a></p>` +
+      locationNav(),
+  );
+}
