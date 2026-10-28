@@ -13,3 +13,5 @@ PLACES assets/
 # Local data reports and backups (not source)
 listing-data-issues.csv
 listing-title-backup-*.json
+maintenance-fixes.csv
+listing-data-backup-*.json
