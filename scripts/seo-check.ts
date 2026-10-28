@@ -9,7 +9,7 @@
 const HOST = (process.argv[2] ?? "https://places-egy.com").replace(/\/$/, "");
 const SITE = "https://places-egy.com";
 const UA = "Mozilla/5.0 (compatible; PLACES-seo-check/1.0)";
-const CONCURRENCY = 6;
+const CONCURRENCY = 4;
 
 type Page = { url: string; status: number; title: string; canonical: string | null; h1: number; robots: string | null; html: string };
 
@@ -20,8 +20,20 @@ const toHost = (u: string) => u.replace(SITE, HOST);
 const norm = (u: string | null) =>
   (u ?? "").replace(/%[0-9A-F]{2}/gi, (m) => m.toLowerCase()).replace(/\/$/, "");
 
+// Retries network errors (dropped connections), not HTTP error statuses.
+async function fetchRetry(url: string, init: RequestInit = {}, tries = 3): Promise<Response> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await fetch(url, { ...init, headers: { "User-Agent": UA, ...(init.headers ?? {}) } });
+    } catch (err) {
+      if (attempt >= tries) throw err;
+      await new Promise((r) => setTimeout(r, 1000 * attempt));
+    }
+  }
+}
+
 async function get(url: string): Promise<Page> {
-  const res = await fetch(url, { redirect: "manual", headers: { "User-Agent": UA } });
+  const res = await fetchRetry(url, { redirect: "manual" });
   const html = res.status === 200 ? await res.text() : "";
   return {
     url,
@@ -35,7 +47,7 @@ async function get(url: string): Promise<Page> {
 }
 
 async function sitemapUrls(url: string): Promise<string[]> {
-  const xml = await (await fetch(toHost(url), { headers: { "User-Agent": UA } })).text();
+  const xml = await (await fetchRetry(toHost(url))).text();
   const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1].trim());
   if (/<sitemapindex/.test(xml)) return (await Promise.all(locs.map(sitemapUrls))).flat();
   return locs;
@@ -84,7 +96,7 @@ async function main() {
   // 404 behaviour
   const missing = await get(`${HOST}/zz-not-real-${Date.now()}`);
   if (missing.status !== 404) fail(`unknown route returned ${missing.status}, expected 404`);
-  const missingBody = await (await fetch(`${HOST}/zz-not-real-${Date.now()}`, { headers: { "User-Agent": UA } })).text();
+  const missingBody = await (await fetchRetry(`${HOST}/zz-not-real-${Date.now()}`)).text();
   if (!/<meta name="robots" content="[^"]*noindex/.test(missingBody)) fail("404 page is missing robots noindex");
   if (/<link rel="canonical"/.test(missingBody)) fail("404 page still has a canonical");
 
