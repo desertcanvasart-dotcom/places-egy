@@ -1,11 +1,13 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { renderDeveloper, renderHome, renderListing, renderListingsIndex, renderLocation, setDistPath } from "./render";
 import { getListingById } from "./data";
+import { registerSitemapRoutes } from "./sitemap";
 
 // Server-rendered pages. Registered before express.static so they win over
 // build-time files. On any error, fall through to the normal static/SPA path.
 export function registerSeoRoutes(app: Express, distPath: string): void {
   setDistPath(distPath);
+  registerSitemapRoutes(app);
 
   const send = (render: (req: Request) => Promise<string | null>) =>
     async (req: Request, res: Response, next: NextFunction) => {
