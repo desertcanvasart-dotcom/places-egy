@@ -139,6 +139,14 @@ export function Footer() {
               <li><Link href="/projects" className="hover:text-white transition-colors">Browse all Projects</Link></li>
               <li><Link href="/locations" className="hover:text-white transition-colors">Browse all Locations</Link></li>
             </ul>
+            {/* Search landing pages with deep stock (the server 404s a page under 8 units). */}
+            <SubHeading>Popular searches</SubHeading>
+            <ul className="space-y-2 text-sm text-gray-300">
+              <li><Link href="/rent/new-cairo" className="hover:text-white transition-colors">Offices for rent in New Cairo</Link></li>
+              <li><Link href="/buy/new-cairo" className="hover:text-white transition-colors">Offices for sale in New Cairo</Link></li>
+              <li><Link href="/income-property/new-cairo" className="hover:text-white transition-colors">Income properties in New Cairo</Link></li>
+              <li><Link href="/rent/sheikh-zayed" className="hover:text-white transition-colors">Offices for rent in Sheikh Zayed</Link></li>
+            </ul>
           </div>
 
           {/* SERVICES */}

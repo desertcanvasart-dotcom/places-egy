@@ -4,9 +4,20 @@ import { readFileSync, existsSync } from "fs";
 import path from "path";
 import { FURNISHING_OPTIONS, getEnumLabel } from "../../client/src/lib/enums";
 import { cleanListingTitle, listingSnippet, rentedLabel } from "../../client/src/lib/listing-text";
-import { listingSchema } from "../../client/src/lib/schema";
 import { rankSimilar } from "../../client/src/lib/similar-listings";
 import { LOCATION_CONTENT } from "../../client/src/lib/location-content";
+import { breadcrumbSchema, faqSchema, itemListSchema, listingSchema } from "../../client/src/lib/schema";
+import {
+  DEALS,
+  LANDING_LOCATIONS,
+  LANDING_MIN_UNITS,
+  eligibleLandingPages,
+  landingCopy,
+  landingPath,
+  landingRows,
+  landingStats,
+  type DealSlug,
+} from "../../client/src/lib/landing-pages";
 
 const LOCATIONS = Object.values(LOCATION_CONTENT);
 import { esc, injectBody, injectJsonLd, injectMeta, prerenderInner, type PageMeta } from "./html";
@@ -88,6 +99,67 @@ const locationNav = () =>
   LOCATIONS.map((l) => `<li><a href="/locations/${l.slug}">Offices in ${esc(l.displayName)}</a></li>`).join("") +
   "</ul>";
 
+// "Offices for rent in New Cairo" etc.: keyword-anchored links to every live landing page.
+function landingNav(inventory: SeoListing[], heading = "Popular searches"): string {
+  const pages = eligibleLandingPages(inventory);
+  if (!pages.length) return "";
+  return (
+    `<h2>${esc(heading)}</h2><ul>` +
+    pages.map((p) => `<li><a href="${p.path}">${esc(DEALS[p.deal].heading(p.loc.name))}</a> (${p.count})</li>`).join("") +
+    "</ul>"
+  );
+}
+
+/** The live landing page for this listing's deal type and location, if there is one. */
+export function landingFor(l: Pick<SeoListing, "transaction_type" | "location">, inventory: SeoListing[]): { path: string; heading: string } | null {
+  const page = eligibleLandingPages(inventory).find((p) => DEALS[p.deal].tx === l.transaction_type && p.loc.name === l.location);
+  return page ? { path: page.path, heading: DEALS[page.deal].heading(page.loc.name) } : null;
+}
+
+export async function renderLanding(dealSlug: string, locSlug: string): Promise<string | null> {
+  if (!(dealSlug in DEALS)) return null;
+  const deal = dealSlug as DealSlug;
+  const loc = LANDING_LOCATIONS.find((l) => l.slug === locSlug);
+  if (!loc) return null;
+  const inventory = await getInventory();
+  const rows = landingRows(inventory, deal, loc.name);
+  if (rows.length < LANDING_MIN_UNITS) return null;
+
+  const copy = landingCopy(deal, loc, landingStats(rows, loc.name));
+  const pagePath = landingPath(deal, loc.slug);
+  let html = injectMeta(shell(), { title: copy.title, description: copy.description, url: `${SITE}${pagePath}` });
+  html = injectJsonLd(
+    html,
+    breadcrumbSchema([
+      { name: "Home", url: SITE },
+      { name: `Offices in ${loc.name}`, url: `${SITE}/locations/${loc.slug}` },
+      { name: copy.h1, url: `${SITE}${pagePath}` },
+    ]),
+  );
+  html = injectJsonLd(html, itemListSchema({ name: copy.h1, url: pagePath, items: rows.slice(0, 48).map((l) => ({ name: listingTitle(l), url: l.path })) }));
+  html = injectJsonLd(html, faqSchema(copy.faqs));
+
+  const siblings = DEALS_FOR_LOCATION(inventory, loc.name).filter((p) => p.path !== pagePath);
+  return injectBody(
+    html,
+    `<h1>${esc(copy.h1)}</h1>` +
+      copy.intro.map((p) => `<p>${esc(p)}</p>`).join("") +
+      `<h2>${esc(copy.listHeading)}</h2>` +
+      listingLinks(rows) +
+      `<h2>${esc(`${copy.h1}: FAQs`)}</h2>` +
+      copy.faqs.map((f) => `<h3>${esc(f.question)}</h3><p>${esc(f.answer)}</p>`).join("") +
+      (siblings.length
+        ? `<h2>More offices in ${esc(loc.name)}</h2><ul>${siblings.map((p) => `<li><a href="${p.path}">${esc(DEALS[p.deal].heading(loc.name))}</a></li>`).join("")}</ul>`
+        : "") +
+      `<p><a href="/locations/${loc.slug}">${esc(`${loc.name} area guide: projects, developers and market overview`)}</a></p>` +
+      landingNav(inventory, "Other popular searches") +
+      locationNav(),
+  );
+}
+
+const DEALS_FOR_LOCATION = (inventory: SeoListing[], locName: string) =>
+  eligibleLandingPages(inventory).filter((p) => p.loc.name === locName);
+
 export async function renderHome(): Promise<string> {
   const inventory = await getInventory();
   const html = shell();
@@ -98,6 +170,7 @@ export async function renderHome(): Promise<string> {
       `<p>Buy, lease, or resell administrative offices across Cairo's top districts: New Cairo, Sheikh Zayed, 6th October, Downtown, Sheraton and Maadi.</p>` +
       `<h2>Latest offices</h2>${listingLinks(latest)}` +
       `<p><a href="/listings">Browse all ${inventory.length} listings</a></p>` +
+      landingNav(inventory) +
       locationNav(),
   );
 }
@@ -134,11 +207,16 @@ export async function renderLocation(slug: string): Promise<string | null> {
   const loc = LOCATIONS.find((l) => l.slug === slug);
   const base = builtFile(`locations/${slug}.html`);
   if (!loc || !base) return null;
-  const rows = (await getInventory()).filter((l) => l.location === loc.displayName);
+  const inventory = await getInventory();
+  const rows = inventory.filter((l) => l.location === loc.displayName);
   const intro = prerenderInner(base) ?? `<h1>${esc(loc.h1)}</h1>`;
+  const deals = DEALS_FOR_LOCATION(inventory, loc.displayName);
+  const dealLinks = deals.length
+    ? `<ul>${deals.map((p) => `<li><a href="${p.path}">${esc(DEALS[p.deal].heading(loc.displayName))}</a> (${p.count})</li>`).join("")}</ul>`
+    : "";
   return injectBody(
     base,
-    intro + `<h2>Available offices in ${esc(loc.displayName)} (${rows.length})</h2>` + listingLinks(rows) + locationNav(),
+    intro + dealLinks + `<h2>Available offices in ${esc(loc.displayName)} (${rows.length})</h2>` + listingLinks(rows) + locationNav(),
   );
 }
 
@@ -198,12 +276,14 @@ export async function renderListing(l: SeoListing): Promise<string> {
   ];
 
   const similar = similarListings(l, all);
+  const landing = landingFor(l, all);
   const body =
     `<article><h1>${esc(title)}</h1>` +
     (photo ? `<img src="${esc(photo)}" alt="${esc(title)}" width="1200" height="800">` : "") +
     `<dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>` +
     (descriptionParagraphs(l.description ?? "") || `<p>${esc(meta.description)}</p>`) +
     `</article>` +
+    (landing ? `<p>See all <a href="${landing.path}">${esc(landing.heading)}</a></p>` : "") +
     (locSlug ? `<p><a href="/locations/${locSlug}">More offices in ${esc(l.location ?? "")}</a></p>` : "") +
     (similar.length ? `<h2>Similar units</h2>${listingLinks(similar)}` : "") +
     `<p><a href="/listings">Browse all listings</a></p>`;

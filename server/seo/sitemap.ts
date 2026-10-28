@@ -1,12 +1,13 @@
 // /sitemap.xml is an index of four sitemaps generated on request:
 //   static    — hand-maintained routes + guides (from the built sitemap file)
-//   locations — /locations hub and each location page
+//   locations — /locations hub, each location page, and live landing pages (/rent/new-cairo, …)
 //   listings  — every published listing, lastmod from updated_at
 //   blog      — WordPress posts (EN + AR, hreflang pairs), lastmod from modified
 import type { Express } from "express";
 import { buildPostEntries, fetchAllPosts, type WpPost } from "../../script/build-sitemap";
 import { getInventory } from "./data";
 import { builtFile, SITE } from "./render";
+import { eligibleLandingPages, landingRows } from "../../client/src/lib/landing-pages";
 
 const XML_HEAD = `<?xml version="1.0" encoding="UTF-8"?>\n`;
 const URLSET_OPEN = `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n`;
@@ -58,11 +59,22 @@ async function blogXml(): Promise<string> {
   }
 }
 
+async function landingXml(): Promise<string> {
+  const inventory = await getInventory();
+  return eligibleLandingPages(inventory)
+    .map((p) => {
+      const rows = landingRows(inventory, p.deal, p.loc.name);
+      const latest = rows.reduce<string | null>((m, l) => ((l.updated_at ?? "") > (m ?? "") ? l.updated_at : m), null);
+      return url(`${SITE}${p.path}`, day(latest), "daily", "0.9");
+    })
+    .join("\n");
+}
+
 async function part(name: (typeof PARTS)[number]): Promise<string> {
   if (name === "listings") return listingsXml();
   if (name === "blog") return blogXml();
   const { staticXml, locationXml } = staticEntries();
-  return name === "static" ? staticXml : locationXml;
+  return name === "static" ? staticXml : [locationXml, await landingXml()].filter(Boolean).join("\n");
 }
 
 export function registerSitemapRoutes(app: Express): void {

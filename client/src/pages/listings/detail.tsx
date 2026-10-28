@@ -19,6 +19,7 @@ import { openCalendly } from "@/lib/calendly";
 import { useScrollDepth } from "@/lib/use-scroll-depth";
 import { ViewingRequestModal } from "@/components/ViewingRequestModal";
 import { rankSimilar } from "@/lib/similar-listings";
+import { DEALS, eligibleLandingPages } from "@/lib/landing-pages";
 import { cleanListingTitle, listingSnippet, rentedLabel } from "@/lib/listing-text";
 import DOMPurify from "dompurify";
 import { marked } from "marked";
@@ -135,6 +136,16 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
 
   const similarListings = useMemo<Listing[]>(
     () => (listing ? rankSimilar(listing, similarPool, 4) : []),
+    [similarPool, listing],
+  );
+  // The "Offices for Rent in New Cairo"-style page for this unit, if it's live.
+  const landingPage = useMemo(
+    () =>
+      listing
+        ? eligibleLandingPages(similarPool).find(
+            (p) => DEALS[p.deal].tx === listing.transaction_type && p.loc.name === listing.location,
+          )
+        : undefined,
     [similarPool, listing],
   );
 
@@ -564,12 +575,22 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
                   Check out similar units
                 </h2>
               </div>
-              <Link
-                href="/listings"
-                className="hidden md:inline-flex items-center text-sm font-medium text-primary hover:text-accent transition-colors"
-              >
-                View all listings <ArrowRight className="ml-1.5 w-3.5 h-3.5" />
-              </Link>
+              {landingPage ? (
+                <Link
+                  href={landingPage.path}
+                  className="inline-flex items-center text-sm font-medium text-primary hover:text-accent transition-colors"
+                >
+                  See all {DEALS[landingPage.deal].heading(landingPage.loc.name)} ({landingPage.count})
+                  <ArrowRight className="ml-1.5 w-3.5 h-3.5" />
+                </Link>
+              ) : (
+                <Link
+                  href="/listings"
+                  className="hidden md:inline-flex items-center text-sm font-medium text-primary hover:text-accent transition-colors"
+                >
+                  View all listings <ArrowRight className="ml-1.5 w-3.5 h-3.5" />
+                </Link>
+              )}
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {similarListings.map((l) => (
