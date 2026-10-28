@@ -3,7 +3,7 @@ import { type Listing } from "@/lib/supabase";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Slider } from "@/components/ui/slider";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -13,29 +13,33 @@ import {
 } from "@/components/ui/select";
 import { RotateCcw } from "lucide-react";
 import { FURNISHING_OPTIONS } from "@/lib/enums";
+import { USD_EGP_RATE } from "@/lib/currency";
 
 export type Filters = {
   transactionType: "Sale" | "Rent" | "Income Property" | null;
   propertyType: "Admin" | "Commercial" | null;
   subtype: string[];
   location: string | null;
-  priceRange: [number, number];
+  /** Budget in EGP (USD listings are converted). Monthly rent for Rent, total price otherwise. */
+  priceMin: number | null;
+  priceMax: number | null;
   furnishing: string[];
   developer: string | null;
+  areaMin: number | null;
+  areaMax: number | null;
 };
-
-export const PRICE_MIN = 0;
-export const PRICE_MAX = 100000000;
-export const PRICE_STEP = 100000;
 
 export const DEFAULT_FILTERS: Filters = {
   transactionType: null,
   propertyType: null,
   subtype: [],
   location: null,
-  priceRange: [PRICE_MIN, PRICE_MAX],
+  priceMin: null,
+  priceMax: null,
   furnishing: [],
   developer: null,
+  areaMin: null,
+  areaMax: null,
 };
 
 const ADMIN_SUBTYPES = ["Business Park", "Business Building", "Mixed Use"];
@@ -49,11 +53,17 @@ interface FilterSidebarProps {
   className?: string;
 }
 
-function formatPrice(value: number): string {
-  if (value >= 1000000) return `${(value / 1000000).toFixed(value % 1000000 === 0 ? 0 : 1)}M`;
-  if (value >= 1000) return `${(value / 1000).toFixed(0)}K`;
-  return `${value}`;
-}
+// Placeholders hint at a realistic range for each budget type.
+const BUDGET_HINTS = {
+  rent: { label: "Monthly rent (EGP)", min: "e.g. 100,000", max: "e.g. 500,000" },
+  sale: { label: "Total price (EGP)", min: "e.g. 10,000,000", max: "e.g. 50,000,000" },
+} as const;
+
+const parseAmount = (raw: string): number | null => {
+  const digits = raw.replace(/[^\d]/g, "");
+  return digits ? Number(digits) : null;
+};
+const formatAmount = (n: number | null) => (n == null ? "" : n.toLocaleString("en-US"));
 
 export function FilterSidebar({ filters, setFilters, listings, className }: FilterSidebarProps) {
 
@@ -65,9 +75,13 @@ export function FilterSidebar({ filters, setFilters, listings, className }: Filt
   const subtypeOptions = ADMIN_SUBTYPES;
 
   const setTransactionType = (type: "Sale" | "Rent" | "Income Property") => {
+    // Rent budgets are monthly and sale budgets are totals, so a budget
+    // never carries over from one transaction type to another.
     setFilters((prev) => ({
       ...prev,
       transactionType: prev.transactionType === type ? null : type,
+      priceMin: null,
+      priceMax: null,
     }));
   };
 
@@ -93,8 +107,14 @@ export function FilterSidebar({ filters, setFilters, listings, className }: Filt
     setFilters((prev) => ({ ...prev, location: value === "all" ? null : value }));
   };
 
-  const setPriceRange = (range: number[]) => {
-    setFilters((prev) => ({ ...prev, priceRange: [range[0], range[1]] as [number, number] }));
+  const setPrice = (key: "priceMin" | "priceMax", raw: string) => {
+    setFilters((prev) => ({ ...prev, [key]: parseAmount(raw) }));
+  };
+  const budget = filters.transactionType === null ? null : filters.transactionType === "Rent" ? BUDGET_HINTS.rent : BUDGET_HINTS.sale;
+
+  const setArea = (key: "areaMin" | "areaMax", raw: string) => {
+    const n = Number(raw.replace(/[^\d.]/g, ""));
+    setFilters((prev) => ({ ...prev, [key]: raw.trim() === "" || !Number.isFinite(n) ? null : n }));
   };
 
   // Use slug values (matching Supabase) — labels are the user-visible text.
@@ -181,23 +201,68 @@ export function FilterSidebar({ filters, setFilters, listings, className }: Filt
 
       <Separator />
 
-      {/* Price Range */}
+      {/* Budget — numeric min/max in EGP, split by transaction type */}
       <div className="space-y-3">
-        <Label className="block mb-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">Price Range (EGP)</Label>
-        <Slider
-          min={PRICE_MIN}
-          max={PRICE_MAX}
-          step={PRICE_STEP}
-          value={[filters.priceRange[0], filters.priceRange[1]]}
-          onValueChange={(vals) => setPriceRange([vals[0], vals[1]])}
-          minStepsBetweenThumbs={1}
-        />
-        <div className="flex justify-between text-xs font-medium text-foreground">
-          <span>{formatPrice(filters.priceRange[0])}</span>
-          <span>{formatPrice(filters.priceRange[1])}</span>
-        </div>
+        <Label className="block mb-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">
+          {budget ? budget.label : "Budget (EGP)"}
+        </Label>
+        {budget ? (
+          <>
+            <div className="flex items-center gap-2">
+              <Input
+                inputMode="numeric"
+                placeholder={budget.min}
+                aria-label={`Minimum ${budget.label.toLowerCase()}`}
+                className="bg-white"
+                value={formatAmount(filters.priceMin)}
+                onChange={(e) => setPrice("priceMin", e.target.value)}
+              />
+              <span className="text-muted-foreground">–</span>
+              <Input
+                inputMode="numeric"
+                placeholder={budget.max}
+                aria-label={`Maximum ${budget.label.toLowerCase()}`}
+                className="bg-white"
+                value={formatAmount(filters.priceMax)}
+                onChange={(e) => setPrice("priceMax", e.target.value)}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">USD listings are included at {USD_EGP_RATE} EGP per USD.</p>
+          </>
+        ) : (
+          <p className="text-xs text-muted-foreground">Choose Sale, Rent or Income Property above to set a budget.</p>
+        )}
       </div>
 
+      <Separator />
+
+      {/* Area (m²) — numeric min/max */}
+      <div className="space-y-3">
+        <Label className="block mb-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">Area (m²)</Label>
+        <div className="flex items-center gap-2">
+          <Input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            placeholder="Min"
+            aria-label="Minimum area in square metres"
+            className="bg-white"
+            value={filters.areaMin ?? ""}
+            onChange={(e) => setArea("areaMin", e.target.value)}
+          />
+          <span className="text-muted-foreground">–</span>
+          <Input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            placeholder="Max"
+            aria-label="Maximum area in square metres"
+            className="bg-white"
+            value={filters.areaMax ?? ""}
+            onChange={(e) => setArea("areaMax", e.target.value)}
+          />
+        </div>
+      </div>
 
       <Separator />
 

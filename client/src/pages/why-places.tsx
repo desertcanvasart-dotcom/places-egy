@@ -1,4 +1,5 @@
 import { Navbar } from "@/components/layout/Navbar";
+import { COMPANY_PROFILE_DOWNLOAD_NAME, COMPANY_PROFILE_HREF, COMPANY_PROFILE_SIZE_LABEL } from "@/lib/company-profile";
 import { Footer } from "@/components/layout/Footer";
 import { CornerSlideMagnet } from "@/components/magnets/CornerSlideMagnet";
 import { ClientsStrip } from "@/components/ClientsStrip";
@@ -165,12 +166,13 @@ export default function WhyPlaces() {
         <div className="container mx-auto px-4">
           <div className="text-center mb-10">
             <a
-              href="/places-company-profile.pdf"
-              download="PLACES-Company-Profile.pdf"
+              href={COMPANY_PROFILE_HREF}
+              download={COMPANY_PROFILE_DOWNLOAD_NAME}
               className="inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-3 text-sm font-bold uppercase tracking-widest text-accent-foreground transition-colors hover:bg-accent/90"
             >
               <Download className="h-4 w-4" />
               Download Company Profile
+              <span className="font-normal normal-case tracking-normal opacity-80">({COMPANY_PROFILE_SIZE_LABEL})</span>
             </a>
           </div>
           <div className="text-center mb-12">

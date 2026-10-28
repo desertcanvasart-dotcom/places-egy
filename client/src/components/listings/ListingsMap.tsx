@@ -4,7 +4,7 @@ import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Map, MapMarker, MarkerContent } from "@/components/ui/map";
 import { fetchAllProjectCoords, type ProjectCoord } from "@/lib/project-coords";
-import { listingCurrency } from "@/lib/currency";
+import { listingCurrency, priceInEgp } from "@/lib/currency";
 import { listingUrl } from "@/lib/listings";
 import { trackEvent } from "@/lib/analytics";
 import { ArrowRight, Building2 } from "lucide-react";
@@ -32,9 +32,9 @@ type GroupedProject = {
 function fromPrice(units: Listing[]): string {
   const priced = units.filter((u) => u.price != null && u.price > 0);
   if (priced.length === 0) return "Price on request";
-  const min = Math.min(...priced.map((u) => u.price!));
-  const currency = listingCurrency(priced[0]);
-  return `From ${new Intl.NumberFormat("en-US").format(min)} ${currency}`;
+  // Cheapest compared in EGP, shown in that unit's own currency.
+  const cheapest = priced.reduce((a, b) => ((priceInEgp(b) ?? Infinity) < (priceInEgp(a) ?? Infinity) ? b : a));
+  return `From ${new Intl.NumberFormat("en-US").format(cheapest.price!)} ${listingCurrency(cheapest)}`;
 }
 
 // Public map. Groups listings by their `project` field, joins each project

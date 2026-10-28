@@ -12,14 +12,13 @@ import { breadcrumbSchema, listingSchema } from "@/lib/schema";
 import { supabase, type Listing } from "@/lib/supabase";
 import { DEVELOPER_OPTIONS, FURNISHING_OPTIONS, MAINTENANCE_STATUS_OPTIONS, getEnumLabel } from "@/lib/enums";
 import { listingUrl, parseListingId } from "@/lib/listings";
-import { listingCurrency } from "@/lib/currency";
+import { formatEgpShort, listingCurrency, priceInEgp, USD_EGP_RATE } from "@/lib/currency";
 import { supabaseImage, supabaseImageOnError } from "@/lib/image-url";
 import { trackEvent } from "@/lib/analytics";
 import { openCalendly } from "@/lib/calendly";
 import { useScrollDepth } from "@/lib/use-scroll-depth";
-import { PriceGate, DerivedPriceLocked } from "@/components/PriceGate";
-import { UnlockPriceModal } from "@/components/UnlockPriceModal";
-import { usePriceUnlock } from "@/lib/price-unlock";
+import { ViewingRequestModal } from "@/components/ViewingRequestModal";
+import { rankSimilar } from "@/lib/similar-listings";
 import { cleanListingTitle, listingSnippet, rentedLabel } from "@/lib/listing-text";
 import DOMPurify from "dompurify";
 import { marked } from "marked";
@@ -32,6 +31,7 @@ import {
   Building2,
   Maximize,
   Calendar,
+  CalendarCheck,
   CarFront,
   Phone,
   MessageCircle,
@@ -83,12 +83,7 @@ export default function ListingDetailPage() {
 function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
   const [, setLocation] = useLocation();
   const [imageIndex, setImageIndex] = useState(0);
-  // Price-unlock modal open/close state. usePriceUnlock also drives the
-  // <PriceGate /> reveal — once the visitor submits and markUnlocked() fires,
-  // every gate on the page (hero price + price_per_meter row) flips to real
-  // values automatically.
-  const [unlockOpen, setUnlockOpen] = useState(false);
-  const { unlocked } = usePriceUnlock();
+  const [viewingOpen, setViewingOpen] = useState(false);
 
   useScrollDepth(`/listings/${idSlug}`);
 
@@ -117,44 +112,31 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
     },
   });
 
-  // Pool of same-subtype listings to rank as "similar" candidates. Subtype is
-  // the broadest meaningful similarity dimension; project/developer/location
-  // matches are layered on top via the scoring step below.
+  // Every listing with the same transaction type (card fields only), cached
+  // across listing pages; ranked by rankSimilar (area, location, price).
   const { data: similarPool = [] } = useQuery<Listing[]>({
-    queryKey: ["similar-listings", listing?.id, listing?.subtype],
+    queryKey: ["similar-pool", listing?.transaction_type],
+    staleTime: 5 * 60 * 1000,
     queryFn: async () => {
-      if (!listing?.subtype) return [];
+      if (!listing?.transaction_type) return [];
       const { data, error } = await supabase
         .from<Listing>("listings")
-        .select("*")
-        .eq('is_test', false)
-        .eq("subtype", listing.subtype)
-        .neq("id", listing.id)
-        .limit(20);
+        .select(
+          "id,title,transaction_type,property_type,subtype,developer,project,location,location_area,price,currency,area_sqm,furnishing,images,rental_status,rental_end,updated_at,price_per_meter,maintenance_fees,maintenance_status,floor,parking,delivery_date",
+        )
+        .eq("is_test", false)
+        .eq("property_type", "admin")
+        .eq("transaction_type", listing.transaction_type);
       if (error) throw error;
       return data ?? [];
     },
-    enabled: !!listing?.subtype,
+    enabled: !!listing?.transaction_type,
   });
 
-  // Rank candidates by closeness to the current listing — same project beats
-  // same developer beats same location. Ties broken by id (newest first).
-  const similarListings = useMemo<Listing[]>(() => {
-    if (!listing) return [];
-    const score = (l: Listing) => {
-      let s = 0;
-      if (l.project && listing.project && l.project === listing.project) s += 10;
-      if (l.developer && listing.developer && l.developer === listing.developer) s += 5;
-      if (l.location && listing.location && l.location === listing.location) s += 2;
-      return s;
-    };
-    return [...similarPool]
-      .sort((a, b) => {
-        const diff = score(b) - score(a);
-        return diff !== 0 ? diff : b.id - a.id;
-      })
-      .slice(0, 4);
-  }, [similarPool, listing]);
+  const similarListings = useMemo<Listing[]>(
+    () => (listing ? rankSimilar(listing, similarPool, 4) : []),
+    [similarPool, listing],
+  );
 
   // Listing not found → soft redirect to /listings (replace history so the
   // bad URL doesn't trap the back button).
@@ -341,15 +323,28 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
             <div className="flex flex-col items-start md:items-end shrink-0 gap-3">
               <FavoriteButton listingId={listing.id} size="lg" />
               {listing.price != null && (
-                <PriceGate
-                  price={listing.price}
-                  currency={listingCurrency(listing)}
-                  transactionType={listing.transaction_type}
-                  size="hero"
-                  listingId={listing.id}
-                  onUnlockClick={() => setUnlockOpen(true)}
-                />
+                <div className="md:text-right">
+                  <div className="flex items-baseline gap-1.5 md:justify-end">
+                    <span className="text-3xl md:text-4xl font-bold text-primary font-serif">
+                      {listing.price.toLocaleString()}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      {listingCurrency(listing)}
+                      {listing.transaction_type?.toLowerCase() === "rent" ? " / month" : ""}
+                    </span>
+                  </div>
+                  {listingCurrency(listing) === "USD" && priceInEgp(listing) != null && (
+                    <p className="text-xs text-muted-foreground mt-1">≈ {formatEgpShort(priceInEgp(listing)!)} at {USD_EGP_RATE} EGP/USD</p>
+                  )}
+                </div>
               )}
+              <Button
+                type="button"
+                onClick={() => setViewingOpen(true)}
+                className="bg-accent hover:bg-accent/90 text-white rounded-full"
+              >
+                <CalendarCheck className="w-4 h-4 mr-2" /> Book a viewing
+              </Button>
             </div>
           </div>
         </div>
@@ -462,18 +457,13 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
                       icon={Building2}
                       label="Price per m²"
                       value={
-                        unlocked ? (
-                          `${listing.price_per_meter.toLocaleString()} ${listingCurrency(listing)}`
-                        ) : (
-                          <DerivedPriceLocked
-                            label="price per m²"
-                            onUnlockClick={() => setUnlockOpen(true)}
-                          />
-                        )
+                        (
+`${listing.price_per_meter.toLocaleString()} ${listingCurrency(listing)}`
+)
                       }
                     />
                   )}
-                  {listing.maintenance_fees != null && listing.maintenance_status !== "included" && (
+                  {!!listing.maintenance_fees && listing.maintenance_status !== "included" && (
                     <DetailRow
                       icon={Building2}
                       label="Maintenance Fees"
@@ -623,13 +613,10 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
 
       <Footer />
       <CornerSlideMagnet />
-      {/* Price-unlock modal — opened by any <PriceGate onUnlockClick={...}>
-          or <DerivedPriceLocked> on this page. Renders nothing until open,
-          zero cost when locked visitor never interacts. */}
-      <UnlockPriceModal
+      <ViewingRequestModal
         listing={listing}
-        open={unlockOpen}
-        onClose={() => setUnlockOpen(false)}
+        open={viewingOpen}
+        onClose={() => setViewingOpen(false)}
       />
     </div>
   );
@@ -643,7 +630,7 @@ function DetailRow({
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   // ReactNode allowed so callers can pass a locked-state fallback component
-  // (like <DerivedPriceLocked />) in place of a raw string/number.
+  // (a React node) in place of a raw string/number.
   value: React.ReactNode;
 }) {
   if (value == null || value === "") return null;
