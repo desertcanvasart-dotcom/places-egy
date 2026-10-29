@@ -27,6 +27,7 @@ import {
   FAQ_SECTIONS,
   FAQ_ALL_ITEMS,
   countQuestionsInSection,
+  faqSampleQuestions,
 } from "@/lib/faq";
 
 const BASE_URL = "https://places-egy.com";
@@ -223,10 +224,9 @@ export default function FAQIndexPage() {
                 const Icon = SECTION_ICONS[section.id] ?? Brain;
                 const count = countQuestionsInSection(section);
                 return (
-                  <Link
+                  <div
                     key={section.id}
-                    href={`/faqs/${section.id}`}
-                    className="group relative flex flex-col h-full p-7 rounded-2xl bg-white border border-border/40 hover:border-primary hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
+                    className="group relative flex flex-col h-full p-7 rounded-2xl bg-white border border-border/40 hover:border-primary hover:shadow-xl transition-all duration-300"
                   >
                     <div className="flex items-center justify-between mb-4">
                       <span className="inline-flex w-10 h-10 items-center justify-center rounded-full bg-accent/10 text-accent">
@@ -237,20 +237,38 @@ export default function FAQIndexPage() {
                       </span>
                     </div>
                     <h2 className="text-lg font-serif font-bold text-primary mb-2 leading-snug">
-                      {section.title}
+                      <Link href={`/faqs/${section.id}`} className="hover:text-accent transition-colors">
+                        {section.title}
+                      </Link>
                     </h2>
-                    <p className="text-sm text-muted-foreground leading-relaxed mb-5 flex-1">
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-4">
                       {section.intro}
                     </p>
-                    <div className="flex items-center justify-between mt-auto pt-4 border-t border-border/40">
+                    {/* A few sample questions; the answers live only on the section page. */}
+                    <ul className="space-y-2 mb-5 flex-1">
+                      {faqSampleQuestions(section).map((q) => (
+                        <li key={q.slug}>
+                          <Link
+                            href={`/faqs/${section.id}#${q.slug}`}
+                            className="block text-sm text-primary/80 leading-snug hover:text-accent transition-colors"
+                          >
+                            {q.q}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                    <Link
+                      href={`/faqs/${section.id}`}
+                      className="flex items-center justify-between mt-auto pt-4 border-t border-border/40"
+                    >
                       <span className="text-xs text-muted-foreground">
                         {count} question{count === 1 ? "" : "s"}
                       </span>
                       <span className="inline-flex items-center text-accent text-sm font-medium group-hover:translate-x-0.5 transition-transform">
-                        Browse <ArrowRight className="ml-1.5 w-3.5 h-3.5" />
+                        See all <ArrowRight className="ml-1.5 w-3.5 h-3.5" />
                       </span>
-                    </div>
-                  </Link>
+                    </Link>
+                  </div>
                 );
               })}
             </div>

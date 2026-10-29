@@ -3,6 +3,7 @@ import path from "path";
 import ts from "typescript";
 import { attr, esc, injectBody, injectMeta } from "../server/seo/html";
 import { STATIC_PAGE_META } from "../client/src/lib/page-meta";
+import { FAQ_SECTIONS, countQuestionsInSection, faqSampleQuestions } from "../client/src/lib/faq";
 
 // Build-time "meta-only" prerender.
 //
@@ -854,12 +855,11 @@ export async function prerender() {
   // index.html SPA shell with homepage canonical.
   const CLOUDFLARE_REWRITTEN_ROUTES = new Set(["/listings", "/developers", "/blog"]);
 
-  // Pre-build the combined FAQ hub schema (all Q&As across all sections) so
-  // /faqs serves one giant FAQPage block — AI engines prefer a single
-  // aggregated source over N scattered pages.
+  // Q&As per FAQ section. Each section page is the only page that carries its
+  // Q&As and FAQPage markup; /faqs is a table of contents. (Repeating every
+  // question on /faqs made Google treat the section pages as duplicates:
+  // "Crawled - currently not indexed".)
   const faqItemsBySlugForHub = await collectFaqItems();
-  const allFaqItems: FaqQAPair[] = Object.values(faqItemsBySlugForHub).flat();
-  const faqHubJsonLd = allFaqItems.length > 0 ? buildFaqJsonLd(allFaqItems) : null;
 
   const staticRoutes: RouteMeta[] = Object.entries(STATIC_PAGE_META).map(([route, m]) => ({
     route,
@@ -876,24 +876,24 @@ export async function prerender() {
             ],
           })
         : injectMeta(shell, meta);
-    // Route-specific JSON-LD injections. /faqs gets the combined FAQPage;
-    // /contact gets the enriched RealEstateAgent with opening hours.
-    if (meta.route === "/faqs" && faqHubJsonLd) {
-      html = injectJsonLd(html, faqHubJsonLd);
-    } else if (meta.route === "/contact") {
+    // Route-specific JSON-LD: /contact gets the enriched RealEstateAgent with opening hours.
+    if (meta.route === "/contact") {
       html = injectJsonLd(html, buildContactJsonLd());
     }
 
     if (meta.route === "/blog" && enPosts.length > 0) {
       html = injectBody(html, blogListBody("PLACES Blog", meta.description, enPosts, "/blog"));
     } else if (meta.route === "/faqs") {
-      const sections = faqSectionMetas
-        .map((s) => {
-          const slug = s.route.replace(/^\/faqs\//, "");
-          const qs = (faqItemsBySlugForHub[slug] ?? []).map((it) => `<li>${esc(it.q)}</li>`).join("");
-          return `<section><h2><a href="${s.route}">${esc(headingFrom(s.title))}</a></h2><ul>${qs}</ul></section>`;
-        })
-        .join("");
+      const sections = FAQ_SECTIONS.map((sec) => {
+        const count = countQuestionsInSection(sec);
+        const samples = faqSampleQuestions(sec)
+          .map((q) => `<li><a href="/faqs/${sec.id}#${q.slug}">${esc(q.q)}</a></li>`)
+          .join("");
+        return (
+          `<section><h2><a href="/faqs/${sec.id}">${esc(sec.title)}</a></h2><p>${esc(sec.intro)}</p>` +
+          `<ul>${samples}</ul><p><a href="/faqs/${sec.id}">All ${count} questions on ${esc(sec.shortTitle ?? sec.title)}</a></p></section>`
+        );
+      }).join("");
       html = injectBody(html, `<h1>${esc(headingFrom(meta.title))}</h1><p>${esc(meta.description)}</p>${sections}`);
     } else {
       html = injectBody(html, simpleBody(meta));

@@ -1998,3 +1998,13 @@ export function getFAQSectionBySlug(slug: string | undefined): FAQSection | unde
 export function countQuestionsInSection(section: FAQSection): number {
   return section.subsections.reduce((sum, sub) => sum + sub.items.length, 0);
 }
+
+// A few representative questions per section (the first of each of the first
+// subsections) for the /faqs hub. The hub links to these on the section page
+// instead of repeating every question and answer, so each section page is the
+// only home of its Q&As (and their FAQPage markup).
+export function faqSampleQuestions(section: FAQSection, n = 3): Array<FAQItem & { slug: string }> {
+  const firsts = section.subsections.map((sub) => sub.items[0]).filter(Boolean);
+  const rest = section.subsections.flatMap((sub) => sub.items.slice(1));
+  return [...firsts, ...rest].slice(0, n).map((item) => ({ ...item, slug: slugify(item.q) }));
+}

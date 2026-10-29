@@ -24,7 +24,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
-import { breadcrumbSchema, faqSchema } from "@/lib/schema";
+import { breadcrumbSchema } from "@/lib/schema";
 import { useDocumentMeta } from "@/lib/use-document-meta";
 import {
   FAQ_SECTIONS,
@@ -202,15 +202,9 @@ function SectionView({ section }: { section: FAQSection }) {
           { name: section.title, url: `/faqs/${section.id}` },
         ])}
       />
-      {/* FAQPage schema scoped to THIS section only — keeps each page's structured
-          data tightly focused so Google indexes section pages by topic. */}
-      <SchemaMarkup
-        schema={faqSchema(
-          section.subsections.flatMap((sub) =>
-            sub.items.map((item) => ({ question: item.q, answer: item.a })),
-          ),
-        )}
-      />
+      {/* This section's FAQPage JSON-LD is baked into the served HTML by
+          script/prerender.ts. Mounting it here too would put two FAQPage blocks
+          on the page ("Duplicate field FAQPage" in Search Console). */}
       <Navbar />
 
       {/* Hero */}
