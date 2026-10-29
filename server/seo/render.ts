@@ -8,6 +8,12 @@ import { rankSimilar } from "../../client/src/lib/similar-listings";
 import { LOCATION_CONTENT } from "../../client/src/lib/location-content";
 import { breadcrumbSchema, faqSchema, itemListSchema, listingSchema } from "../../client/src/lib/schema";
 import {
+  DEVELOPERS_WITH_OWN_FAQ,
+  developerInventory,
+  developerRows,
+  developersWithStock,
+} from "../../client/src/lib/developer-inventory";
+import {
   DEALS,
   LANDING_LOCATIONS,
   LANDING_MIN_UNITS,
@@ -223,9 +229,32 @@ export async function renderLocation(slug: string): Promise<string | null> {
 export async function renderDeveloper(slug: string): Promise<string | null> {
   const base = builtFile(`developers/${slug}.html`);
   if (!base) return null;
-  const rows = (await getInventory()).filter((l) => l.developer === slug);
+  const inventory = await getInventory();
+  const inv = developerInventory(slug, inventory);
+  const rows = developerRows(inventory, slug);
   const intro = prerenderInner(base) ?? "";
-  return injectBody(base, intro + `<h2>Available offices (${rows.length})</h2>` + listingLinks(rows) + locationNav());
+
+  let units = `<h2>${esc(inv.count ? `${inv.name} offices available (${inv.count})` : `${inv.name} offices`)}</h2><p>${esc(inv.summary)}</p>`;
+  if (rows.length) {
+    units += listingLinks(rows);
+    if (inv.landingLinks.length) {
+      units += `<ul>${inv.landingLinks.map((l) => `<li><a href="${l.path}">${esc(l.heading)}</a></li>`).join("")}</ul>`;
+    }
+  } else {
+    const others = developersWithStock(inventory, slug);
+    units +=
+      `<p><a href="/contact">Ask about ${esc(inv.name)} availability</a></p>` +
+      (others.length
+        ? `<h3>Developers with offices available now</h3><ul>${others.map((d) => `<li><a href="/developers/${d.slug}">${esc(d.name)}</a> (${d.count})</li>`).join("")}</ul>`
+        : "");
+  }
+
+  const ownFaq = DEVELOPERS_WITH_OWN_FAQ.has(slug);
+  const faqs = ownFaq
+    ? ""
+    : `<h2>${esc(inv.name)}: FAQs</h2>` + inv.faqs.map((f) => `<h3>${esc(f.question)}</h3><p>${esc(f.answer)}</p>`).join("");
+  const html = injectBody(base, intro + units + faqs + locationNav());
+  return ownFaq ? html : injectJsonLd(html, faqSchema(inv.faqs));
 }
 
 export function similarListings(l: SeoListing, all: SeoListing[], limit = 6): SeoListing[] {

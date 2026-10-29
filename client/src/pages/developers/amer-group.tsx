@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { useState, useMemo } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { DeveloperInventory } from "@/components/developers/DeveloperInventory";
 import { Button } from "@/components/ui/button";
 import {
   Accordion,
@@ -298,6 +299,9 @@ export default function AmerGroupPage() {
           </Accordion>
         </div>
       </section>
+
+      {/* Live units + FAQs */}
+      <DeveloperInventory slug="amer-group" />
 
       {/* Related Developers */}
       <section className="py-8">
