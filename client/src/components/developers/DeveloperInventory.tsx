@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Building2, HelpCircle } from "lucide-react";
 import { ListingCard } from "@/components/listings/ListingCard";
+import { FaqAccordionList } from "@/components/FaqAccordionList";
 import { supabase, type Listing } from "@/lib/supabase";
 import {
   DEVELOPERS_WITH_OWN_FAQ,
@@ -131,14 +132,7 @@ export function DeveloperInventory({ slug }: { slug: string }) {
               <HelpCircle className="w-6 h-6 md:w-7 md:h-7 text-accent shrink-0" />
               <span>{inv.name}: FAQs</span>
             </h2>
-            <div className="space-y-6">
-              {inv.faqs.map((f) => (
-                <div key={f.question}>
-                  <h3 className="font-semibold text-primary text-lg mb-1">{f.question}</h3>
-                  <p className="text-muted-foreground leading-relaxed">{f.answer}</p>
-                </div>
-              ))}
-            </div>
+            <FaqAccordionList faqs={inv.faqs} />
           </div>
         </section>
       )}
