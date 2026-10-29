@@ -119,9 +119,12 @@ async function fetchMetrics(): Promise<WeeklyMetrics> {
     .lt("created_at", weekEnd.toISOString());
 
   // ── Hot leads: top 3 by "warm signal" this week ─────────────────────────
-  // Simple heuristic: leads with a magnet (price_unlock, market_report,
-  // developer_survey) are hotter than plain contact-form leads because
-  // they explicitly asked for something. Then by created_at desc.
+  // Simple heuristic: viewing requests (someone asked to see a specific
+  // unit) and magnet leads (market_report, developer_survey; price_unlock
+  // before the price gate was removed on 2026-10-28) are hotter than plain
+  // contact-form leads because they explicitly asked for something. Then by
+  // created_at desc.
+  const HOT_SOURCES = new Set(["viewing_request"]);
   const HOT_MAGNETS = new Set([
     "price_unlock",
     "cairo_office_market_report_2026",
@@ -140,8 +143,9 @@ async function fetchMetrics(): Promise<WeeklyMetrics> {
   const hotLeads = (leadsThisWeek ?? [])
     .map((l) => l as unknown as LeadRow)
     .sort((a, b) => {
-      const aHot = a.magnet && HOT_MAGNETS.has(a.magnet) ? 1 : 0;
-      const bHot = b.magnet && HOT_MAGNETS.has(b.magnet) ? 1 : 0;
+      const hot = (l: LeadRow) => HOT_SOURCES.has(l.lead_source) || (!!l.magnet && HOT_MAGNETS.has(l.magnet));
+      const aHot = hot(a) ? 1 : 0;
+      const bHot = hot(b) ? 1 : 0;
       if (aHot !== bHot) return bHot - aHot;
       return b.created_at.localeCompare(a.created_at);
     })
@@ -194,7 +198,9 @@ function fmtDate(iso: string): string {
 // (so we never surface "developer_survey_submit" untouched).
 const EVENT_LABELS: Record<string, string> = {
   contact_form_submit: "Form submits",
-  price_unlock_submit: "Price unlocks",
+  viewing_request_submit: "Viewing requests",
+  viewing_request_open: "Viewing form opens",
+  price_unlock_submit: "Price unlocks (old)",
   developer_survey_submit: "Survey submits",
   concierge_submit: "Concierge chats",
   whatsapp_click: "WhatsApp clicks",
@@ -231,7 +237,8 @@ const LEAD_SOURCE_LABELS: Record<string, string> = {
   favorites_email_me_now: "'Email my saved list' button",
   developer_survey_popup: "Developer survey popup",
   developer_survey_inline: "Developer survey inline",
-  price_unlock: "Price unlock",
+  viewing_request: "Viewing request (listing page)",
+  price_unlock: "Price unlock (old)",
 };
 
 function friendlyLeadSource(slug: string): string {
