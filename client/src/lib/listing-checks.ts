@@ -148,6 +148,13 @@ const TITLE_CONDITION: Record<string, string> = {
   serviced: "Serviced",
 };
 
+// Fields are sometimes typed in lowercase ("hyde park", "cfc"): capitalise
+// names nobody capitalised; short ones are acronyms.
+function displayName(raw: string): string {
+  if (!raw || /[A-Z]/.test(raw)) return raw;
+  return raw.length <= 4 ? raw.toUpperCase() : raw.replace(/\b([a-z])/g, (m) => m.toUpperCase());
+}
+
 // Title built from the structured fields, so title and fields can't disagree:
 // "Office for Rent in Mivida The Place | 114 SQM | Finished"
 export function suggestedTitle(l: {
@@ -162,7 +169,7 @@ export function suggestedTitle(l: {
     l.transaction_type === "income-property" ? "Income Property for Sale"
     : l.transaction_type === "sale" ? "Office for Sale"
     : "Office for Rent";
-  const place = l.project?.trim() || l.location_area?.trim() || l.location?.trim();
+  const place = displayName(l.project?.trim() || l.location_area?.trim() || l.location?.trim() || "");
   return [
     place ? `${deal} in ${place}` : deal,
     l.area_sqm ? `${Number(l.area_sqm).toLocaleString("en-US")} SQM` : null,
