@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { useState, useMemo } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { DeveloperInventory } from "@/components/developers/DeveloperInventory";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ChevronRight, MapPin, CheckCircle2 } from "lucide-react";
 import { SchemaMarkup } from "@/components/SchemaMarkup";
@@ -275,6 +276,9 @@ export default function MorshedyPage() {
           )}
         </div>
       </section>
+
+      {/* Live units + FAQs */}
+      <DeveloperInventory slug="morshedy" />
 
       {/* Related Developers */}
       <section className="py-8">

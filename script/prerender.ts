@@ -3,6 +3,7 @@ import path from "path";
 import ts from "typescript";
 import { attr, esc, injectBody, injectMeta } from "../server/seo/html";
 import { STATIC_PAGE_META } from "../client/src/lib/page-meta";
+import { renderDeveloperBodies } from "./ssr-developers";
 import { FAQ_SECTIONS, countQuestionsInSection, faqSampleQuestions } from "../client/src/lib/faq";
 
 // Build-time "meta-only" prerender.
@@ -836,8 +837,11 @@ export async function prerender() {
     `<p><time datetime="${attr(p.publishedAt)}">${esc(p.publishedAt.slice(0, 10))}</time></p>` +
     `<div class="blog-content">${p.bodyHtml}</div></article>`;
 
+  // Full page content for each developer, rendered from its React component.
+  const developerBodies = await renderDeveloperBodies();
   for (const meta of metas) {
-    const html = injectBody(injectMeta(shell, meta), simpleBody(meta));
+    const slug = meta.route.replace(/^\/developers\//, "");
+    const html = injectBody(injectMeta(shell, meta), developerBodies[slug] ?? simpleBody(meta));
     // Write dist/public/developers/<slug>.html — express.static resolves
     // /developers/<slug> to this file before the SPA catch-all.
     const outPath = path.join(DIST, `${meta.route}.html`);
