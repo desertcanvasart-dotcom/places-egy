@@ -6,12 +6,9 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { ListingCard } from "@/components/listings/ListingCard";
-import { SchemaMarkup } from "@/components/SchemaMarkup";
+import { FaqAccordionList } from "@/components/FaqAccordionList";
 import { supabase, type Listing } from "@/lib/supabase";
 import { LOCATION_CONTENT } from "@/lib/location-content";
-import { breadcrumbSchema, faqSchema, itemListSchema } from "@/lib/schema";
-import { listingUrl } from "@/lib/listings";
-import { cleanListingTitle } from "@/lib/listing-text";
 import { useDocumentMeta } from "@/lib/use-document-meta";
 import {
   DEALS,
@@ -81,25 +78,8 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-background">
-      {copy && (
-        <>
-          <SchemaMarkup
-            schema={breadcrumbSchema([
-              { name: "Home", url: "/" },
-              { name: `Offices in ${loc.name}`, url: `/locations/${loc.slug}` },
-              { name: copy.h1, url: pagePath },
-            ])}
-          />
-          <SchemaMarkup
-            schema={itemListSchema({
-              name: copy.h1,
-              url: pagePath,
-              items: rows.slice(0, 48).map((l) => ({ name: cleanListingTitle(l.title ?? ""), url: listingUrl(l) })),
-            })}
-          />
-          <SchemaMarkup schema={faqSchema(copy.faqs)} />
-        </>
-      )}
+      {/* Breadcrumb, ItemList and FAQPage JSON-LD come from the server render
+          (server/seo/render.ts); adding them here would duplicate them. */}
       <Navbar />
 
       {/* Hero */}
@@ -188,14 +168,7 @@ export default function LandingPage() {
               <HelpCircle className="w-6 h-6 md:w-7 md:h-7 text-accent shrink-0" />
               <span>{copy.h1}: FAQs</span>
             </h2>
-            <div className="space-y-6">
-              {copy.faqs.map((f) => (
-                <div key={f.question}>
-                  <h3 className="font-semibold text-primary text-lg mb-1">{f.question}</h3>
-                  <p className="text-muted-foreground leading-relaxed">{f.answer}</p>
-                </div>
-              ))}
-            </div>
+            <FaqAccordionList faqs={copy.faqs} />
           </div>
         </section>
       )}
