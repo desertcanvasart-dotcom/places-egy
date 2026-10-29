@@ -35,6 +35,12 @@ import { useDocumentMeta } from "@/lib/use-document-meta";
 import NotFound from "@/pages/not-found";
 import { DEALS, eligibleLandingPages } from "@/lib/landing-pages";
 
+const UNIT_TABS = [
+  { tx: "rent", label: "For rent", noun: "offices for rent" },
+  { tx: "sale", label: "For sale", noun: "offices for sale" },
+  { tx: "income-property", label: "Income properties", noun: "income properties" },
+] as const;
+
 function formatLabel(value: string | null | undefined): string {
   if (!value) return "";
   return value.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
@@ -100,22 +106,28 @@ export default function LocationDetail() {
       : "https://places-egy.com/locations",
   });
 
-  // Newest listings for this location (ID DESC acts as "newest" since no created_at column)
-  const { data: newestListings = [] } = useQuery<Listing[]>({
-    queryKey: ["location-newest-listings", content?.displayName],
+  // Newest 4 available units per deal type, for the tabbed "Available units" preview.
+  const { data: newestByDeal = {} as Record<string, Listing[]> } = useQuery<Record<string, Listing[]>>({
+    queryKey: ["location-newest-by-deal", content?.displayName],
     enabled: !!content,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from<Listing>("listings")
-        .select("*")
-        .eq('is_test', false)
-        .eq("property_type", "admin")
-        .eq("location", content!.displayName)
-        .neq("rental_status", "rented")
-        .order("updated_at", { ascending: false })
-        .limit(4);
-      if (error) throw error;
-      return data ?? [];
+      const entries = await Promise.all(
+        UNIT_TABS.map(async (tab) => {
+          const { data, error } = await supabase
+            .from<Listing>("listings")
+            .select("*")
+            .eq("is_test", false)
+            .eq("property_type", "admin")
+            .eq("location", content!.displayName)
+            .eq("transaction_type", tab.tx)
+            .neq("rental_status", "rented")
+            .order("updated_at", { ascending: false })
+            .limit(4);
+          if (error) throw error;
+          return [tab.tx, data ?? []] as const;
+        }),
+      );
+      return Object.fromEntries(entries);
     },
   });
 
@@ -184,11 +196,24 @@ export default function LocationDetail() {
     return out;
   }, [allMeta]);
 
-  // Live "Offices for Rent in {location}"-style pages for this location.
-  const landingPages = useMemo(
-    () => (content ? eligibleLandingPages(allMeta).filter((p) => p.loc.slug === content.slug) : []),
-    [allMeta, content],
-  );
+  // Tabs with their available-unit counts; "See all" goes to the landing page
+  // (/rent/new-cairo, …) when it's live, else to the filtered listings page.
+  const unitTabs = useMemo(() => {
+    if (!content) return [];
+    const landing = eligibleLandingPages(allMeta).filter((p) => p.loc.slug === content.slug);
+    return UNIT_TABS.map((tab) => {
+      const count = allMeta.filter((l) => l.transaction_type === tab.tx && l.rental_status !== "rented").length;
+      const page = landing.find((p) => DEALS[p.deal].tx === tab.tx);
+      return {
+        ...tab,
+        count,
+        href: page ? page.path : `/listings?transaction=${tab.tx}&location=${encodeURIComponent(content.displayName)}`,
+        linkText: page ? `See all ${DEALS[page.deal].heading(content.displayName)}` : `See all ${tab.noun} in ${content.displayName}`,
+      };
+    }).filter((t) => t.count > 0 && (newestByDeal[t.tx]?.length ?? 0) > 0);
+  }, [allMeta, content, newestByDeal]);
+  const [unitTab, setUnitTab] = useState<string | null>(null);
+  const activeTab = unitTabs.find((t) => t.tx === unitTab) ?? unitTabs[0];
 
   if (!content) return <NotFound />;
 
@@ -242,7 +267,7 @@ export default function LocationDetail() {
           <p className="text-base md:text-lg text-white/90 font-medium mb-8 max-w-3xl">
             {content.subtitle}
           </p>
-          <a href={newestListings.length > 0 ? "#available-units" : listingsHref}>
+          <a href={unitTabs.length > 0 ? "#available-units" : listingsHref}>
             <Button
               size="lg"
               className="bg-accent hover:bg-accent/90 text-white font-bold px-8 h-12 text-base shadow-xl shadow-accent/30 transition-all hover:scale-105"
@@ -251,17 +276,6 @@ export default function LocationDetail() {
               <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
           </a>
-          {landingPages.length > 0 && (
-            <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm">
-              {landingPages.map((p) => (
-                <li key={p.path}>
-                  <Link href={p.path} className="text-white/90 underline underline-offset-4 decoration-white/40 hover:decoration-white">
-                    {DEALS[p.deal].heading(content.displayName)} ({p.count})
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
         </div>
       </section>
 
@@ -298,33 +312,53 @@ export default function LocationDetail() {
         </div>
       </section>
 
-      {/* Newest listings — hidden if empty */}
-      {newestListings.length > 0 && (
+      {/* Available units — tabbed by deal type, each with a "See all" link to its landing page */}
+      {activeTab && (
         <section id="available-units" className="py-8 bg-secondary/40 scroll-mt-24">
           <div className="container mx-auto px-6 md:px-10">
-            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-5">
               <h2 className="text-2xl md:text-3xl font-serif font-bold text-primary flex items-center gap-3">
                 <Home className="w-6 h-6 md:w-7 md:h-7 text-accent shrink-0" />
                 <span>Available units in {content.displayName}</span>
               </h2>
-              <a
-                href={listingsHref}
-                className="inline-flex items-center text-primary font-medium hover:text-accent transition-colors"
+              <Link
+                href={activeTab.href}
+                className="hidden md:inline-flex items-center text-primary font-medium hover:text-accent transition-colors"
               >
-                Browse all {content.displayName} units{" "}
-                <ArrowRight className="ml-2 w-4 h-4" />
-              </a>
+                {activeTab.linkText} ({activeTab.count}) <ArrowRight className="ml-2 w-4 h-4" />
+              </Link>
             </div>
+            {unitTabs.length > 1 && (
+              <div role="tablist" aria-label="Deal type" className="flex flex-wrap gap-2 mb-6">
+                {unitTabs.map((t) => (
+                  <button
+                    key={t.tx}
+                    type="button"
+                    role="tab"
+                    aria-selected={t.tx === activeTab.tx}
+                    onClick={() => setUnitTab(t.tx)}
+                    className={`min-h-11 text-sm font-medium px-4 py-2 rounded-full border transition-all ${
+                      t.tx === activeTab.tx
+                        ? "bg-primary text-white border-primary shadow-sm"
+                        : "bg-white text-foreground/70 border-border hover:border-accent hover:text-accent"
+                    }`}
+                  >
+                    {t.label} ({t.count})
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
-              {newestListings.map((listing) => (
-                <ListingCard
-                  key={listing.id}
-                  listing={listing}
-                  compact
-                  hideSubtype
-                />
+              {(newestByDeal[activeTab.tx] ?? []).map((listing) => (
+                <ListingCard key={listing.id} listing={listing} compact hideSubtype />
               ))}
             </div>
+            <Link
+              href={activeTab.href}
+              className="md:hidden mt-6 flex w-full items-center justify-center rounded-full bg-primary text-white font-medium px-5 py-3 text-sm"
+            >
+              {activeTab.linkText} ({activeTab.count}) <ArrowRight className="ml-2 w-4 h-4" />
+            </Link>
           </div>
         </section>
       )}

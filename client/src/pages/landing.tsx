@@ -28,6 +28,8 @@ import NotFound from "@/pages/not-found";
 
 const SITE = "https://places-egy.com";
 const BATCH = 24;
+const CARD_FIELDS =
+  "id,title,transaction_type,property_type,subtype,developer,project,location,location_area,price,currency,area_sqm,furnishing,images,rental_status,rental_end,updated_at,price_per_meter,maintenance_fees,maintenance_status,floor,parking,delivery_date";
 
 // /rent/{location}, /buy/{location}, /income-property/{location}.
 // The server renders the same copy for crawlers (server/seo/render.ts).
@@ -40,16 +42,19 @@ export default function LandingPage() {
   const content = loc ? LOCATION_CONTENT[loc.slug] : undefined;
   const [shown, setShown] = useState(BATCH);
 
-  // All published listings: this page's units plus counts for the sibling links.
+  // This location's listings (all deal types, for the sibling links), card
+  // fields only: no descriptions, which keeps the download small on mobile.
   const { data: all = [], isLoading } = useQuery<Listing[]>({
-    queryKey: ["landing-inventory"],
+    queryKey: ["landing-inventory", loc?.name],
+    enabled: !!loc,
     staleTime: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from<Listing>("listings")
-        .select("*")
+        .select(CARD_FIELDS)
         .eq("is_test", false)
         .eq("property_type", "admin")
+        .eq("location", loc!.name)
         .order("updated_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
