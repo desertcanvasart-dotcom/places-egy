@@ -337,7 +337,7 @@ export default function LocationDetail() {
                     role="tab"
                     aria-selected={t.tx === activeTab.tx}
                     onClick={() => setUnitTab(t.tx)}
-                    className={`text-sm font-medium px-4 py-2 rounded-full border transition-all ${
+                    className={`min-h-11 text-sm font-medium px-4 py-2 rounded-full border transition-all ${
                       t.tx === activeTab.tx
                         ? "bg-primary text-white border-primary shadow-sm"
                         : "bg-white text-foreground/70 border-border hover:border-accent hover:text-accent"
