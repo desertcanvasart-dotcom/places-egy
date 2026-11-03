@@ -80,7 +80,7 @@ const NAV_LINKS = {
   en: [
     ["/", "Home"], ["/listings", "Office listings"], ["/locations", "Locations"],
     ["/developers", "Developers"], ["/guides", "Guides"], ["/blog", "Blog"],
-    ["/faqs", "FAQs"], ["/contact", "Contact"],
+    ["/faqs", "FAQs"], ["/ar/blog", "Arabic blog"], ["/contact", "Contact"],
   ],
   ar: [
     ["/", "PLACES"], ["/listings", "المكاتب المتاحة"], ["/ar/blog", "المدونة"], ["/contact", "تواصل معنا"],
