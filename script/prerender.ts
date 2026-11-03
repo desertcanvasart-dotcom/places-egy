@@ -832,10 +832,43 @@ export async function prerender() {
       .join("") +
     `</ul>`;
 
-  const blogPostBody = (p: BlogPostMeta) =>
-    `<article><h1>${esc(p.heading)}</h1>` +
-    `<p><time datetime="${attr(p.publishedAt)}">${esc(p.publishedAt.slice(0, 10))}</time></p>` +
-    `<div class="blog-content">${p.bodyHtml}</div></article>`;
+  // Crawlable links between the two blogs: each post links to its translation
+  // (link text = the other post's title, in the page's own language) and to a
+  // few related posts in the same language. Without these the Arabic posts were
+  // reachable only via the sitemap and /ar/blog, so Google left them unindexed.
+  const postsByLang = { en: enPosts, ar: arPosts };
+  const words = (t: string) => new Set(t.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((w) => w.length > 2));
+  const relatedPosts = (p: BlogPostMeta, lang: "en" | "ar", n = 4) => {
+    const mine = words(p.heading);
+    return postsByLang[lang]
+      .filter((o) => o.slug !== p.slug)
+      .map((o, i) => ({ o, i, score: [...words(o.heading)].filter((w) => mine.has(w)).length }))
+      .sort((a, b) => b.score - a.score || a.i - b.i)
+      .slice(0, n)
+      .map((x) => x.o);
+  };
+  const blogPostBody = (p: BlogPostMeta, lang: "en" | "ar") => {
+    const other = lang === "en" ? "ar" : "en";
+    const twin = p.otherLangSlug ? postsByLang[other].find((o) => o.slug === p.otherLangSlug) : undefined;
+    const base = (l: "en" | "ar") => (l === "ar" ? "/ar/blog" : "/blog");
+    const twinLine = twin
+      ? `<p>${lang === "en" ? "Also available in Arabic:" : "هذا المقال متاح أيضًا بالإنجليزية:"} ` +
+        `<a href="${base(other)}/${attr(twin.slug)}" hreflang="${other}">${esc(twin.heading)}</a></p>`
+      : "";
+    const related = relatedPosts(p, lang);
+    const relatedList = related.length
+      ? `<h2>${lang === "en" ? "Related articles" : "مقالات ذات صلة"}</h2><ul>` +
+        related.map((o) => `<li><a href="${base(lang)}/${attr(o.slug)}">${esc(o.heading)}</a></li>`).join("") +
+        `</ul>`
+      : "";
+    return (
+      `<article><h1>${esc(p.heading)}</h1>` +
+      `<p><time datetime="${attr(p.publishedAt)}">${esc(p.publishedAt.slice(0, 10))}</time></p>` +
+      twinLine +
+      `<div class="blog-content">${p.bodyHtml}</div></article>` +
+      relatedList
+    );
+  };
 
   // Full page content for each developer, rendered from its React component.
   const developerBodies = await renderDeveloperBodies();
@@ -1022,7 +1055,7 @@ export async function prerender() {
       alternates.push({ hreflang: "ar", url: `${SITE}/ar/blog/${post.otherLangSlug}` });
     }
     alternates.push({ hreflang: "x-default", url: `${SITE}/blog/${post.slug}` });
-    let html = injectBody(injectMeta(shell, meta, { lang: "en", alternates }), blogPostBody(post), "en");
+    let html = injectBody(injectMeta(shell, meta, { lang: "en", alternates }), blogPostBody(post, "en"), "en");
     html = injectJsonLd(html, buildBlogArticleJsonLd(post, meta.url, "en"));
     const outPath = path.join(DIST, `${meta.route}.html`);
     await mkdir(path.dirname(outPath), { recursive: true });
@@ -1073,8 +1106,11 @@ export async function prerender() {
       if (post.otherLangSlug) {
         alternates.push({ hreflang: "en", url: `${SITE}/blog/${post.otherLangSlug}` });
         alternates.push({ hreflang: "x-default", url: `${SITE}/blog/${post.otherLangSlug}` });
+      } else {
+        // Arabic-only post: it is its own default version.
+        alternates.push({ hreflang: "x-default", url: `${SITE}/ar/blog/${post.slug}` });
       }
-      let html = injectBody(injectMeta(shell, meta, { lang: "ar", alternates }), blogPostBody(post), "ar");
+      let html = injectBody(injectMeta(shell, meta, { lang: "ar", alternates }), blogPostBody(post, "ar"), "ar");
       html = injectJsonLd(html, buildBlogArticleJsonLd(post, meta.url, "ar"));
       const outPath = path.join(DIST, `${meta.route}.html`);
       await mkdir(path.dirname(outPath), { recursive: true });
