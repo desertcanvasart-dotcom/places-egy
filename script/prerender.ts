@@ -4,6 +4,7 @@ import ts from "typescript";
 import { attr, esc, injectBody, injectMeta } from "../server/seo/html";
 import { STATIC_PAGE_META } from "../client/src/lib/page-meta";
 import { renderDeveloperBodies } from "./ssr-developers";
+import { buildBlogData, collectBlogPosts, renderBlogHub, renderBlogPost } from "../server/seo/blog";
 import { FAQ_SECTIONS, countQuestionsInSection, faqSampleQuestions } from "../client/src/lib/faq";
 
 // Build-time "meta-only" prerender.
@@ -123,17 +124,6 @@ export async function collectDeveloperMeta(): Promise<RouteMeta[]> {
 
 function headingFrom(title: string): string {
   return title.replace(/\s*\|\s*PLACES\s*$/, "").replace(/\s+—\s+Egypt Office FAQs$/, "");
-}
-
-// WP content is authored in our own CMS, but strip anything executable anyway.
-function sanitizeWpHtml(html: string): string {
-  return html
-    .replace(/<(script|style|iframe|noscript|object|embed|form)\b[\s\S]*?<\/\1>/gi, "")
-    .replace(/<(script|iframe|object|embed)\b[^>]*\/?>/gi, "")
-    .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
-    .replace(/(href|src)\s*=\s*(["'])\s*javascript:[^"']*\2/gi, '$1="#"')
-    // The page template supplies the one <h1>; headings inside the article start at h2.
-    .replace(/<(\/?)h1\b/gi, "<$1h2");
 }
 
 function simpleBody(meta: RouteMeta): string {
@@ -445,49 +435,6 @@ function injectJsonLd(html: string, jsonLd: string): string {
   return html.replace(/<\/head>/i, `${jsonLd}</head>`);
 }
 
-// Build Article JSON-LD for a WordPress blog post. AI engines (Perplexity,
-// ChatGPT, Claude, Google AI Overviews) use Article schema to decide which
-// source to cite — a post without it is often skipped in favor of a
-// competitor's structured article.
-function buildBlogArticleJsonLd(
-  post: BlogPostMeta,
-  url: string,
-  lang: "en" | "ar",
-): string {
-  const article = {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    "@id": `${url}#article`,
-    headline: post.title,
-    description: post.description,
-    url,
-    mainEntityOfPage: { "@type": "WebPage", "@id": url },
-    datePublished: post.publishedAt,
-    dateModified: post.publishedAt,
-    inLanguage: lang,
-    author: {
-      "@type": "Organization",
-      "@id": `${SITE}/#organization`,
-      name: "PLACES",
-    },
-    publisher: {
-      "@type": "Organization",
-      "@id": `${SITE}/#organization`,
-      name: "PLACES",
-      logo: {
-        "@type": "ImageObject",
-        url: `${SITE}/opengraph.jpg`,
-      },
-    },
-    image: {
-      "@type": "ImageObject",
-      url: post.featuredImage ?? `${SITE}/opengraph.jpg`,
-    },
-  };
-  const encoded = JSON.stringify(article).replace(/<\/script/gi, "<\\/script");
-  return `<script type="application/ld+json">${encoded}</script>`;
-}
-
 // Enriched RealEstateAgent + LocalBusiness JSON-LD for the /contact page.
 // Pulls brand facts from the runtime schema in client/src/lib/schema.ts and
 // extends with openingHoursSpecification + areaServed so AI engines can
@@ -681,132 +628,6 @@ function buildFaqJsonLd(items: FaqQAPair[]): string {
 //
 // Fails gracefully — if the CMS is unreachable during the Railway build,
 // we log and skip rather than crashing the whole deploy.
-interface BlogPostMeta {
-  slug: string;
-  title: string;
-  description: string;
-  publishedAt: string;
-  featuredImage: string | null;
-  // Slug of this post's translation in the opposite language. Populated
-  // via Polylang's translations pointer when available. Null when the
-  // counterpart isn't published or Polylang doesn't expose it.
-  otherLangSlug: string | null;
-  heading: string;
-  excerpt: string;
-  bodyHtml: string;
-}
-
-// Fetch a language's blog posts from WordPress at build time. Used for
-// both /ar/blog/* and /blog/* prerendering. Returns [] on any failure so
-// deploys ship even when the CMS is briefly unreachable.
-async function collectBlogPosts(lang: "en" | "ar"): Promise<BlogPostMeta[]> {
-  const CMS = "https://cms.places-egy.com";
-  const url = `${CMS}/wp-json/wp/v2/posts?lang=${lang}&per_page=100&_embed=true`;
-  try {
-    // A single slow CMS response used to drop every post's prerender (homepage meta).
-    let res: Response | undefined;
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      try {
-        res = await fetch(url, { signal: AbortSignal.timeout(45000) });
-        if (res.ok) break;
-      } catch (err) {
-        if (attempt === 3) throw err;
-      }
-      console.warn(`[prerender] ${lang.toUpperCase()} blog fetch attempt ${attempt} failed — retrying`);
-      await new Promise((r) => setTimeout(r, 3000));
-    }
-    if (!res) throw new Error("no response");
-    if (!res.ok) {
-      console.warn(`[prerender] ${lang.toUpperCase()} blog fetch failed: HTTP ${res.status} — skipping`);
-      return [];
-    }
-    // WP REST post shape. `translations` is a Polylang addition (only
-    // present when our WP snippet enables it); when missing we ship the
-    // page without a cross-language hreflang pair.
-    type WpPost = {
-      slug: string;
-      title: { rendered: string };
-      excerpt: { rendered: string };
-      content: { rendered: string };
-      date: string;
-      translations?: Record<string, number>;
-      yoast_head_json?: { title?: string; description?: string };
-      meta?: Record<string, unknown>;
-      _embedded?: {
-        "wp:featuredmedia"?: Array<{ source_url?: string }>;
-      };
-    };
-    const raw = (await res.json()) as WpPost[];
-    // Resolve counterpart-lang post IDs to slugs in one bulk lookup.
-    const otherLang = lang === "ar" ? "en" : "ar";
-    const otherIds = raw
-      .map((p) => p.translations?.[otherLang])
-      .filter((id): id is number => typeof id === "number");
-    const otherSlugMap = new Map<number, string>();
-    if (otherIds.length > 0) {
-      try {
-        const otherRes = await fetch(
-          `${CMS}/wp-json/wp/v2/posts?include=${otherIds.join(",")}&per_page=100&_fields=id,slug&lang=${otherLang}`,
-          { signal: AbortSignal.timeout(15000) },
-        );
-        if (otherRes.ok) {
-          const otherData = (await otherRes.json()) as Array<{ id: number; slug: string }>;
-          for (const p of otherData) otherSlugMap.set(p.id, p.slug);
-        }
-      } catch (err) {
-        console.warn(`[prerender] ${otherLang.toUpperCase()} translation slug lookup failed:`, err);
-      }
-    }
-    return raw.map((p): BlogPostMeta => {
-      const meta = p.meta ?? {};
-      const seoTitle =
-        (meta.rank_math_title as string | undefined) ||
-        p.yoast_head_json?.title ||
-        p.title.rendered;
-      const seoDescription =
-        (meta.rank_math_description as string | undefined) ||
-        p.yoast_head_json?.description ||
-        p.excerpt.rendered.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim().slice(0, 240);
-      const otherId = p.translations?.[otherLang];
-      return {
-        slug: p.slug,
-        title: decodeEntitiesServer(seoTitle),
-        description: decodeEntitiesServer(seoDescription),
-        publishedAt: p.date,
-        featuredImage: p._embedded?.["wp:featuredmedia"]?.[0]?.source_url ?? null,
-        otherLangSlug: otherId ? otherSlugMap.get(otherId) ?? null : null,
-        heading: decodeEntitiesServer(p.title.rendered),
-        excerpt: decodeEntitiesServer(
-          p.excerpt.rendered.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim(),
-        ),
-        bodyHtml: sanitizeWpHtml(p.content?.rendered ?? ""),
-      };
-    });
-  } catch (err) {
-    console.warn(`[prerender] ${lang.toUpperCase()} blog fetch threw — skipping:`, err);
-    return [];
-  }
-}
-
-// Node-side HTML entity decoder (there's no `document` at build time).
-// Handles the common WP-emitted entities: &amp; &#8217; &#8220; etc.
-function decodeEntitiesServer(s: string): string {
-  return s
-    .replace(/&amp;/g, "&")
-    .replace(/&#8217;/g, "’")
-    .replace(/&#8216;/g, "‘")
-    .replace(/&#8220;/g, "“")
-    .replace(/&#8221;/g, "”")
-    .replace(/&#8211;/g, "–")
-    .replace(/&#8212;/g, "—")
-    .replace(/&#8230;/g, "…")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&quot;/g, '"')
-    .replace(/&#039;/g, "'")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">");
-}
-
 export async function prerender() {
   const shellPath = path.join(DIST, "index.html");
   const shell = await readFile(shellPath, "utf8");
@@ -820,73 +641,8 @@ export async function prerender() {
     collectBlogPosts("en"),
     collectBlogPosts("ar"),
   ]);
+  const blogData = buildBlogData(enPosts, arPosts);
   const faqSectionMetas = await collectFaqSectionMeta();
-
-  const blogListBody = (heading: string, intro: string, posts: BlogPostMeta[], base: string) =>
-    `<h1>${esc(heading)}</h1><p>${esc(intro)}</p><ul>` +
-    posts
-      .map(
-        (p) =>
-          `<li><h2><a href="${base}/${attr(p.slug)}">${esc(p.heading)}</a></h2><p>${esc(p.excerpt)}</p></li>`,
-      )
-      .join("") +
-    `</ul>`;
-
-  // Crawlable links between the two blogs: each post links to its translation
-  // ("Read this article in Arabic →" / "اقرأ هذا المقال بالإنجليزية ←") and to a
-  // few related posts in the same language. Without these the Arabic posts were
-  // reachable only via the sitemap and /ar/blog, so Google left them unindexed.
-  const postsByLang = { en: enPosts, ar: arPosts };
-  const words = (t: string) => new Set(t.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((w) => w.length > 2));
-  const similarity = (a: BlogPostMeta, b: BlogPostMeta) => {
-    const wa = words(a.heading);
-    return Array.from(words(b.heading)).filter((w) => wa.has(w)).length;
-  };
-  // Top 4 by title similarity, then a balancing pass so every post is linked
-  // from at least 3 others (a 5th slot goes to under-linked posts).
-  const relatedMaps = { en: new Map<string, BlogPostMeta[]>(), ar: new Map<string, BlogPostMeta[]>() };
-  for (const lang of ["en", "ar"] as const) {
-    const all = postsByLang[lang];
-    const ranked = (p: BlogPostMeta) =>
-      all
-        .filter((o) => o.slug !== p.slug)
-        .map((o, i) => ({ o, i, score: similarity(p, o) }))
-        .sort((x, y) => y.score - x.score || x.i - y.i)
-        .map((x) => x.o);
-    for (const p of all) relatedMaps[lang].set(p.slug, ranked(p).slice(0, 4));
-    const incoming = (slug: string) =>
-      Array.from(relatedMaps[lang].values()).filter((list) => list.some((o) => o.slug === slug)).length;
-    for (const p of all) {
-      for (const host of ranked(p)) {
-        if (incoming(p.slug) >= 3) break;
-        const list = relatedMaps[lang].get(host.slug)!;
-        if (list.length < 5 && !list.some((o) => o.slug === p.slug)) list.push(p);
-      }
-    }
-  }
-  const relatedPosts = (p: BlogPostMeta, lang: "en" | "ar") => relatedMaps[lang].get(p.slug) ?? [];
-  const blogPostBody = (p: BlogPostMeta, lang: "en" | "ar") => {
-    const other = lang === "en" ? "ar" : "en";
-    const twin = p.otherLangSlug ? postsByLang[other].find((o) => o.slug === p.otherLangSlug) : undefined;
-    const base = (l: "en" | "ar") => (l === "ar" ? "/ar/blog" : "/blog");
-    const twinLine = twin
-      ? `<p><a href="${base(other)}/${attr(twin.slug)}" hreflang="${other}">` +
-        `${lang === "en" ? "Read this article in Arabic →" : "اقرأ هذا المقال بالإنجليزية ←"}</a></p>`
-      : "";
-    const related = relatedPosts(p, lang);
-    const relatedList = related.length
-      ? `<h2>${lang === "en" ? "Related articles" : "مقالات ذات صلة"}</h2><ul>` +
-        related.map((o) => `<li><a href="${base(lang)}/${attr(o.slug)}">${esc(o.heading)}</a></li>`).join("") +
-        `</ul>`
-      : "";
-    return (
-      `<article><h1>${esc(p.heading)}</h1>` +
-      `<p><time datetime="${attr(p.publishedAt)}">${esc(p.publishedAt.slice(0, 10))}</time></p>` +
-      twinLine +
-      `<div class="blog-content">${p.bodyHtml}</div></article>` +
-      relatedList
-    );
-  };
 
   // Full page content for each developer, rendered from its React component.
   const developerBodies = await renderDeveloperBodies();
@@ -937,7 +693,7 @@ export async function prerender() {
     }
 
     if (meta.route === "/blog" && enPosts.length > 0) {
-      html = injectBody(html, blogListBody("PLACES Blog", meta.description, enPosts, "/blog"));
+      html = renderBlogHub(shell, "en", blogData);
     } else if (meta.route === "/faqs") {
       const sections = FAQ_SECTIONS.map((sec) => {
         const count = countQuestionsInSection(sec);
@@ -1059,22 +815,8 @@ export async function prerender() {
 
   // English blog posts — /blog/{slug}.html per post.
   for (const post of enPosts) {
-    const meta: RouteMeta = {
-      route: `/blog/${post.slug}`,
-      title: post.title,
-      description: post.description,
-      url: `${SITE}/blog/${post.slug}`,
-      image: post.featuredImage ?? undefined,
-    };
-    const alternates: Array<{ hreflang: string; url: string }> = [
-      { hreflang: "en", url: `${SITE}/blog/${post.slug}` },
-    ];
-    if (post.otherLangSlug) {
-      alternates.push({ hreflang: "ar", url: `${SITE}/ar/blog/${post.otherLangSlug}` });
-    }
-    alternates.push({ hreflang: "x-default", url: `${SITE}/blog/${post.slug}` });
-    let html = injectBody(injectMeta(shell, meta, { lang: "en", alternates }), blogPostBody(post, "en"), "en");
-    html = injectJsonLd(html, buildBlogArticleJsonLd(post, meta.url, "en"));
+    const meta = { route: `/blog/${post.slug}` };
+    const html = renderBlogPost(shell, post, "en", blogData);
     const outPath = path.join(DIST, `${meta.route}.html`);
     await mkdir(path.dirname(outPath), { recursive: true });
     await writeFile(outPath, html, "utf8");
@@ -1083,25 +825,7 @@ export async function prerender() {
 
   // Arabic blog posts + the /ar/blog hub.
   if (arPosts.length > 0) {
-    const hubMeta: RouteMeta = {
-      route: "/ar/blog",
-      title: "المدونة — رؤى وأدلة PLACES",
-      description:
-        "أحدث المقالات والأدلة من PLACES عن سوق المكاتب الإدارية في مصر — القاهرة الجديدة، الشيخ زايد، 6 أكتوبر، والمناطق التجارية الرئيسية.",
-      url: `${SITE}/ar/blog`,
-    };
-    const hubHtml = injectBody(
-      injectMeta(shell, hubMeta, {
-        lang: "ar",
-        alternates: [
-          { hreflang: "ar", url: `${SITE}/ar/blog` },
-          { hreflang: "en", url: `${SITE}/blog` },
-          { hreflang: "x-default", url: `${SITE}/blog` },
-        ],
-      }),
-      blogListBody("مدونة PLACES", hubMeta.description, arPosts, "/ar/blog"),
-      "ar",
-    );
+    const hubHtml = renderBlogHub(shell, "ar", blogData);
     // server/static.ts serves /ar/blog from ar/blog.html; the directory index
     // alone fell through to the SPA shell (homepage canonical).
     const hubOut = path.join(DIST, "ar/blog", "index.html");
@@ -1111,25 +835,8 @@ export async function prerender() {
     arBlogWritten++;
 
     for (const post of arPosts) {
-      const meta: RouteMeta = {
-        route: `/ar/blog/${post.slug}`,
-        title: post.title,
-        description: post.description,
-        url: `${SITE}/ar/blog/${post.slug}`,
-        image: post.featuredImage ?? undefined,
-      };
-      const alternates: Array<{ hreflang: string; url: string }> = [
-        { hreflang: "ar", url: `${SITE}/ar/blog/${post.slug}` },
-      ];
-      if (post.otherLangSlug) {
-        alternates.push({ hreflang: "en", url: `${SITE}/blog/${post.otherLangSlug}` });
-        alternates.push({ hreflang: "x-default", url: `${SITE}/blog/${post.otherLangSlug}` });
-      } else {
-        // Arabic-only post: it is its own default version.
-        alternates.push({ hreflang: "x-default", url: `${SITE}/ar/blog/${post.slug}` });
-      }
-      let html = injectBody(injectMeta(shell, meta, { lang: "ar", alternates }), blogPostBody(post, "ar"), "ar");
-      html = injectJsonLd(html, buildBlogArticleJsonLd(post, meta.url, "ar"));
+      const meta = { route: `/ar/blog/${post.slug}` };
+      const html = renderBlogPost(shell, post, "ar", blogData);
       const outPath = path.join(DIST, `${meta.route}.html`);
       await mkdir(path.dirname(outPath), { recursive: true });
       await writeFile(outPath, html, "utf8");

@@ -1,5 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
-import { renderDeveloper, renderHome, renderLanding, renderListing, renderListingsIndex, renderLocation, renderNotFound, setDistPath } from "./render";
+import { renderDeveloper, renderHome, renderLanding, renderListing, renderListingsIndex, renderLocation, renderNotFound, setDistPath, shell } from "./render";
+import { findBlogPost, getBlogData, renderBlogHub, renderBlogPost, type BlogLang } from "./blog";
 import { getListingById } from "./data";
 import { registerSitemapRoutes } from "./sitemap";
 
@@ -50,6 +51,26 @@ export function registerSeoRoutes(app: Express, distPath: string): void {
       return renderListing(listing);
     }),
   );
+  // Blog (EN + AR), rendered from WordPress on request (10-minute cache, refreshed
+  // in the background) so a newly published post is a proper page right away,
+  // not after the next deploy. Any miss or failure falls through to the
+  // build-time page (express.static) exactly as before.
+  void getBlogData(); // warm the cache at startup
+  const blogHub = (lang: BlogLang) =>
+    send(async () => {
+      const data = await getBlogData();
+      return data ? renderBlogHub(shell(), lang, data) : null;
+    });
+  const blogPost = (lang: BlogLang) =>
+    send(async (req) => {
+      const data = await getBlogData();
+      const post = data && findBlogPost(data, lang, String(req.params.slug));
+      return data && post ? renderBlogPost(shell(), post, lang, data) : null;
+    });
+  app.get(["/blog", "/blog/index.html"], blogHub("en"));
+  app.get(["/ar/blog", "/ar/blog/index.html"], blogHub("ar"));
+  app.get("/blog/:slug", blogPost("en"));
+  app.get("/ar/blog/:slug", blogPost("ar"));
   app.get("/locations/:slug", send((req) => renderLocation(String(req.params.slug))));
   app.get("/developers/:slug", send((req) => renderDeveloper(String(req.params.slug))));
   // Search landing pages (/rent/new-cairo, /buy/new-cairo, …). A page exists only
