@@ -833,27 +833,45 @@ export async function prerender() {
     `</ul>`;
 
   // Crawlable links between the two blogs: each post links to its translation
-  // (link text = the other post's title, in the page's own language) and to a
+  // ("Read this article in Arabic →" / "اقرأ هذا المقال بالإنجليزية ←") and to a
   // few related posts in the same language. Without these the Arabic posts were
   // reachable only via the sitemap and /ar/blog, so Google left them unindexed.
   const postsByLang = { en: enPosts, ar: arPosts };
   const words = (t: string) => new Set(t.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((w) => w.length > 2));
-  const relatedPosts = (p: BlogPostMeta, lang: "en" | "ar", n = 4) => {
-    const mine = words(p.heading);
-    return postsByLang[lang]
-      .filter((o) => o.slug !== p.slug)
-      .map((o, i) => ({ o, i, score: [...words(o.heading)].filter((w) => mine.has(w)).length }))
-      .sort((a, b) => b.score - a.score || a.i - b.i)
-      .slice(0, n)
-      .map((x) => x.o);
+  const similarity = (a: BlogPostMeta, b: BlogPostMeta) => {
+    const wa = words(a.heading);
+    return Array.from(words(b.heading)).filter((w) => wa.has(w)).length;
   };
+  // Top 4 by title similarity, then a balancing pass so every post is linked
+  // from at least 3 others (a 5th slot goes to under-linked posts).
+  const relatedMaps = { en: new Map<string, BlogPostMeta[]>(), ar: new Map<string, BlogPostMeta[]>() };
+  for (const lang of ["en", "ar"] as const) {
+    const all = postsByLang[lang];
+    const ranked = (p: BlogPostMeta) =>
+      all
+        .filter((o) => o.slug !== p.slug)
+        .map((o, i) => ({ o, i, score: similarity(p, o) }))
+        .sort((x, y) => y.score - x.score || x.i - y.i)
+        .map((x) => x.o);
+    for (const p of all) relatedMaps[lang].set(p.slug, ranked(p).slice(0, 4));
+    const incoming = (slug: string) =>
+      Array.from(relatedMaps[lang].values()).filter((list) => list.some((o) => o.slug === slug)).length;
+    for (const p of all) {
+      for (const host of ranked(p)) {
+        if (incoming(p.slug) >= 3) break;
+        const list = relatedMaps[lang].get(host.slug)!;
+        if (list.length < 5 && !list.some((o) => o.slug === p.slug)) list.push(p);
+      }
+    }
+  }
+  const relatedPosts = (p: BlogPostMeta, lang: "en" | "ar") => relatedMaps[lang].get(p.slug) ?? [];
   const blogPostBody = (p: BlogPostMeta, lang: "en" | "ar") => {
     const other = lang === "en" ? "ar" : "en";
     const twin = p.otherLangSlug ? postsByLang[other].find((o) => o.slug === p.otherLangSlug) : undefined;
     const base = (l: "en" | "ar") => (l === "ar" ? "/ar/blog" : "/blog");
     const twinLine = twin
-      ? `<p>${lang === "en" ? "Also available in Arabic:" : "هذا المقال متاح أيضًا بالإنجليزية:"} ` +
-        `<a href="${base(other)}/${attr(twin.slug)}" hreflang="${other}">${esc(twin.heading)}</a></p>`
+      ? `<p><a href="${base(other)}/${attr(twin.slug)}" hreflang="${other}">` +
+        `${lang === "en" ? "Read this article in Arabic →" : "اقرأ هذا المقال بالإنجليزية ←"}</a></p>`
       : "";
     const related = relatedPosts(p, lang);
     const relatedList = related.length
