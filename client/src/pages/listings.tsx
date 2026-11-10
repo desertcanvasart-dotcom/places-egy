@@ -4,10 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { CornerSlideMagnet } from "@/components/magnets/CornerSlideMagnet";
-import { FilterSidebar, DEFAULT_FILTERS, type Filters } from "@/components/listings/FilterSidebar";
+import { DEFAULT_FILTERS, locationLabel, type Filters } from "@/components/listings/FilterSidebar";
+import { ListingsFilterBar } from "@/components/listings/ListingsFilterBar";
 import { buildListingsSearch, parseListingsSearch, type ListingsUrlState, type SortOption, type ViewMode } from "@/lib/listing-filters-url";
 import { ListingCard } from "@/components/listings/ListingCard";
-import { ListingsMap } from "@/components/listings/ListingsMap";
+import { SafeListingsMap, canDrawMaps } from "@/components/listings/SafeMap";
 import { supabase, type Listing } from "@/lib/supabase";
 import { FURNISHING_OPTIONS, getEnumLabel } from "@/lib/enums";
 import { formatEgpShort, priceInEgp } from "@/lib/currency";
@@ -17,9 +18,7 @@ import { breadcrumbSchema, itemListSchema } from "@/lib/schema";
 import { listingUrl } from "@/lib/listings";
 import { trackEvent } from "@/lib/analytics";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { SlidersHorizontal, Search, LayoutGrid, List, Map as MapIcon } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Search, LayoutGrid, List, Map as MapIcon } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -292,7 +291,7 @@ export default function ListingsPage() {
     // propertyType chip removed — site is admin-only, so the chip would
     // always appear and have nothing meaningful to clear to.
     filters.subtype.forEach((s) => chips.push({ label: s, clear: () => setFilters((p) => ({ ...p, subtype: p.subtype.filter((x) => x !== s) })) }));
-    if (filters.location) chips.push({ label: filters.location, clear: () => setFilters((p) => ({ ...p, location: null })) });
+    if (filters.location) chips.push({ label: locationLabel(filters.location), clear: () => setFilters((p) => ({ ...p, location: null })) });
     if (filters.developer) chips.push({ label: DEVELOPER_DISPLAY_NAMES[filters.developer] ?? filters.developer, clear: () => setFilters((p) => ({ ...p, developer: null })) });
     filters.furnishing.forEach((f) => chips.push({ label: getEnumLabel(FURNISHING_OPTIONS, f), clear: () => setFilters((p) => ({ ...p, furnishing: p.furnishing.filter((x) => x !== f) })) }));
     if (filters.areaMin != null || filters.areaMax != null) {
@@ -313,6 +312,23 @@ export default function ListingsPage() {
     return chips;
   })();
 
+  // Map: on desktop it sits above the results (can be hidden); on phones it
+  // opens with the "Map" button (?view=map, as before). It collapses for good
+  // if it can't draw — see SafeListingsMap.
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
+  const [desktopMapHidden, setDesktopMapHidden] = useState(false);
+  const [mapUnavailable, setMapUnavailable] = useState(() => typeof window !== "undefined" && !canDrawMaps());
+  const mapOpen = !mapUnavailable && (isDesktop ? !desktopMapHidden : viewMode === "map");
+  const resultsView = viewMode === "list" ? "list" : "grid";
+
+  const dealPhrase =
+    filters.transactionType === "Rent" ? "offices for rent"
+    : filters.transactionType === "Sale" ? "offices for sale"
+    : filters.transactionType === "Income Property" ? "income properties"
+    : "offices";
+  const count = sortedListings.length;
+  const headlineNoun = count === 1 ? dealPhrase.replace(/^offices/, "office").replace(/^income properties/, "income property") : dealPhrase;
+
   return (
     <div className="min-h-screen flex flex-col bg-muted font-sans">
       <SchemaMarkup
@@ -330,102 +346,68 @@ export default function ListingsPage() {
           })}
         />
       )}
-      <Navbar />
+      <Navbar solid />
 
-      {/* Hero — taller image-forward header with a soft fade into the
-          results section. Lighter overlay so the photo reads clearly,
-          gradient that begins in the lower third for a smooth handoff. */}
-      <div className="relative text-white pt-20 pb-8 md:pt-28 md:pb-16 overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <img src="/images/offices-hero.jpg" alt="Office" fetchPriority="high" decoding="async" className="w-full h-full object-cover" />
-          {/* Light uniform tint for text contrast, plus a single bottom-half
-              gradient that fades smoothly into the page background. */}
-          <div className="absolute inset-0 bg-black/25" />
-          <div className="absolute inset-0 bg-linear-to-b from-transparent from-50% to-muted" />
-        </div>
-        <div className="relative z-10 container mx-auto px-6 md:px-10">
-          <div className="inline-flex flex-col w-fit max-w-full">
-            <h1 className="text-3xl md:text-6xl font-serif font-bold mb-4 md:mb-6 text-white drop-shadow-md leading-tight">Find your perfect workspace</h1>
-            <div className="relative w-full">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-              <Input
-                placeholder="Search by project, location, or developer..."
-                className="pl-11 h-12 bg-white border-border/40 shadow-lg text-foreground"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
+      <main className="container mx-auto px-6 md:px-10 pt-24 md:pt-28 pb-24 lg:pb-12 flex-1">
+        <ListingsFilterBar
+          filters={filters}
+          setFilters={setFilters}
+          listings={listings}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+        />
+
+        {/* Result count + sort + view controls */}
+        <div className="mt-8 mb-5 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+          <div>
+            <h1 className="font-serif text-primary leading-none">
+              {isLoading ? (
+                <span className="text-3xl md:text-5xl font-bold">Offices in Cairo</span>
+              ) : (
+                <>
+                  <span className="text-4xl md:text-6xl font-bold">{count.toLocaleString()}</span>{" "}
+                  <span className="text-2xl md:text-4xl text-primary/60">{headlineNoun} found</span>
+                </>
+              )}
+            </h1>
+            <p className="mt-2 text-sm md:text-base text-muted-foreground">
+              In <span className="text-primary font-medium">{filters.location ? locationLabel(filters.location) : "Cairo"}</span>
+              {searchQuery.trim() && <> · matching “{searchQuery.trim()}”</>}
+            </p>
           </div>
-        </div>
-      </div>
-
-      <main className="container mx-auto px-6 md:px-10 -mt-12 pb-24 lg:pb-8 flex-1 relative z-10">
-
-        {/* Active filter chips */}
-        {activeFilterChips.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 mb-6">
-            <span className="text-xs text-muted-foreground mr-1">Filters:</span>
-            {activeFilterChips.map((chip, i) => (
-              <button
-                key={i}
-                onClick={chip.clear}
-                className="inline-flex items-center gap-1.5 text-xs font-medium bg-primary/5 text-primary px-3 py-1.5 rounded-full hover:bg-accent/10 hover:text-accent transition-colors"
-              >
-                {chip.label}
-                <span className="text-primary/40 hover:text-accent">×</span>
-              </button>
-            ))}
-            <button
-              onClick={() => setFilters(DEFAULT_FILTERS)}
-              className="text-xs text-muted-foreground hover:text-accent transition-colors ml-1"
-            >
-              Clear all
-            </button>
-          </div>
-        )}
-
-        {/* Results count + sort + view toggle */}
-        <div className="flex items-center justify-between mb-6">
-          <p className="text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">{sortedListings.length}</span> results
-          </p>
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center gap-1">
+          <div className="flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-1 bg-white border border-border/60 rounded-full p-1">
               <button
                 onClick={() => setViewMode("grid")}
                 aria-label="Grid view"
-                className={`p-1.5 rounded-md transition-all hover:bg-primary/10 hover:text-primary active:scale-95 ${viewMode === "grid" ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}
+                className={`p-2 rounded-full transition-colors ${resultsView === "grid" ? "bg-primary text-white" : "text-muted-foreground hover:text-primary"}`}
               >
                 <LayoutGrid className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setViewMode("list")}
                 aria-label="List view"
-                className={`p-1.5 rounded-md transition-all hover:bg-primary/10 hover:text-primary active:scale-95 ${viewMode === "list" ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}
+                className={`p-2 rounded-full transition-colors ${resultsView === "list" ? "bg-primary text-white" : "text-muted-foreground hover:text-primary"}`}
               >
                 <List className="w-4 h-4" />
               </button>
+            </div>
+            {!mapUnavailable && (
               <button
-                onClick={() => setViewMode("map")}
-                aria-label="Map view"
-                className={`p-1.5 rounded-md transition-all hover:bg-primary/10 hover:text-primary active:scale-95 ${viewMode === "map" ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}
+                onClick={() => (isDesktop ? setDesktopMapHidden((h) => !h) : setViewMode((v) => (v === "map" ? "grid" : "map")))}
+                aria-label={mapOpen ? "Hide map" : "Show map"}
+                aria-pressed={mapOpen}
+                className={`inline-flex items-center gap-1.5 h-10 px-4 rounded-full border text-sm font-medium transition-colors ${
+                  mapOpen ? "bg-primary text-white border-primary" : "bg-white text-primary border-border/60 hover:border-primary/40"
+                }`}
               >
                 <MapIcon className="w-4 h-4" />
+                {mapOpen ? "Hide map" : "Show map"}
               </button>
-            </div>
-            {/* Mobile map toggle — the hidden md:flex block above doesn't
-                fire on phone screens; expose Map here so mobile users can
-                still switch views. */}
-            <button
-              onClick={() => setViewMode((v) => (v === "map" ? "grid" : "map"))}
-              aria-label={viewMode === "map" ? "Back to list" : "Map view"}
-              className={`md:hidden inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${viewMode === "map" ? "bg-primary text-white" : "bg-white border border-border/60 text-primary"}`}
-            >
-              <MapIcon className="w-3.5 h-3.5" />
-              {viewMode === "map" ? "List" : "Map"}
-            </button>
+            )}
             <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
-              <SelectTrigger className="w-auto h-8 px-2 gap-1 bg-transparent border-none shadow-none text-xs text-muted-foreground hover:text-primary focus:ring-0 focus-visible:ring-0">
+              <SelectTrigger aria-label="Sort listings" className="w-auto h-10 px-4 gap-1.5 rounded-full bg-white border-border/60 text-sm">
+                <span className="text-muted-foreground">Sort:</span>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -437,122 +419,111 @@ export default function ListingsPage() {
           </div>
         </div>
 
-        {/* Mobile Filter — inline trigger with a live count badge so
-            visitors can see how many filters they've applied at a glance
-            without opening the drawer. */}
-        <div className="lg:hidden mb-6">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="outline" className="w-full bg-white relative">
-                <SlidersHorizontal className="h-4 w-4 mr-2" />
-                Filters
-                {activeFilterChips.length > 0 && (
-                  <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-accent text-white text-[11px] font-bold">
-                    {activeFilterChips.length}
-                  </span>
-                )}
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="overflow-y-auto">
-              <FilterSidebar filters={filters} setFilters={setFilters} listings={listings} className="mt-6" />
-            </SheetContent>
-          </Sheet>
-        </div>
+        {/* Active filter chips */}
+        {activeFilterChips.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 mb-5">
+            {activeFilterChips.map((chip, i) => (
+              <button
+                key={i}
+                onClick={chip.clear}
+                className="inline-flex items-center gap-1.5 text-xs font-medium bg-white border border-border/60 text-primary px-3 py-1.5 rounded-full hover:border-accent hover:text-accent transition-colors"
+              >
+                {chip.label}
+                <span className="text-primary/40">×</span>
+              </button>
+            ))}
+            <button
+              onClick={() => setFilters(DEFAULT_FILTERS)}
+              className="text-xs text-muted-foreground hover:text-accent transition-colors ml-1"
+            >
+              Clear all
+            </button>
+          </div>
+        )}
 
-        <div className="flex gap-8">
-          {/* Sidebar - Desktop */}
-          <aside className="hidden lg:block w-72 shrink-0">
-            <div className="bg-[#FDFBF8] p-6 rounded-2xl shadow-[0_4px_24px_-12px_rgba(232,64,74,0.12)] sticky top-20 border border-border/40 max-h-[calc(100vh-6rem)] overflow-y-auto">
-              <FilterSidebar filters={filters} setFilters={setFilters} listings={listings} />
-            </div>
-          </aside>
+        {/* Map — only after the listings are on screen, so it never holds them up. */}
+        {mapOpen && !isLoading && !error && sortedListings.length > 0 && (
+          <SafeListingsMap
+            listings={sortedListings}
+            embedded
+            hideWhenEmpty
+            className="mb-8"
+            heightClassName="h-[60vh] min-h-[360px] lg:h-[440px] lg:min-h-0"
+            placeholder={<div className="mb-8 h-[60vh] min-h-[360px] lg:h-[440px] lg:min-h-0 rounded-2xl bg-white/70 animate-pulse" />}
+            onUnavailable={() => setMapUnavailable(true)}
+          />
+        )}
 
-          {/* Results Area */}
-          <div className="flex-1">
-            {isLoading ? (
-              // Skeleton grid — matches the real grid's layout so the page
-              // doesn't shift when data lands. Six placeholders fill the
-              // viewport on most screens.
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="rounded-2xl border border-border/40 bg-white overflow-hidden animate-pulse">
-                    <div className="aspect-4/3 bg-muted" />
-                    <div className="p-5 space-y-3">
-                      <div className="h-4 w-2/3 bg-muted rounded" />
-                      <div className="h-3 w-1/2 bg-muted rounded" />
-                      <div className="flex gap-2 pt-2">
-                        <div className="h-3 w-16 bg-muted rounded" />
-                        <div className="h-3 w-16 bg-muted rounded" />
-                      </div>
-                      <div className="h-5 w-1/3 bg-muted rounded mt-2" />
-                    </div>
-                  </div>
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="rounded-3xl border border-border/40 bg-white p-2 animate-pulse">
+                <div className="aspect-[4/3] bg-muted rounded-2xl" />
+                <div className="p-3 space-y-3">
+                  <div className="h-6 w-1/2 bg-muted rounded" />
+                  <div className="h-4 w-3/4 bg-muted rounded" />
+                  <div className="h-3 w-1/2 bg-muted rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <p className="text-destructive mb-2">Failed to load listings</p>
+            <p className="text-muted-foreground text-sm">Please try again later.</p>
+          </div>
+        ) : sortedListings.length > 0 ? (
+          <>
+            {resultsView === "grid" ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {pagedListings.map((listing) => (
+                  <ListingCard key={listing.id} listing={listing} variant="feature" />
                 ))}
               </div>
-            ) : error ? (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <p className="text-destructive mb-2">Failed to load listings</p>
-                <p className="text-muted-foreground text-sm">Please try again later.</p>
-              </div>
-            ) : sortedListings.length > 0 ? (
-              viewMode === "grid" ? (
-                <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    {pagedListings.map((listing) => (
-                      <ListingCard key={listing.id} listing={listing} />
-                    ))}
-                  </div>
-                  <Pagination page={page} pageCount={pageCount} search={search} />
-                </>
-              ) : viewMode === "list" ? (
-                <>
-                  <div className="space-y-3">
-                    {pagedListings.map((listing) => (
-                      <ListingCard key={listing.id} listing={listing} listView />
-                    ))}
-                  </div>
-                  <Pagination page={page} pageCount={pageCount} search={search} />
-                </>
-              ) : (
-                // Map view — on desktop, show the map alongside a scrollable
-                // narrow card column. On mobile, the map takes the full width
-                // (the card column collapses since the map toggle replaced it).
-                <div className="flex flex-col lg:flex-row gap-4">
-                  <div className="lg:w-2/5 lg:max-h-[70vh] lg:overflow-y-auto space-y-3 lg:pr-2 hidden lg:block">
-                    {sortedListings.map((listing) => (
-                      <ListingCard key={listing.id} listing={listing} listView />
-                    ))}
-                  </div>
-                  <div className="flex-1">
-                    <ListingsMap listings={sortedListings} />
-                  </div>
-                </div>
-              )
             ) : (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                  <Search className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <h3 className="text-xl font-serif font-bold text-primary mb-2">No listings match your filters</h3>
-                <p className="text-muted-foreground max-w-md mx-auto mb-6">
-                  Try removing some filters to see more results, or browse all available units.
-                </p>
-                <div className="flex gap-3">
-                  <Button onClick={() => setFilters(DEFAULT_FILTERS)} variant="outline">Clear all filters</Button>
-                  <a href="/listings">
-                    <Button className="bg-primary text-white">Browse all units</Button>
-                  </a>
-                </div>
+              <div className="space-y-3">
+                {pagedListings.map((listing) => (
+                  <ListingCard key={listing.id} listing={listing} listView />
+                ))}
               </div>
             )}
+            <Pagination page={page} pageCount={pageCount} search={search} />
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4">
+              <Search className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h2 className="text-xl font-serif font-bold text-primary mb-2">No listings match your filters</h2>
+            <p className="text-muted-foreground max-w-md mx-auto mb-6">
+              Try removing some filters to see more results, or browse all available units.
+            </p>
+            <div className="flex gap-3">
+              <Button onClick={() => { setFilters(DEFAULT_FILTERS); setSearchQuery(""); }} variant="outline">Clear all filters</Button>
+              <a href="/listings">
+                <Button className="bg-primary text-white">Browse all units</Button>
+              </a>
+            </div>
           </div>
-        </div>
+        )}
       </main>
 
       <Footer />
       <CornerSlideMagnet />
     </div>
   );
+}
+
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(() => typeof window !== "undefined" && window.matchMedia(query).matches);
+  useEffect(() => {
+    const mql = window.matchMedia(query);
+    const onChange = () => setMatches(mql.matches);
+    onChange();
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, [query]);
+  return matches;
 }
 
 function Pagination({ page, pageCount, search }: { page: number; pageCount: number; search: string }) {

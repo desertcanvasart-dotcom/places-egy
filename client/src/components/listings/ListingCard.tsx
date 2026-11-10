@@ -34,6 +34,8 @@ interface ListingCardProps {
   compact?: boolean;
   hideSubtype?: boolean;
   listView?: boolean;
+  /** "feature": the /listings page design (inset photo, price first, specs row). */
+  variant?: "default" | "feature";
 }
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
@@ -49,7 +51,7 @@ function DetailBlock({ icon: Icon, label, value }: { icon: LucideIcon; label: st
   );
 }
 
-export function ListingCard({ listing, compact = false, hideSubtype = false, listView = false }: ListingCardProps) {
+export function ListingCard({ listing, compact = false, hideSubtype = false, listView = false, variant = "default" }: ListingCardProps) {
   const images = listing.images?.length ? listing.images : [FALLBACK_IMAGE];
   const hasMultiple = images.length > 1;
   const [current, setCurrent] = useState(0);
@@ -317,8 +319,101 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
     );
   }
 
+  const isRent = listing.transaction_type?.toLowerCase() === "rent";
+  const featureCard = (
+    <article className="group relative bg-white rounded-3xl border border-border/50 p-2 shadow-[0_8px_30px_-18px_rgba(15,23,42,0.25)] hover:shadow-[0_16px_40px_-16px_rgba(15,23,42,0.3)] hover:-translate-y-0.5 transition-all duration-300 flex flex-col">
+      <div
+        className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-muted"
+        onTouchStart={hasMultiple ? handleTouchStart : undefined}
+        onTouchEnd={hasMultiple ? handleTouchEnd : undefined}
+      >
+        <img
+          src={supabaseImage(images[current], "card")}
+          onError={supabaseImageOnError(images[current])}
+          alt={displayTitle}
+          loading="lazy"
+          decoding="async"
+          className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
+        />
+        <div className="absolute top-3 left-3 z-10 flex flex-wrap items-start gap-1.5 max-w-[75%]">
+          <span className={`${listing.transaction_type?.toLowerCase() === "sale" ? "bg-emerald-600" : isRent ? "bg-accent" : "bg-blue-600"} text-white text-xs font-semibold px-3 py-1 rounded-full shadow-sm`}>
+            {isRent ? "For Rent" : listing.transaction_type?.toLowerCase() === "sale" ? "For Sale" : formatLabel(listing.transaction_type)}
+          </span>
+          {listing.rental_status === "rented" && (
+            <span className="bg-slate-800/90 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-sm">{rentedLabel(listing)}</span>
+          )}
+        </div>
+        <div className="absolute top-0 right-0 z-20"><FavoriteButton listingId={listing.id} overlay /></div>
+        {hasMultiple && (
+          <>
+            <button onClick={prev} aria-label="Previous image" className="absolute z-10 left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 shadow-md flex items-center justify-center text-primary opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button onClick={next} aria-label="Next image" className="absolute z-10 right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 shadow-md flex items-center justify-center text-primary opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+              <ChevronRight className="w-4 h-4" />
+            </button>
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+              {images.slice(0, 8).map((_, i) => (
+                <span key={i} className={`h-1.5 rounded-full transition-all ${i === current ? "bg-white w-4" : "bg-white/60 w-1.5"}`} />
+              ))}
+            </div>
+          </>
+        )}
+        <button
+          type="button"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setModalOpen(true); }}
+          className="hidden md:inline-flex absolute z-10 bottom-3 right-3 items-center rounded-full bg-white/95 px-3 py-1 text-xs font-semibold text-primary shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          Quick view
+        </button>
+      </div>
+
+      <div className="px-3 pt-4 pb-3 flex flex-col flex-1">
+        <div className="flex items-baseline flex-wrap gap-x-1">
+          {listing.price != null ? (
+            <>
+              <span className="text-2xl font-bold text-primary font-serif">{listing.price.toLocaleString()}</span>
+              <span className="text-sm text-muted-foreground">{listingCurrency(listing)}{isRent ? "/month" : ""}</span>
+              <EgpHint listing={listing} />
+            </>
+          ) : (
+            <span className="text-lg font-semibold text-primary font-serif">Price on request</span>
+          )}
+        </div>
+        <h3 className="mt-1 font-serif text-lg font-semibold leading-snug text-primary line-clamp-2">
+          {/* Stretched link: the whole card opens the listing. */}
+          <Link href={listingUrl(listing)} onClick={handleViewFullDetailsClick} className="after:absolute after:inset-0 after:rounded-3xl hover:text-accent transition-colors">
+            {displayTitle}
+          </Link>
+        </h3>
+        <div className="mt-1.5 flex items-center gap-1.5 text-sm text-muted-foreground">
+          <MapPin className="w-3.5 h-3.5 text-accent shrink-0" />
+          <span className="truncate">
+            {[listing.project?.trim(), formatLabel(listing.location)]
+              .filter((v, i, a): v is string => !!v && a.findIndex((x) => x?.toLowerCase() === v.toLowerCase()) === i)
+              .join(", ")}
+          </span>
+        </div>
+        <div className="mt-auto pt-3">
+          <div className="border-t border-border/60 pt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
+            {listing.area_sqm ? (
+              <span className="inline-flex items-center gap-1.5"><Maximize className="w-3.5 h-3.5 text-primary/70" />{listing.area_sqm.toLocaleString()} m²</span>
+            ) : null}
+            {listing.furnishing && (
+              <span className="inline-flex items-center gap-1.5"><Building2 className="w-3.5 h-3.5 text-primary/70" />{getEnumLabel(FURNISHING_OPTIONS, listing.furnishing)}</span>
+            )}
+            {listing.price_per_meter != null && listing.price_per_meter > 0 && (
+              <span className="inline-flex items-center gap-1.5">{listing.price_per_meter.toLocaleString()} {listingCurrency(listing)}/m²</span>
+            )}
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+
   return (
     <>
+      {variant === "feature" ? featureCard : (
       <Card className="group overflow-hidden border-border/50 hover:shadow-[0_12px_32px_-12px_rgba(232,64,74,0.18)] hover:-translate-y-0.5 transition-all duration-300 bg-[#FDFBF8]">
         {/* Image Carousel */}
         <div
@@ -468,6 +563,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
           </Button>
         </CardFooter>
       </Card>
+      )}
 
       {/* Detail Modal */}
       <Dialog open={modalOpen} onOpenChange={(open) => { setModalOpen(open); if (!open) setModalImage(0); }}>

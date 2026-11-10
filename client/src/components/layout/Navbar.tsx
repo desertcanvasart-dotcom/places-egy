@@ -31,7 +31,8 @@ const SERVICES = [
 
 const WHATSAPP_HREF = "https://wa.me/201063618217";
 
-export function Navbar() {
+/** `solid`: always use the solid bar (pages without a dark photo header). */
+export function Navbar({ solid = false }: { solid?: boolean } = {}) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [location] = useLocation();
@@ -44,7 +45,7 @@ export function Navbar() {
     location.startsWith("/developers/") ||
     /^\/locations\/[^/]+$/.test(location) ||
     /^\/admin\/[^/]+$/.test(location);
-  const useSolid = !hasHero || scrolled;
+  const useSolid = solid || !hasHero || scrolled;
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 60);

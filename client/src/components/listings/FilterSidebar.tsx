@@ -43,7 +43,11 @@ export const DEFAULT_FILTERS: Filters = {
 };
 
 const ADMIN_SUBTYPES = ["Business Park", "Business Building", "Mixed Use"];
-const LOCATIONS = ["New Cairo", "Sheikh Zayed", "6th October", "Downtown Cairo", "Sheraton", "Maadi"];
+export const LOCATIONS = ["New Cairo", "Sheikh Zayed", "6th October", "Downtown Cairo", "Sheraton", "Maadi"];
+const normLoc = (s: string) => s.toLowerCase().replace(/[\s-]/g, "");
+/** Links pass locations as slugs ("new-cairo"); show the proper name. */
+export const locationLabel = (v: string) => LOCATIONS.find((l) => normLoc(l) === normLoc(v)) ?? v;
+export const sameLocation = (a: string | null, b: string) => !!a && normLoc(a) === normLoc(b);
 
 
 interface FilterSidebarProps {
@@ -54,16 +58,16 @@ interface FilterSidebarProps {
 }
 
 // Placeholders hint at a realistic range for each budget type.
-const BUDGET_HINTS = {
+export const BUDGET_HINTS = {
   rent: { label: "Monthly rent (EGP)", min: "e.g. 100,000", max: "e.g. 500,000" },
   sale: { label: "Total price (EGP)", min: "e.g. 10,000,000", max: "e.g. 50,000,000" },
 } as const;
 
-const parseAmount = (raw: string): number | null => {
+export const parseAmount = (raw: string): number | null => {
   const digits = raw.replace(/[^\d]/g, "");
   return digits ? Number(digits) : null;
 };
-const formatAmount = (n: number | null) => (n == null ? "" : n.toLocaleString("en-US"));
+export const formatAmount = (n: number | null) => (n == null ? "" : n.toLocaleString("en-US"));
 
 export function FilterSidebar({ filters, setFilters, listings, className }: FilterSidebarProps) {
 

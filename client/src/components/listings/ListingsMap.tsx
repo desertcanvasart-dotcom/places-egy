@@ -11,6 +11,10 @@ import { ArrowRight, Building2 } from "lucide-react";
 import type { Listing } from "@/lib/supabase";
 
 const CAIRO_CENTER: [number, number] = [31.2357, 30.0444];
+// Every PLACES listing is in Greater Cairo/Giza. A saved pin outside this box
+// is a data-entry mistake (e.g. a project geocoded to Alexandria); it's left
+// off the map so it can't drag the view out to the whole country.
+const inGreaterCairo = (lat: number, lng: number) => lat > 29.7 && lat < 30.4 && lng > 30.7 && lng < 31.8;
 const DEFAULT_ZOOM = 10;
 
 type Props = {
@@ -19,7 +23,15 @@ type Props = {
   // zoom so users trying to scroll the page don't accidentally hijack
   // the zoom. Wheel zoom stays on for the standalone /listings map view.
   embedded?: boolean;
+  /** Render nothing (instead of the "No mapped projects" box) when no pins. */
+  hideWhenEmpty?: boolean;
+  /** Overrides the frame height classes. */
+  heightClassName?: string;
+  /** Called if the map hasn't drawn within MAP_LOAD_TIMEOUT_MS (tile provider down). */
+  onFail?: () => void;
 };
+
+const MAP_LOAD_TIMEOUT_MS = 10_000;
 
 type GroupedProject = {
   projectName: string;
@@ -42,7 +54,7 @@ function fromPrice(units: Listing[]): string {
 // ONE pin per project (not per listing). Projects without saved coordinates
 // silently drop off the map — admin sees which are unmapped via the count
 // chip in the legend.
-export function ListingsMap({ listings, embedded = false }: Props) {
+export function ListingsMap({ listings, embedded = false, hideWhenEmpty = false, heightClassName, onFail }: Props) {
   const [mapInstance, setMapInstance] = useState<MapLibreGL.Map | null>(null);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const didFitRef = useRef(false);
@@ -85,7 +97,7 @@ export function ListingsMap({ listings, embedded = false }: Props) {
     const out: GroupedProject[] = [];
     buckets.forEach((units, key) => {
       const coord = coordsMap.get(key);
-      if (!coord) return;
+      if (!coord || !inGreaterCairo(coord.latitude, coord.longitude)) return;
       out.push({
         projectName: units[0].project ?? coord.project_name,
         latitude: coord.latitude,
@@ -134,6 +146,24 @@ export function ListingsMap({ listings, embedded = false }: Props) {
     didFitRef.current = true;
   }, [mapInstance, grouped]);
 
+  // Tile provider down or very slow: give up and let the page collapse the map.
+  const onFailRef = useRef(onFail);
+  onFailRef.current = onFail;
+  useEffect(() => {
+    if (!mapInstance || !onFailRef.current) return;
+    if (mapInstance.loaded()) return;
+    let done = false;
+    const onLoad = () => { done = true; };
+    mapInstance.once("load", onLoad);
+    const t = setTimeout(() => {
+      if (!done && !mapInstance.loaded()) onFailRef.current?.();
+    }, MAP_LOAD_TIMEOUT_MS);
+    return () => {
+      clearTimeout(t);
+      mapInstance.off("load", onLoad);
+    };
+  }, [mapInstance]);
+
   // Reset auto-fit when filters change the list of listings.
   useEffect(() => {
     didFitRef.current = false;
@@ -148,6 +178,7 @@ export function ListingsMap({ listings, embedded = false }: Props) {
   };
 
   if (grouped.length === 0) {
+    if (hideWhenEmpty) return null;
     return (
       <div className="h-[70vh] rounded-2xl border border-border/40 bg-white flex items-center justify-center text-center px-8">
         <div>
@@ -169,9 +200,10 @@ export function ListingsMap({ listings, embedded = false }: Props) {
         // Embedded on scrolling pages gets a shorter, mobile-friendly
         // height so it doesn't dominate the viewport. Full standalone
         // /listings map gets the taller 70vh treatment.
-        embedded
+        heightClassName ??
+        (embedded
           ? "h-[380px] sm:h-[440px] md:h-[520px] lg:h-[560px]"
-          : "h-[60vh] min-h-[420px] md:h-[70vh]"
+          : "h-[60vh] min-h-[420px] md:h-[70vh]")
       }`}
     >
       <Map
