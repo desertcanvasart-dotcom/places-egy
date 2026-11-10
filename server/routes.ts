@@ -943,8 +943,8 @@ export async function registerRoutes(
       if (!supabaseAdmin) {
         return res.status(503).json({ message: "Supabase not configured" });
       }
-      // updated_at/created_at are server-owned; the dashboard may echo them back.
-      const { updated_at: _ignored, created_at: _ignoredCreated, ...body } = req.body ?? {};
+      // updated_at/created_at/hotdesk_listing_id are server-owned; the dashboard may echo them back.
+      const { updated_at: _ignored, created_at: _ignoredCreated, hotdesk_listing_id: _hotdeskId, ...body } = req.body ?? {};
       const parsed = listingInsertSchema.safeParse(body);
       if (!parsed.success) {
         return res.status(400).json({ message: "Invalid listing payload" });
@@ -973,8 +973,8 @@ export async function registerRoutes(
       if (!Number.isFinite(id)) {
         return res.status(400).json({ message: "Invalid id" });
       }
-      // updated_at/created_at are server-owned; the dashboard may echo them back.
-      const { updated_at: _ignored, created_at: _ignoredCreated, ...body } = req.body ?? {};
+      // updated_at/created_at/hotdesk_listing_id are server-owned; the dashboard may echo them back.
+      const { updated_at: _ignored, created_at: _ignoredCreated, hotdesk_listing_id: _hotdeskId, ...body } = req.body ?? {};
       const parsed = listingUpdateSchema.safeParse(body);
       if (!parsed.success) {
         return res.status(400).json({ message: "Invalid listing payload" });
