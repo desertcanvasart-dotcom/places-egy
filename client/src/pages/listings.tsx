@@ -301,11 +301,12 @@ export default function ListingsPage() {
     filters.areaMin != null || filters.areaMax != null || filters.priceMin != null || filters.priceMax != null ||
     !!searchQuery.trim();
 
-  // Map: on desktop it sits above the results (can be hidden); on phones it
-  // opens with the "Map" button (?view=map, as before). It collapses for good
-  // if it can't draw — see SafeListingsMap.
+  // Map: hidden by default everywhere; the "Show map" button opens it above
+  // the results (on phones via ?view=map, as before). Its code isn't even
+  // downloaded until then. It collapses for good if it can't draw — see
+  // SafeListingsMap.
   const isDesktop = useMediaQuery("(min-width: 1024px)");
-  const [desktopMapHidden, setDesktopMapHidden] = useState(false);
+  const [desktopMapHidden, setDesktopMapHidden] = useState(true);
   const [mapUnavailable, setMapUnavailable] = useState(() => typeof window !== "undefined" && !canDrawMaps());
   const mapOpen = !mapUnavailable && (isDesktop ? !desktopMapHidden : viewMode === "map");
   const resultsView = viewMode === "list" ? "list" : "grid";
