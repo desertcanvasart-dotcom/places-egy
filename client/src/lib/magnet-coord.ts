@@ -1,35 +1,85 @@
-// Coordination between the concierge widget and the PDF market-report
-// magnets so they never fight for attention at the same time.
+// Which popup each page gets, and the rule that only one is on screen at a time.
 //
-// Rule: if the concierge widget is currently on-screen (bubble showing or
-// form expanded), the PDF magnet doesn't appear. If the user dismisses the
-// concierge, the PDF magnet fires 15s later as normal.
-//
-// Uses sessionStorage so the flag clears when the tab closes. Nothing needs
-// to persist across visits — the SUBMITTED_KEY constants already do that.
+// Pages are matched by intent:
+//   - "concierge": visitor is looking for an office now (listings, locations,
+//     developers, services) → "tell us what you need" chat prompt.
+//   - "report":    visitor is researching (blog, FAQs, glossary, why PLACES)
+//     → market report PDF popup.
+//   - "both":      mixed intent (homepage) → concierge first; the report only
+//     appears 15s after the concierge is closed. Never both at once.
+//   - "none":      the page already has its own form (contact, market report)
+//     or is a legal/admin page.
+// Unlisted pages default to "concierge". Guides keep their own survey popup.
 
-const CONCIERGE_ACTIVE_KEY = "concierge_widget_active_this_session";
+export type PagePopups = "concierge" | "report" | "both" | "none";
 
-export function markConciergeActive(): void {
-  try {
-    sessionStorage.setItem(CONCIERGE_ACTIVE_KEY, "1");
-  } catch {
-    // Ignore — worst case both popups show together.
-  }
+const RULES: [RegExp, PagePopups][] = [
+  [/^\/$/, "both"],
+  [/^\/(contact|resources\/market-report|privacy-policy|terms-of-service|dashboard)$/, "none"],
+  [/^\/guides(\/|$)/, "none"],
+  [/^\/(ar\/)?blog(\/|$)/, "report"],
+  [/^\/faqs(\/|$)/, "report"],
+  [/^\/(glossary|why-places)$/, "report"],
+];
+
+export function popupsFor(path: string): PagePopups {
+  const p = path.replace(/\/+$/, "") || "/";
+  for (const [re, kind] of RULES) if (re.test(p)) return kind;
+  return "concierge";
 }
 
-export function markConciergeInactive(): void {
-  try {
-    sessionStorage.removeItem(CONCIERGE_ACTIVE_KEY);
-  } catch {
-    // Ignore.
-  }
+export const conciergeAllowed = (path: string) => {
+  const k = popupsFor(path);
+  return k === "concierge" || k === "both";
+};
+export const reportAllowed = (path: string) => {
+  const k = popupsFor(path);
+  return k === "report" || k === "both";
+};
+
+// ── One popup on screen at a time ──────────────────────────────────────────
+// In-memory (all popups live in the same SPA), so nothing goes stale across
+// tabs or after a reload.
+const REPORT_AFTER_CONCIERGE_MS = 15_000;
+let conciergeOnScreen = false;
+let reportOnScreen = false;
+const listeners = new Set<() => void>();
+const notify = () => listeners.forEach((fn) => fn());
+
+export function setConciergeOnScreen(on: boolean): void {
+  conciergeOnScreen = on;
+  notify();
+}
+export function setReportOnScreen(on: boolean): void {
+  reportOnScreen = on;
+  notify();
+}
+export const isReportOnScreen = () => reportOnScreen;
+
+// Runs `show` after `delayMs`. If the concierge is on screen at that moment,
+// waits until it closes, then another 15s. Returns a cancel function.
+export function scheduleReport(delayMs: number, show: () => void): () => void {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let unsubscribe = () => {};
+  const fire = () => {
+    if (!conciergeOnScreen) return show();
+    const onChange = () => {
+      if (conciergeOnScreen) return;
+      unsubscribe();
+      timer = setTimeout(() => (conciergeOnScreen ? fire() : show()), REPORT_AFTER_CONCIERGE_MS);
+    };
+    listeners.add(onChange);
+    unsubscribe = () => listeners.delete(onChange);
+  };
+  timer = setTimeout(fire, delayMs);
+  return () => {
+    if (timer) clearTimeout(timer);
+    unsubscribe();
+  };
 }
 
-export function isConciergeActive(): boolean {
-  try {
-    return sessionStorage.getItem(CONCIERGE_ACTIVE_KEY) === "1";
-  } catch {
-    return false;
-  }
+// Calls `fn` whenever either popup appears or closes. Returns unsubscribe.
+export function onPopupChange(fn: () => void): () => void {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
 }

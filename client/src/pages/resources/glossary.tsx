@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { CornerSlideMagnet } from "@/components/magnets/CornerSlideMagnet";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { GLOSSARY_TERMS, GlossaryTerm } from "@/lib/glossary-data";
@@ -164,6 +165,8 @@ export default function GlossaryPage() {
       </main>
 
       <Footer />
+
+      <CornerSlideMagnet />
     </div>
   );
 }

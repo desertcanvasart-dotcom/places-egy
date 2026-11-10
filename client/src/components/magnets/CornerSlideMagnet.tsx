@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { X, FileText, ArrowRight } from "lucide-react";
 import { LeadForm } from "@/components/LeadForm";
 import { trackEvent } from "@/lib/analytics";
-import { isConciergeActive } from "@/lib/magnet-coord";
+import { useLocation } from "wouter";
+import { reportAllowed, scheduleReport, setReportOnScreen } from "@/lib/magnet-coord";
 
 // Bottom-right corner slide-in for homepage + listing pages.
 // Dark primary card, accent-red icon + button, larger typography, one-shot
@@ -49,17 +50,23 @@ export function CornerSlideMagnet() {
   const [expanded, setExpanded] = useState(false);
   const [mounted, setMounted] = useState(false);
 
+  // Only on pages the rules in magnet-coord give it, and never while the
+  // concierge is on screen (scheduleReport waits for it to close + 15s).
+  const [location] = useLocation();
+  const allowed = reportAllowed(location);
   useEffect(() => {
-    if (isSuppressed()) return;
-    const t = setTimeout(() => {
+    if (!allowed || isSuppressed()) return;
+    return scheduleReport(SHOW_AFTER_MS, () => {
+      setReportOnScreen(true);
       setMounted(true);
       requestAnimationFrame(() => setVisible(true));
       trackEvent("corner_magnet_shown", {
         magnet: "cairo_office_market_report_2026",
       });
-    }, SHOW_AFTER_MS);
-    return () => clearTimeout(t);
-  }, []);
+    });
+  }, [allowed]);
+
+  useEffect(() => () => setReportOnScreen(false), []);
 
   const dismiss = () => {
     try {
@@ -71,6 +78,7 @@ export function CornerSlideMagnet() {
       magnet: "cairo_office_market_report_2026",
     });
     setVisible(false);
+    setReportOnScreen(false);
     setTimeout(() => {
       setMounted(false);
       setExpanded(false);
@@ -92,7 +100,7 @@ export function CornerSlideMagnet() {
     }
   };
 
-  if (!mounted) return null;
+  if (!mounted || !allowed) return null;
 
   return (
     <div
