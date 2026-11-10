@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -29,7 +29,7 @@ const DEALS = [
   { value: "Income Property", label: "Income property" },
 ] as const;
 
-function Pill({ label, value, active, children, wide }: { label: string; value: string; active: boolean; children: ReactNode; wide?: boolean }) {
+function Pill({ label, value, active, children, wide, highlight }: { label: string; value: string; active: boolean; children: ReactNode; wide?: boolean; highlight?: boolean }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -37,7 +37,7 @@ function Pill({ label, value, active, children, wide }: { label: string; value: 
           type="button"
           className={`shrink-0 inline-flex items-center gap-1.5 h-11 px-4 rounded-full border text-sm transition-colors whitespace-nowrap ${
             active ? "bg-primary text-white border-primary" : "bg-white text-primary border-border/60 hover:border-primary/40"
-          }`}
+          } ${highlight ? "ring-2 ring-accent ring-offset-2 ring-offset-background" : ""}`}
         >
           <span className="font-semibold">{label}:</span>
           <span className={active ? "text-white/90" : "text-muted-foreground"}>{value}</span>
@@ -46,6 +46,50 @@ function Pill({ label, value, active, children, wide }: { label: string; value: 
       </PopoverTrigger>
       <PopoverContent align="start" className={`${wide ? "w-80" : "w-60"} p-3 bg-white`}>
         {children}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// Budget before a deal type is chosen: looks inactive and doesn't open. A tap
+// shows a short note above it (in a portal, so the sideways-scrolling pill
+// row on phones can't clip it) and briefly highlights the Deal button.
+function LockedBudgetPill({ onNudge }: { onNudge: () => void }) {
+  const [open, setOpen] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const nudge = () => {
+    setOpen(true);
+    onNudge();
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => setOpen(false), 2500);
+  };
+  return (
+    <Popover open={open} onOpenChange={(o) => !o && setOpen(false)}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-disabled="true"
+          aria-label="Budget — choose a deal type first"
+          onClick={(e) => {
+            e.preventDefault();
+            nudge();
+          }}
+          className="shrink-0 inline-flex items-center gap-1.5 h-11 px-4 rounded-full border border-dashed border-border bg-white/50 text-sm whitespace-nowrap text-primary/45 cursor-not-allowed"
+        >
+          <span className="font-semibold">Budget:</span>
+          <span>Any</span>
+          <ChevronDown className="w-3.5 h-3.5 opacity-50" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        side="top"
+        align="center"
+        sideOffset={8}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        className="w-auto max-w-[16rem] px-3 py-2 rounded-xl bg-primary text-white text-xs font-medium border-0 shadow-lg"
+      >
+        Pick a deal type first
       </PopoverContent>
     </Popover>
   );
@@ -103,6 +147,14 @@ export function ListingsFilterBar({
   const budget = filters.transactionType === null ? null : filters.transactionType === "Rent" ? BUDGET_HINTS.rent : BUDGET_HINTS.sale;
   const moreCount = filters.subtype.length + filters.furnishing.length + (filters.developer ? 1 : 0);
   const dealLabel = DEALS.find((d) => d.value === filters.transactionType)?.label ?? "Any";
+  const [dealNudge, setDealNudge] = useState(false);
+  const nudgeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(nudgeTimer.current), []);
+  const nudgeDeal = () => {
+    setDealNudge(true);
+    clearTimeout(nudgeTimer.current);
+    nudgeTimer.current = setTimeout(() => setDealNudge(false), 2500);
+  };
 
   return (
     <div className="flex flex-col xl:flex-row gap-3">
@@ -129,7 +181,7 @@ export function ListingsFilterBar({
 
       {/* Scrolls sideways on phones instead of wrapping into a tall block. */}
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-6 px-6 md:-mx-10 md:px-10 xl:mx-0 xl:px-0 xl:pb-0 xl:shrink-0 xl:overflow-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <Pill label="Deal" value={dealLabel} active={!!filters.transactionType}>
+        <Pill label="Deal" value={dealLabel} active={!!filters.transactionType} highlight={dealNudge && !filters.transactionType}>
           <Option selected={!filters.transactionType} onClick={() => setDeal(null)}>Any</Option>
           {DEALS.map((d) => (
             <Option key={d.value} selected={filters.transactionType === d.value} onClick={() => setDeal(d.value)}>
@@ -161,35 +213,24 @@ export function ListingsFilterBar({
           </div>
         </Pill>
 
-        <Pill
-          label="Budget"
-          value={rangeLabel(filters.priceMin, filters.priceMax, formatEgpShort, "Any")}
-          active={filters.priceMin != null || filters.priceMax != null}
-          wide
-        >
-          {budget ? (
-            <>
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{budget.label}</p>
-              <div className="flex items-center gap-2">
-                <Input inputMode="numeric" placeholder={budget.min} aria-label={`Minimum ${budget.label.toLowerCase()}`} value={formatAmount(filters.priceMin)} onChange={(e) => setPrice("priceMin", e.target.value)} />
-                <span className="text-muted-foreground">–</span>
-                <Input inputMode="numeric" placeholder={budget.max} aria-label={`Maximum ${budget.label.toLowerCase()}`} value={formatAmount(filters.priceMax)} onChange={(e) => setPrice("priceMax", e.target.value)} />
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">USD listings are included at {USD_EGP_RATE} EGP per USD.</p>
-            </>
-          ) : (
-            <>
-              <p className="text-sm text-muted-foreground mb-2">Choose a deal type first. Rent budgets are monthly, sale budgets are the total price.</p>
-              <div className="flex flex-wrap gap-2">
-                {DEALS.map((d) => (
-                  <button key={d.value} type="button" onClick={() => setDeal(d.value)} className="text-xs font-medium px-3 py-1.5 rounded-full border border-border hover:border-primary hover:text-primary">
-                    {d.label}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </Pill>
+        {budget ? (
+          <Pill
+            label="Budget"
+            value={rangeLabel(filters.priceMin, filters.priceMax, formatEgpShort, "Any")}
+            active={filters.priceMin != null || filters.priceMax != null}
+            wide
+          >
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{budget.label}</p>
+            <div className="flex items-center gap-2">
+              <Input inputMode="numeric" placeholder={budget.min} aria-label={`Minimum ${budget.label.toLowerCase()}`} value={formatAmount(filters.priceMin)} onChange={(e) => setPrice("priceMin", e.target.value)} />
+              <span className="text-muted-foreground">–</span>
+              <Input inputMode="numeric" placeholder={budget.max} aria-label={`Maximum ${budget.label.toLowerCase()}`} value={formatAmount(filters.priceMax)} onChange={(e) => setPrice("priceMax", e.target.value)} />
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">USD listings are included at {USD_EGP_RATE} EGP per USD.</p>
+          </Pill>
+        ) : (
+          <LockedBudgetPill onNudge={nudgeDeal} />
+        )}
 
         <Sheet>
           <SheetTrigger asChild>
