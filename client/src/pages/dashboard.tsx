@@ -223,6 +223,20 @@ function formatCairoDateTime(iso: string): string {
   return cairoDateTime.format(new Date(iso));
 }
 
+type DealFilter = "all" | "rent" | "rented" | "sale" | "income-property";
+const DEAL_FILTERS: [DealFilter, string][] = [
+  ["all", "All listings"],
+  ["rent", "For rent"],
+  ["rented", "Rented"],
+  ["sale", "For sale"],
+  ["income-property", "Income property"],
+];
+// "For rent" includes rented offices; "Rented" narrows to just those.
+function matchesDeal(l: Pick<Listing, "transaction_type" | "rental_status">, f: DealFilter): boolean {
+  if (f === "rented") return l.transaction_type === "rent" && l.rental_status === "rented";
+  return f === "all" || l.transaction_type === f;
+}
+
 // Two listings are treated as duplicates when their titles match ignoring
 // case, punctuation and spacing.
 function titleKey(title: string | null | undefined): string {
@@ -624,6 +638,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
 
   const [search, setSearch] = useState("");
   const [onlyDuplicates, setOnlyDuplicates] = useState(false);
+  const [dealFilter, setDealFilter] = useState<DealFilter>("all");
 
   // listing id -> ids of other listings sharing its title
   const duplicatesOf = useMemo(() => {
@@ -642,12 +657,13 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
   }, [listings]);
 
   const filteredListings = useMemo(() => {
+    const byDeal = dealFilter === "all" ? listings : listings.filter((l) => matchesDeal(l, dealFilter));
     // Duplicates view: group copies next to each other.
     const base = onlyDuplicates
-      ? listings
+      ? byDeal
           .filter((l) => duplicatesOf.has(l.id))
           .sort((a, b) => titleKey(a.title).localeCompare(titleKey(b.title)) || b.id - a.id)
-      : listings;
+      : byDeal;
     const q = search.trim().toLowerCase();
     if (!q) return base;
     // "423" or "#423" matches that listing ID exactly, ahead of text matches.
@@ -675,7 +691,8 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
         .replace(/[-_]/g, " ");
       return terms.every((t) => haystack.includes(t.replace(/[-_]/g, " ")));
     });
-  }, [listings, search, onlyDuplicates, duplicatesOf]);
+  }, [listings, search, onlyDuplicates, duplicatesOf, dealFilter]);
+  const filtering = !!search || onlyDuplicates || dealFilter !== "all";
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -808,12 +825,24 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                   </button>
                 )}
               </div>
+              <select
+                value={dealFilter}
+                onChange={(e) => setDealFilter(e.target.value as DealFilter)}
+                aria-label="Show listings"
+                className="h-10 w-full sm:w-auto rounded-md border border-input bg-white px-3 text-sm text-primary"
+              >
+                {DEAL_FILTERS.map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label} ({value === "all" ? listings.length : listings.filter((l) => matchesDeal(l, value)).length})
+                  </option>
+                ))}
+              </select>
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/5 border border-border/40 px-3 py-1 text-xs font-medium text-primary">
-                  {search || onlyDuplicates ? `${filteredListings.length} of ${listings.length}` : listings.length}
+                  {filtering ? `${filteredListings.length} of ${listings.length}` : listings.length}
                   <span className="text-muted-foreground font-normal">
                     {listings.length === 1 ? "listing" : "listings"}
-                    {search || onlyDuplicates ? "" : " total"}
+                    {filtering ? "" : " total"}
                   </span>
                 </span>
                 {duplicatesOf.size > 0 && (
