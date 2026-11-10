@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { X, FileText, ArrowRight } from "lucide-react";
 import { LeadForm } from "@/components/LeadForm";
 import { trackEvent } from "@/lib/analytics";
-import { isConciergeActive } from "@/lib/magnet-coord";
+import { useLocation } from "wouter";
+import { reportAllowed, scheduleReport, setReportOnScreen } from "@/lib/magnet-coord";
 
 // Corner slide-in for blog pages. Bottom-right, dark primary card with accent
 // red button = high-contrast against the light background. Same UX pattern
@@ -36,8 +37,6 @@ function isSuppressed(): boolean {
   try {
     if (localStorage.getItem(SUBMITTED_KEY)) return true;
     if (sessionStorage.getItem(DISMISS_KEY)) return true;
-    // Wait if the concierge widget is on-screen — no double popups.
-    if (isConciergeActive()) return true;
     return false;
   } catch {
     return false;
@@ -49,18 +48,24 @@ export function BlogSlideUpMagnet() {
   const [expanded, setExpanded] = useState(false);
   const [mounted, setMounted] = useState(false);
 
+  // Only on pages the rules in magnet-coord give it, and never while the
+  // concierge is on screen (scheduleReport waits for it to close + 15s).
+  const [location] = useLocation();
+  const allowed = reportAllowed(location);
   useEffect(() => {
-    if (isSuppressed()) return;
-    const t = setTimeout(() => {
+    if (!allowed || isSuppressed()) return;
+    return scheduleReport(SHOW_AFTER_MS, () => {
+      setReportOnScreen(true);
       setMounted(true);
       // Small delay before setting visible so the CSS transition fires.
       requestAnimationFrame(() => setVisible(true));
       trackEvent("blog_magnet_shown", {
         magnet: "cairo_office_market_report_2026",
       });
-    }, SHOW_AFTER_MS);
-    return () => clearTimeout(t);
-  }, []);
+    });
+  }, [allowed]);
+
+  useEffect(() => () => setReportOnScreen(false), []);
 
   const dismiss = () => {
     try {
@@ -72,6 +77,7 @@ export function BlogSlideUpMagnet() {
       magnet: "cairo_office_market_report_2026",
     });
     setVisible(false);
+    setReportOnScreen(false);
     setTimeout(() => {
       setMounted(false);
       setExpanded(false);
@@ -93,7 +99,7 @@ export function BlogSlideUpMagnet() {
     }
   };
 
-  if (!mounted) return null;
+  if (!mounted || !allowed) return null;
 
   return (
     <div

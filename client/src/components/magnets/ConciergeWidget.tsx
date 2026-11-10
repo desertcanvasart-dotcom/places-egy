@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { MessageCircle, X, ArrowRight, Check, Loader2, ChevronDown } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { detectPreferredLanguage } from "@/lib/detect-language";
-import { markConciergeActive, markConciergeInactive } from "@/lib/magnet-coord";
+import { useLocation } from "wouter";
+import { conciergeAllowed, isReportOnScreen, onPopupChange, setConciergeOnScreen } from "@/lib/magnet-coord";
 
 // Concierge widget — a friendly bottom-LEFT chat-bubble prompt asking
 // visitors what they're looking for. Positioned opposite the PDF market-
@@ -154,17 +155,49 @@ export function ConciergeWidget() {
 
   useEffect(() => {
     setLang(detectPreferredLanguage());
-    if (isSuppressed()) return;
-    const t = setTimeout(() => {
+  }, []);
+
+  // Shown only on pages the rules in magnet-coord give it, and never while the
+  // market report popup is on screen. Leaving for a research page hides it
+  // (typed answers are kept); coming back shows it again straight away.
+  const [location] = useLocation();
+  const allowed = conciergeAllowed(location);
+  const shownRef = useRef(false);
+  useEffect(() => {
+    if (!allowed || isSuppressed()) {
+      setVisible(false);
+      setConciergeOnScreen(false);
+      return;
+    }
+    if (shownRef.current) {
+      setVisible(true);
+      setConciergeOnScreen(true);
+      return;
+    }
+    let unsubscribe = () => {};
+    const show = () => {
+      if (isReportOnScreen()) {
+        unsubscribe = onPopupChange(() => {
+          if (isReportOnScreen()) return;
+          unsubscribe();
+          show();
+        });
+        return;
+      }
+      shownRef.current = true;
       setMounted(true);
-      // Set the coord flag so the PDF magnet knows to hold off. Cleared
-      // in dismiss() and on success submit (via SUBMITTED_KEY suppression).
-      markConciergeActive();
+      setConciergeOnScreen(true);
       requestAnimationFrame(() => setVisible(true));
       trackEvent("concierge_shown", {});
-    }, computeShowAfterMs());
-    return () => clearTimeout(t);
-  }, []);
+    };
+    const t = setTimeout(show, computeShowAfterMs());
+    return () => {
+      clearTimeout(t);
+      unsubscribe();
+    };
+  }, [allowed]);
+
+  useEffect(() => () => setConciergeOnScreen(false), []);
 
   // Focus name field when the form expands — small UX polish so keyboard
   // users don't have to tab through the whole widget to start typing.
@@ -184,8 +217,8 @@ export function ConciergeWidget() {
     } catch {
       // ignore — worst case they see it again next tab
     }
-    // Free the PDF magnet to fire its 15s timer from now on.
-    markConciergeInactive();
+    // Frees the report popup to appear 15s from now (homepage).
+    setConciergeOnScreen(false);
     trackEvent("concierge_dismiss", { expanded });
     setVisible(false);
     setTimeout(() => {

@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { X, FileText, ArrowRight, Check, Loader2, ChevronDown } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { detectPreferredLanguage } from "@/lib/detect-language";
-import { markConciergeActive, isConciergeActive } from "@/lib/magnet-coord";
 
 // Developer survey lead magnet — the /guides/* magnet that hands out the
 // PLACES Cairo Developer Price Survey PDF in exchange for name + phone +
@@ -159,13 +158,9 @@ export function DeveloperSurveyMagnet({ variant, guideSlug }: Props) {
     }
     setLang(detectPreferredLanguage());
     if (isSuppressed()) return;
-    // If the concierge widget is currently on-screen, hold off. We check at
-    // the moment we would show — not on mount — so we naturally fire once
-    // the user dismisses concierge and the flag clears.
+    // Guides get no concierge (see magnet-coord), so nothing to wait for.
     const t = setTimeout(() => {
-      if (isConciergeActive()) return;
       setMounted(true);
-      markConciergeActive(); // shared flag; keeps PDF magnet off while we're up
       requestAnimationFrame(() => setVisible(true));
       trackEvent("developer_survey_shown", { variant, guide_slug: guideSlug ?? null });
     }, SHOW_AFTER_MS);
@@ -193,13 +188,6 @@ export function DeveloperSurveyMagnet({ variant, guideSlug }: Props) {
   const dismiss = () => {
     try {
       sessionStorage.setItem(DISMISS_KEY, "1");
-    } catch {
-      // ignore
-    }
-    // Release the coord flag so PDF magnet can fire 15s from now.
-    // (Re-using markConciergeActive's counterpart — cleared by removeItem.)
-    try {
-      sessionStorage.removeItem("concierge_widget_active_this_session");
     } catch {
       // ignore
     }
