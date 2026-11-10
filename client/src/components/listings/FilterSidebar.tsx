@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { RotateCcw } from "lucide-react";
 import { FURNISHING_OPTIONS } from "@/lib/enums";
-import { USD_EGP_RATE } from "@/lib/currency";
+import { USD_EGP_RATE, formatEgpShort, type Currency } from "@/lib/currency";
 
 export type Filters = {
   transactionType: "Sale" | "Rent" | "Income Property" | null;
@@ -23,6 +23,8 @@ export type Filters = {
   /** Budget in EGP (USD listings are converted). Monthly rent for Rent, total price otherwise. */
   priceMin: number | null;
   priceMax: number | null;
+  /** Currency the visitor types and sees the budget in. priceMin/priceMax stay EGP either way. */
+  budgetCurrency: Currency;
   furnishing: string[];
   developer: string | null;
   areaMin: number | null;
@@ -36,6 +38,7 @@ export const DEFAULT_FILTERS: Filters = {
   location: null,
   priceMin: null,
   priceMax: null,
+  budgetCurrency: "EGP",
   furnishing: [],
   developer: null,
   areaMin: null,
@@ -57,11 +60,77 @@ interface FilterSidebarProps {
   className?: string;
 }
 
-// Placeholders hint at a realistic range for each budget type.
+// Placeholders hint at a realistic range for each budget type and currency.
 export const BUDGET_HINTS = {
-  rent: { label: "Monthly rent (EGP)", min: "e.g. 100,000", max: "e.g. 500,000" },
-  sale: { label: "Total price (EGP)", min: "e.g. 10,000,000", max: "e.g. 50,000,000" },
+  rent: { label: "Monthly rent", EGP: { min: "e.g. 100,000", max: "e.g. 500,000" }, USD: { min: "e.g. 2,000", max: "e.g. 10,000" } },
+  sale: { label: "Total price", EGP: { min: "e.g. 10,000,000", max: "e.g. 50,000,000" }, USD: { min: "e.g. 200,000", max: "e.g. 1,000,000" } },
 } as const;
+export type BudgetKind = keyof typeof BUDGET_HINTS;
+export const budgetKindFor = (t: Filters["transactionType"]): BudgetKind | null => (t === null ? null : t === "Rent" ? "rent" : "sale");
+
+// The budget is always stored (and filtered, and put in the URL) in EGP; USD
+// is only what the visitor types and sees, converted at the site's rate.
+const egpToShown = (egp: number, cur: Currency) => (cur === "USD" ? Math.round(egp / USD_EGP_RATE) : egp);
+const shownToEgp = (n: number, cur: Currency) => (cur === "USD" ? Math.round(n * USD_EGP_RATE) : n);
+
+/** Short label for a stored EGP amount in the visitor's chosen currency: "EGP 850K", "$15K". */
+export function formatBudgetShort(egp: number, cur: Currency): string {
+  if (cur === "EGP") return formatEgpShort(egp);
+  const v = egpToShown(egp, cur);
+  if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(v >= 10_000_000 ? 0 : 1)}M`;
+  if (v >= 1_000) return `$${Math.round(v / 1_000)}K`;
+  return `$${v}`;
+}
+
+/** Min/max budget boxes with an EGP / USD switch. Shared by the filter bar and "More filters". */
+export function BudgetFields({
+  filters,
+  setFilters,
+  kind,
+  inputClassName,
+}: {
+  filters: Filters;
+  setFilters: (f: Filters | ((prev: Filters) => Filters)) => void;
+  kind: BudgetKind;
+  inputClassName?: string;
+}) {
+  const cur = filters.budgetCurrency;
+  const hints = BUDGET_HINTS[kind];
+  const setPrice = (key: "priceMin" | "priceMax", raw: string) => {
+    const n = parseAmount(raw);
+    setFilters((p) => ({ ...p, [key]: n == null ? null : shownToEgp(n, p.budgetCurrency) }));
+  };
+  const shown = (egp: number | null) => (egp == null ? "" : formatAmount(egpToShown(egp, cur)));
+  const label = `${hints.label} in ${cur}`;
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-3 mb-2">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{hints.label}</p>
+        <div role="radiogroup" aria-label="Budget currency" className="inline-flex rounded-full bg-muted p-0.5">
+          {(["EGP", "USD"] as const).map((c) => (
+            <button
+              key={c}
+              type="button"
+              role="radio"
+              aria-checked={cur === c}
+              onClick={() => setFilters((p) => ({ ...p, budgetCurrency: c }))}
+              className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
+                cur === c ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:text-primary"
+              }`}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <Input inputMode="numeric" placeholder={hints[cur].min} aria-label={`Minimum ${label.toLowerCase()}`} className={inputClassName} value={shown(filters.priceMin)} onChange={(e) => setPrice("priceMin", e.target.value)} />
+        <span className="text-muted-foreground">–</span>
+        <Input inputMode="numeric" placeholder={hints[cur].max} aria-label={`Maximum ${label.toLowerCase()}`} className={inputClassName} value={shown(filters.priceMax)} onChange={(e) => setPrice("priceMax", e.target.value)} />
+      </div>
+    </div>
+  );
+}
 
 export const parseAmount = (raw: string): number | null => {
   const digits = raw.replace(/[^\d]/g, "");
@@ -114,7 +183,7 @@ export function FilterSidebar({ filters, setFilters, listings, className }: Filt
   const setPrice = (key: "priceMin" | "priceMax", raw: string) => {
     setFilters((prev) => ({ ...prev, [key]: parseAmount(raw) }));
   };
-  const budget = filters.transactionType === null ? null : filters.transactionType === "Rent" ? BUDGET_HINTS.rent : BUDGET_HINTS.sale;
+  const budget = budgetKindFor(filters.transactionType);
 
   const setArea = (key: "areaMin" | "areaMax", raw: string) => {
     const n = Number(raw.replace(/[^\d.]/g, ""));
@@ -207,34 +276,13 @@ export function FilterSidebar({ filters, setFilters, listings, className }: Filt
 
       {/* Budget — numeric min/max in EGP, split by transaction type */}
       <div className="space-y-3">
-        <Label className="block mb-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">
-          {budget ? budget.label : "Budget (EGP)"}
-        </Label>
         {budget ? (
-          <>
-            <div className="flex items-center gap-2">
-              <Input
-                inputMode="numeric"
-                placeholder={budget.min}
-                aria-label={`Minimum ${budget.label.toLowerCase()}`}
-                className="bg-white"
-                value={formatAmount(filters.priceMin)}
-                onChange={(e) => setPrice("priceMin", e.target.value)}
-              />
-              <span className="text-muted-foreground">–</span>
-              <Input
-                inputMode="numeric"
-                placeholder={budget.max}
-                aria-label={`Maximum ${budget.label.toLowerCase()}`}
-                className="bg-white"
-                value={formatAmount(filters.priceMax)}
-                onChange={(e) => setPrice("priceMax", e.target.value)}
-              />
-            </div>
-            <p className="text-xs text-muted-foreground">USD listings are included at {USD_EGP_RATE} EGP per USD.</p>
-          </>
+          <BudgetFields filters={filters} setFilters={setFilters} kind={budget} inputClassName="bg-white" />
         ) : (
-          <p className="text-xs text-muted-foreground">Choose Sale, Rent or Income Property above to set a budget.</p>
+          <>
+            <Label className="block mb-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">Budget</Label>
+            <p className="text-xs text-muted-foreground">Choose Sale, Rent or Income Property above to set a budget.</p>
+          </>
         )}
       </div>
 

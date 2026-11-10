@@ -3,16 +3,15 @@ import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
-import { formatEgpShort, USD_EGP_RATE } from "@/lib/currency";
 import type { Listing } from "@/lib/supabase";
 import {
-  BUDGET_HINTS,
+  BudgetFields,
+  budgetKindFor,
   FilterSidebar,
+  formatBudgetShort,
   LOCATIONS,
   locationLabel,
   sameLocation,
-  formatAmount,
-  parseAmount,
   type Filters,
 } from "@/components/listings/FilterSidebar";
 
@@ -75,11 +74,11 @@ function LockedBudgetPill({ onNudge }: { onNudge: () => void }) {
             e.preventDefault();
             nudge();
           }}
-          className="shrink-0 inline-flex items-center gap-1.5 h-11 px-4 rounded-full border border-dashed border-border bg-white/50 text-sm whitespace-nowrap text-primary/45 cursor-not-allowed"
+          className="shrink-0 inline-flex items-center gap-1.5 h-11 px-4 rounded-full border text-sm whitespace-nowrap bg-white text-primary border-border/60 hover:border-primary/40 transition-colors"
         >
           <span className="font-semibold">Budget:</span>
-          <span>Any</span>
-          <ChevronDown className="w-3.5 h-3.5 opacity-50" />
+          <span className="text-muted-foreground">Any</span>
+          <ChevronDown className="w-3.5 h-3.5 opacity-70" />
         </button>
       </PopoverTrigger>
       <PopoverContent
@@ -141,10 +140,8 @@ export function ListingsFilterBar({
     const n = Number(raw.replace(/[^\d.]/g, ""));
     setFilters((p) => ({ ...p, [key]: raw.trim() === "" || !Number.isFinite(n) ? null : n }));
   };
-  const setPrice = (key: "priceMin" | "priceMax", raw: string) =>
-    setFilters((p) => ({ ...p, [key]: parseAmount(raw) }));
 
-  const budget = filters.transactionType === null ? null : filters.transactionType === "Rent" ? BUDGET_HINTS.rent : BUDGET_HINTS.sale;
+  const budget = budgetKindFor(filters.transactionType);
   const moreCount = filters.subtype.length + filters.furnishing.length + (filters.developer ? 1 : 0);
   const dealLabel = DEALS.find((d) => d.value === filters.transactionType)?.label ?? "Any";
   const [dealNudge, setDealNudge] = useState(false);
@@ -216,17 +213,11 @@ export function ListingsFilterBar({
         {budget ? (
           <Pill
             label="Budget"
-            value={rangeLabel(filters.priceMin, filters.priceMax, formatEgpShort, "Any")}
+            value={rangeLabel(filters.priceMin, filters.priceMax, (n) => formatBudgetShort(n, filters.budgetCurrency), "Any")}
             active={filters.priceMin != null || filters.priceMax != null}
             wide
           >
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{budget.label}</p>
-            <div className="flex items-center gap-2">
-              <Input inputMode="numeric" placeholder={budget.min} aria-label={`Minimum ${budget.label.toLowerCase()}`} value={formatAmount(filters.priceMin)} onChange={(e) => setPrice("priceMin", e.target.value)} />
-              <span className="text-muted-foreground">–</span>
-              <Input inputMode="numeric" placeholder={budget.max} aria-label={`Maximum ${budget.label.toLowerCase()}`} value={formatAmount(filters.priceMax)} onChange={(e) => setPrice("priceMax", e.target.value)} />
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">USD listings are included at {USD_EGP_RATE} EGP per USD.</p>
+            <BudgetFields filters={filters} setFilters={setFilters} kind={budget} />
           </Pill>
         ) : (
           <LockedBudgetPill onNudge={nudgeDeal} />

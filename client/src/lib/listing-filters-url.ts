@@ -5,6 +5,7 @@
 //   /listings?transaction=rent&location=New+Cairo&min_area=100&max_area=300&max_price=400000&sort=price-low
 //
 // min_price / max_price are EGP (monthly for rent) and only apply with a transaction type.
+// currency=usd only changes what the visitor types and sees; amounts stay EGP.
 import { DEFAULT_FILTERS, type Filters } from "@/components/listings/FilterSidebar";
 
 export type SortOption = "newest" | "price-low" | "price-high" | "area-large" | "area-small";
@@ -48,6 +49,7 @@ export function parseListingsSearch(search: string): ListingsUrlState {
   if (filters.transactionType) {
     filters.priceMin = num(p.get("min_price"));
     filters.priceMax = num(p.get("max_price"));
+    if (p.get("currency") === "usd") filters.budgetCurrency = "USD";
   }
 
   const sort = p.get("sort") as SortOption | null;
@@ -63,7 +65,7 @@ export function parseListingsSearch(search: string): ListingsUrlState {
 /** Query string (with leading "?", or "" when nothing is set). Unrelated params such as utm_* are kept. */
 export function buildListingsSearch(state: ListingsUrlState, current = ""): string {
   const p = new URLSearchParams(current);
-  for (const k of ["type", "transaction", "subtype", "location", "developer", "condition", "min_area", "max_area", "min_price", "max_price", "q", "project", "sort", "view"]) p.delete(k);
+  for (const k of ["type", "transaction", "subtype", "location", "developer", "condition", "min_area", "max_area", "min_price", "max_price", "currency", "q", "project", "sort", "view"]) p.delete(k);
   const { filters: f } = state;
   if (f.propertyType === "Admin") p.set("type", "admin");
   if (f.transactionType) p.set("transaction", TRANSACTION_TO_PARAM[f.transactionType]);
@@ -75,6 +77,7 @@ export function buildListingsSearch(state: ListingsUrlState, current = ""): stri
   if (f.areaMax != null) p.set("max_area", String(f.areaMax));
   if (f.priceMin != null) p.set("min_price", String(f.priceMin));
   if (f.priceMax != null) p.set("max_price", String(f.priceMax));
+  if (f.transactionType && f.budgetCurrency === "USD") p.set("currency", "usd");
   if (state.q.trim()) p.set("q", state.q.trim());
   if (state.sort !== "newest") p.set("sort", state.sort);
   if (state.view !== "grid") p.set("view", state.view);
