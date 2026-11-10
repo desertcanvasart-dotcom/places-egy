@@ -1,7 +1,7 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { ListingsMap } from "@/components/listings/ListingsMap";
+import { SafeListingsMap, canDrawMaps } from "@/components/listings/SafeMap";
 import { supabase, type Listing } from "@/lib/supabase";
 import { ArrowRight, MapPin } from "lucide-react";
 
@@ -32,6 +32,10 @@ export function HomepageMap() {
   });
 
   const hasContent = useMemo(() => listings.length > 0, [listings]);
+  // If the map can't draw (old device, map provider down, map error) the whole
+  // section disappears instead of leaving an empty frame or a blank page.
+  const [mapUnavailable, setMapUnavailable] = useState(() => typeof window !== "undefined" && !canDrawMaps());
+  if (mapUnavailable) return null;
 
   if (isLoading && !hasContent) {
     // Loading skeleton — sits on the same transparent background so the
@@ -86,7 +90,7 @@ export function HomepageMap() {
             The shadow color picks up the brand's dark-primary tone at low
             opacity — subtle grounding rather than heavy separation. */}
         <div className="relative rounded-3xl overflow-hidden shadow-xl shadow-primary/[0.08] ring-1 ring-primary/[0.06]">
-          <ListingsMap listings={listings} embedded />
+          <SafeListingsMap listings={listings} embedded onUnavailable={() => setMapUnavailable(true)} placeholder={<div className="h-[380px] sm:h-[440px] md:h-[520px] lg:h-[560px] bg-white/70 animate-pulse" />} />
         </div>
 
         {/* Mobile version of the CTA below the map. */}
