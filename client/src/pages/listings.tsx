@@ -286,31 +286,20 @@ export default function ListingsPage() {
   }, [filters, sortBy, viewMode]);
 
   const activeFilterChips = (() => {
+    // Only filters from "More filters" — deal, location, size and budget
+    // already show their value on their own button in the filter bar.
     const chips: { label: string; clear: () => void }[] = [];
-    if (filters.transactionType) chips.push({ label: filters.transactionType, clear: () => setFilters((p) => ({ ...p, transactionType: null })) });
     // propertyType chip removed — site is admin-only, so the chip would
     // always appear and have nothing meaningful to clear to.
     filters.subtype.forEach((s) => chips.push({ label: s, clear: () => setFilters((p) => ({ ...p, subtype: p.subtype.filter((x) => x !== s) })) }));
-    if (filters.location) chips.push({ label: locationLabel(filters.location), clear: () => setFilters((p) => ({ ...p, location: null })) });
     if (filters.developer) chips.push({ label: DEVELOPER_DISPLAY_NAMES[filters.developer] ?? filters.developer, clear: () => setFilters((p) => ({ ...p, developer: null })) });
     filters.furnishing.forEach((f) => chips.push({ label: getEnumLabel(FURNISHING_OPTIONS, f), clear: () => setFilters((p) => ({ ...p, furnishing: p.furnishing.filter((x) => x !== f) })) }));
-    if (filters.areaMin != null || filters.areaMax != null) {
-      const label =
-        filters.areaMin != null && filters.areaMax != null ? `${filters.areaMin}–${filters.areaMax} m²`
-        : filters.areaMin != null ? `${filters.areaMin}+ m²`
-        : `Up to ${filters.areaMax} m²`;
-      chips.push({ label, clear: () => setFilters((p) => ({ ...p, areaMin: null, areaMax: null })) });
-    }
-    if (filters.priceMin != null || filters.priceMax != null) {
-      const per = filters.transactionType === "Rent" ? "/month" : "";
-      const label =
-        filters.priceMin != null && filters.priceMax != null ? `${formatEgpShort(filters.priceMin)} – ${formatEgpShort(filters.priceMax)}${per}`
-        : filters.priceMin != null ? `${formatEgpShort(filters.priceMin)}+${per}`
-        : `Up to ${formatEgpShort(filters.priceMax!)}${per}`;
-      chips.push({ label, clear: () => setFilters((p) => ({ ...p, priceMin: null, priceMax: null })) });
-    }
     return chips;
   })();
+  const hasAnyFilter =
+    activeFilterChips.length > 0 || !!filters.transactionType || !!filters.location ||
+    filters.areaMin != null || filters.areaMax != null || filters.priceMin != null || filters.priceMax != null ||
+    !!searchQuery.trim();
 
   // Map: on desktop it sits above the results (can be hidden); on phones it
   // opens with the "Map" button (?view=map, as before). It collapses for good
@@ -358,7 +347,7 @@ export default function ListingsPage() {
         />
 
         {/* Result count + sort + view controls */}
-        <div className="mt-8 mb-5 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div className="mt-6 md:mt-8 mb-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="font-serif text-primary leading-none">
               {isLoading ? (
@@ -373,9 +362,21 @@ export default function ListingsPage() {
             <p className="mt-2 text-sm md:text-base text-muted-foreground">
               In <span className="text-primary font-medium">{filters.location ? locationLabel(filters.location) : "Cairo"}</span>
               {searchQuery.trim() && <> · matching “{searchQuery.trim()}”</>}
+              {hasAnyFilter && (
+                <>
+                  {" · "}
+                  <button
+                    type="button"
+                    onClick={() => { setFilters(DEFAULT_FILTERS); setSearchQuery(""); }}
+                    className="underline underline-offset-4 decoration-border hover:text-accent hover:decoration-accent transition-colors"
+                  >
+                    Clear all
+                  </button>
+                </>
+              )}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <div className="hidden md:flex items-center gap-1 bg-white border border-border/60 rounded-full p-1">
               <button
                 onClick={() => setViewMode("grid")}
@@ -432,12 +433,6 @@ export default function ListingsPage() {
                 <span className="text-primary/40">×</span>
               </button>
             ))}
-            <button
-              onClick={() => setFilters(DEFAULT_FILTERS)}
-              className="text-xs text-muted-foreground hover:text-accent transition-colors ml-1"
-            >
-              Clear all
-            </button>
           </div>
         )}
 
@@ -448,8 +443,9 @@ export default function ListingsPage() {
             embedded
             hideWhenEmpty
             className="mb-8"
-            heightClassName="h-[60vh] min-h-[360px] lg:h-[440px] lg:min-h-0"
-            placeholder={<div className="mb-8 h-[60vh] min-h-[360px] lg:h-[440px] lg:min-h-0 rounded-2xl bg-white/70 animate-pulse" />}
+            cluster
+            heightClassName="h-[55vh] min-h-[320px] max-h-[520px] lg:h-[340px] lg:min-h-0"
+            placeholder={<div className="mb-8 h-[55vh] min-h-[320px] max-h-[520px] lg:h-[340px] lg:min-h-0 rounded-2xl bg-white/70 animate-pulse" />}
             onUnavailable={() => setMapUnavailable(true)}
           />
         )}

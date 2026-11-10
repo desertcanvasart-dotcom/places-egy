@@ -52,9 +52,11 @@ type Props = {
   placeholder?: ReactNode;
   /** Called once if the map is hidden for any reason (so the page can drop its frame). */
   onUnavailable?: () => void;
+  /** Merge overlapping pins into numbered bubbles. */
+  cluster?: boolean;
 };
 
-export function SafeListingsMap({ listings, embedded, hideWhenEmpty, className, heightClassName, placeholder = null, onUnavailable }: Props) {
+export function SafeListingsMap({ listings, embedded, hideWhenEmpty, className, heightClassName, placeholder = null, onUnavailable, cluster }: Props) {
   const [failed, setFailed] = useState(() => typeof window !== "undefined" && !canDrawMaps());
   const fail = () => {
     setFailed(true);
@@ -65,7 +67,7 @@ export function SafeListingsMap({ listings, embedded, hideWhenEmpty, className, 
     <MapErrorBoundary onError={fail}>
       <Suspense fallback={placeholder}>
         <div className={className}>
-          <ListingsMap listings={listings} embedded={embedded} hideWhenEmpty={hideWhenEmpty} heightClassName={heightClassName} onFail={fail} />
+          <ListingsMap listings={listings} embedded={embedded} hideWhenEmpty={hideWhenEmpty} heightClassName={heightClassName} onFail={fail} cluster={cluster} />
         </div>
       </Suspense>
     </MapErrorBoundary>

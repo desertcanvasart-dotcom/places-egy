@@ -105,8 +105,8 @@ export function ListingsFilterBar({
   const dealLabel = DEALS.find((d) => d.value === filters.transactionType)?.label ?? "Any";
 
   return (
-    <div className="flex flex-col lg:flex-row gap-3">
-      <div className="relative lg:w-72 shrink-0">
+    <div className="flex flex-col xl:flex-row gap-3">
+      <div className="relative xl:flex-1 xl:min-w-[16rem]">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
         <Input
           placeholder="Search project or area"
@@ -128,7 +128,7 @@ export function ListingsFilterBar({
       </div>
 
       {/* Scrolls sideways on phones instead of wrapping into a tall block. */}
-      <div className="flex gap-2 overflow-x-auto pb-1 -mx-6 px-6 lg:mx-0 lg:px-0 lg:pb-0 lg:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex gap-2 overflow-x-auto pb-1 -mx-6 px-6 md:-mx-10 md:px-10 xl:mx-0 xl:px-0 xl:pb-0 xl:shrink-0 xl:overflow-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <Pill label="Deal" value={dealLabel} active={!!filters.transactionType}>
           <Option selected={!filters.transactionType} onClick={() => setDeal(null)}>Any</Option>
           {DEALS.map((d) => (

@@ -7,7 +7,7 @@ import { fetchAllProjectCoords, type ProjectCoord } from "@/lib/project-coords";
 import { listingCurrency, priceInEgp } from "@/lib/currency";
 import { listingUrl } from "@/lib/listings";
 import { trackEvent } from "@/lib/analytics";
-import { ArrowRight, Building2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import type { Listing } from "@/lib/supabase";
 
 const CAIRO_CENTER: [number, number] = [31.2357, 30.0444];
@@ -16,6 +16,9 @@ const CAIRO_CENTER: [number, number] = [31.2357, 30.0444];
 // off the map so it can't drag the view out to the whole country.
 const inGreaterCairo = (lat: number, lng: number) => lat > 29.7 && lat < 30.4 && lng > 30.7 && lng < 31.8;
 const DEFAULT_ZOOM = 10;
+// Must be a constant: <Map> jumps to `viewport` whenever it changes, so a new
+// object on every render would snap the map back to central Cairo each time.
+const INITIAL_VIEWPORT = { center: CAIRO_CENTER, zoom: DEFAULT_ZOOM };
 
 type Props = {
   listings: Listing[];
@@ -29,7 +32,33 @@ type Props = {
   heightClassName?: string;
   /** Called if the map hasn't drawn within MAP_LOAD_TIMEOUT_MS (tile provider down). */
   onFail?: () => void;
+  /** Merge pins that would overlap on screen into one numbered bubble. */
+  cluster?: boolean;
 };
+
+// Two pins closer than this (in screen pixels) merge into one bubble.
+const CLUSTER_PX = 90;
+
+type Cluster = { key: string; latitude: number; longitude: number; members: GroupedProject[]; units: number };
+
+// Bounds that cover the main group of pins. A pin far from all the others
+// (usually a project saved in the wrong place) is left outside the view so it
+// can't zoom the whole map out; it's still there if the visitor zooms out.
+function pinBounds(points: GroupedProject[]): [[number, number], [number, number]] {
+  const median = (xs: number[]) => {
+    const v = [...xs].sort((a, b) => a - b);
+    return v[Math.floor(v.length / 2)];
+  };
+  const mLat = median(points.map((p) => p.latitude));
+  const mLng = median(points.map((p) => p.longitude));
+  const dist = (p: GroupedProject) => Math.hypot(p.latitude - mLat, p.longitude - mLng);
+  const limit = Math.max(median(points.map(dist)) * 3, 0.05);
+  const kept = points.length >= 5 ? points.filter((p) => dist(p) <= limit) : points;
+  const use = kept.length > 0 ? kept : points;
+  const lats = use.map((p) => p.latitude);
+  const lngs = use.map((p) => p.longitude);
+  return [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]];
+}
 
 const MAP_LOAD_TIMEOUT_MS = 10_000;
 
@@ -54,10 +83,12 @@ function fromPrice(units: Listing[]): string {
 // ONE pin per project (not per listing). Projects without saved coordinates
 // silently drop off the map — admin sees which are unmapped via the count
 // chip in the legend.
-export function ListingsMap({ listings, embedded = false, hideWhenEmpty = false, heightClassName, onFail }: Props) {
+export function ListingsMap({ listings, embedded = false, hideWhenEmpty = false, heightClassName, onFail, cluster = false }: Props) {
   const [mapInstance, setMapInstance] = useState<MapLibreGL.Map | null>(null);
-  const [selectedProject, setSelectedProject] = useState<string | null>(null);
-  const didFitRef = useRef(false);
+  // Keys of the project(s) shown in the preview card (several when a bubble
+  // holds projects saved at the same spot).
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+  const userMovedRef = useRef(false);
 
   // Fetch all saved project coords once (cheap, small table). Cached across
   // views so the homepage + listings map share the request.
@@ -113,38 +144,125 @@ export function ListingsMap({ listings, embedded = false, hideWhenEmpty = false,
   const mappedUnitCount = grouped.reduce((n, g) => n + g.units.length, 0);
   const unmappedCount = Math.max(0, totalListings - mappedUnitCount);
 
-  const selected = useMemo(
-    () =>
-      grouped.find(
-        (g) => g.projectName.trim().toLowerCase() === selectedProject,
-      ) ?? null,
-    [grouped, selectedProject],
+  const projKey = (g: GroupedProject) => g.projectName.trim().toLowerCase();
+  const selectedGroup = useMemo(
+    () => grouped.filter((g) => selectedKeys.includes(projKey(g))),
+    [grouped, selectedKeys],
   );
+  const selected = selectedGroup.length === 1 ? selectedGroup[0] : null;
 
-  // Fit bounds to all pins on first load.
+  // Fit the view to the pins. Re-fits when the results change, and when the
+  // map's box changes size (the map can be created before the page finishes
+  // laying out, which left the phone map pointed at the wrong place) — but
+  // never after the visitor has dragged or zoomed the map themselves.
+  const pinSig = grouped.map((g) => `${projKey(g)}@${g.latitude},${g.longitude}`).join("|");
+  const fitRef = useRef<() => void>(() => {});
+  fitRef.current = () => {
+    if (!mapInstance || grouped.length === 0) return;
+    try {
+      if (grouped.length === 1) {
+        mapInstance.jumpTo({ center: [grouped[0].longitude, grouped[0].latitude], zoom: 14 });
+        return;
+      }
+      const narrow = mapInstance.getContainer().clientWidth < 640;
+      mapInstance.fitBounds(pinBounds(grouped), { padding: narrow ? 44 : 64, maxZoom: 14, duration: 0 });
+    } catch {
+      // Map removed mid-fit — ignore.
+    }
+  };
   useEffect(() => {
-    if (!mapInstance || grouped.length === 0 || didFitRef.current) return;
-    if (grouped.length === 1) {
-      mapInstance.jumpTo({
-        center: [grouped[0].longitude, grouped[0].latitude],
-        zoom: 14,
-      });
-      didFitRef.current = true;
+    userMovedRef.current = false;
+    fitRef.current();
+  }, [mapInstance, pinSig]);
+  useEffect(() => {
+    if (!mapInstance) return;
+    const refit = () => {
+      if (!userMovedRef.current) fitRef.current();
+    };
+    // Only real drags/zooms carry an originalEvent; our own fitBounds doesn't.
+    const markMoved = (e: { originalEvent?: unknown }) => {
+      if (e.originalEvent) userMovedRef.current = true;
+    };
+    // On phones the map credit starts expanded and covers the bottom of the
+    // map; collapse it to its (i) button (tap to read it).
+    const collapseCredit = () => {
+      try {
+        if (mapInstance.getContainer().clientWidth < 640)
+          mapInstance.getContainer().querySelector(".maplibregl-ctrl-attrib")?.classList.remove("maplibregl-compact-show");
+      } catch {
+        // ignore
+      }
+    };
+    collapseCredit();
+    mapInstance.on("resize", refit);
+    mapInstance.on("load", refit);
+    mapInstance.on("load", collapseCredit);
+    mapInstance.on("movestart", markMoved);
+    return () => {
+      mapInstance.off("resize", refit);
+      mapInstance.off("load", refit);
+      mapInstance.off("load", collapseCredit);
+      mapInstance.off("movestart", markMoved);
+    };
+  }, [mapInstance]);
+
+  // Bubbles: recomputed whenever the view settles, so they split apart as
+  // the visitor zooms in. Plain pins when clustering is off.
+  const [clusters, setClusters] = useState<Cluster[] | null>(null);
+  useEffect(() => {
+    if (!cluster || !mapInstance) {
+      setClusters(null);
       return;
     }
-    let west = Infinity, east = -Infinity, south = Infinity, north = -Infinity;
-    for (const g of grouped) {
-      if (g.longitude < west) west = g.longitude;
-      if (g.longitude > east) east = g.longitude;
-      if (g.latitude < south) south = g.latitude;
-      if (g.latitude > north) north = g.latitude;
+    const compute = () => {
+      try {
+        const pts = grouped
+          .map((g) => ({ g, p: mapInstance.project([g.longitude, g.latitude]) }))
+          .sort((a, b) => b.g.units.length - a.g.units.length);
+        const out: { x: number; y: number; members: GroupedProject[] }[] = [];
+        for (const { g, p } of pts) {
+          const hit = out.find((c) => Math.abs(c.x - p.x) < CLUSTER_PX && Math.abs(c.y - p.y) < CLUSTER_PX);
+          if (hit) hit.members.push(g);
+          else out.push({ x: p.x, y: p.y, members: [g] });
+        }
+        setClusters(
+          out.map((c) => ({
+            key: c.members.map(projKey).sort().join("|"),
+            latitude: c.members.reduce((n, m) => n + m.latitude, 0) / c.members.length,
+            longitude: c.members.reduce((n, m) => n + m.longitude, 0) / c.members.length,
+            members: c.members,
+            units: c.members.reduce((n, m) => n + m.units.length, 0),
+          })),
+        );
+      } catch {
+        setClusters(null);
+      }
+    };
+    compute();
+    mapInstance.on("moveend", compute);
+    mapInstance.on("resize", compute);
+    return () => {
+      mapInstance.off("moveend", compute);
+      mapInstance.off("resize", compute);
+    };
+  }, [cluster, mapInstance, grouped]);
+
+  const openCluster = (c: Cluster) => {
+    if (!mapInstance) return;
+    const w = Math.min(...c.members.map((m) => m.longitude));
+    const e = Math.max(...c.members.map((m) => m.longitude));
+    const s = Math.min(...c.members.map((m) => m.latitude));
+    const n = Math.max(...c.members.map((m) => m.latitude));
+    trackEvent("listings_map_cluster_click", { projects: c.members.length, unit_count: c.units });
+    // Projects saved at (almost) the same spot can't be split by zooming —
+    // list them in the preview card instead.
+    if ((e - w < 0.002 && n - s < 0.002) || mapInstance.getZoom() >= 15) {
+      setSelectedKeys(c.members.map(projKey));
+      return;
     }
-    mapInstance.fitBounds(
-      [[west, south], [east, north]],
-      { padding: 60, maxZoom: 14, duration: 0 },
-    );
-    didFitRef.current = true;
-  }, [mapInstance, grouped]);
+    setSelectedKeys([]);
+    mapInstance.fitBounds([[w, s], [e, n]], { padding: 80, maxZoom: 15, duration: 500 });
+  };
 
   // Tile provider down or very slow: give up and let the page collapse the map.
   const onFailRef = useRef(onFail);
@@ -164,13 +282,8 @@ export function ListingsMap({ listings, embedded = false, hideWhenEmpty = false,
     };
   }, [mapInstance]);
 
-  // Reset auto-fit when filters change the list of listings.
-  useEffect(() => {
-    didFitRef.current = false;
-  }, [listings]);
-
   const handlePinClick = (project: GroupedProject) => {
-    setSelectedProject(project.projectName.trim().toLowerCase());
+    setSelectedKeys([projKey(project)]);
     trackEvent("listings_map_pin_click", {
       project_name: project.projectName,
       unit_count: project.units.length,
@@ -210,7 +323,7 @@ export function ListingsMap({ listings, embedded = false, hideWhenEmpty = false,
         ref={(m) => {
           if (m && m !== mapInstance) setMapInstance(m);
         }}
-        viewport={{ center: CAIRO_CENTER, zoom: DEFAULT_ZOOM }}
+        viewport={INITIAL_VIEWPORT}
         className="h-full w-full"
         // When embedded, disable wheel + double-click zoom so users
         // scrolling past the map on homepage / guides can't hijack
@@ -219,42 +332,77 @@ export function ListingsMap({ listings, embedded = false, hideWhenEmpty = false,
         scrollZoom={!embedded}
         doubleClickZoom={!embedded}
       >
-        {grouped.map((g) => {
-          const key = g.projectName.trim().toLowerCase();
-          const isSelected = key === selectedProject;
-          return (
-            <MapMarker
-              key={key}
-              longitude={g.longitude}
-              latitude={g.latitude}
-              onClick={() => handlePinClick(g)}
-            >
-              <MarkerContent>
-                {/* Count-badge marker — Airbnb pattern, but shows unit
-                    count so multi-unit projects read differently from
-                    single-unit ones. */}
-                <div
-                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-md border-2 transition-all ${
-                    isSelected
-                      ? "bg-accent text-white border-white scale-110 z-10"
-                      : "bg-white text-primary border-accent/40 hover:bg-accent hover:text-white hover:border-white"
-                  }`}
-                >
-                  <Building2 className="w-3 h-3" />
-                  {g.units.length}
-                </div>
-              </MarkerContent>
-            </MapMarker>
-          );
-        })}
+        {(clusters ?? grouped.map((g) => ({ key: projKey(g), latitude: g.latitude, longitude: g.longitude, members: [g], units: g.units.length })))
+          .map((c) => {
+            // One marker style for single projects and groups alike: a white
+            // pill with the number of offices. Red when hovered or open.
+            const single = c.members.length === 1;
+            const isSelected = c.members.every((m) => selectedKeys.includes(projKey(m)));
+            const size = c.units >= 100 ? "h-9 min-w-[3.25rem] px-3 text-sm" : c.units >= 10 ? "h-8 min-w-[2.75rem] px-2.5 text-[13px]" : "h-7 min-w-[2rem] px-2 text-xs";
+            return (
+              <MapMarker
+                key={single ? projKey(c.members[0]) : `c:${c.key}`}
+                longitude={c.longitude}
+                latitude={c.latitude}
+                onClick={() => (single ? handlePinClick(c.members[0]) : openCluster(c))}
+              >
+                <MarkerContent>
+                  <div
+                    aria-label={single ? `${c.units} ${c.units === 1 ? "office" : "offices"} in ${c.members[0].projectName}` : `${c.units} offices in ${c.members.length} projects`}
+                    className={`${size} inline-flex items-center justify-center rounded-full font-semibold tabular-nums shadow-[0_2px_8px_rgba(0,0,0,0.18)] border transition-colors cursor-pointer ${
+                      isSelected
+                        ? "bg-accent text-white border-accent"
+                        : "bg-white text-primary border-black/5 hover:bg-accent hover:text-white hover:border-accent"
+                    }`}
+                  >
+                    {c.units}
+                  </div>
+                </MarkerContent>
+              </MapMarker>
+            );
+          })}
       </Map>
+
+      {selectedGroup.length > 1 && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 w-[calc(100%-2rem)] max-w-sm">
+          <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-border/40 relative p-5">
+            <button
+              type="button"
+              onClick={() => setSelectedKeys([])}
+              aria-label="Close preview"
+              className="absolute top-2 right-2 z-10 w-7 h-7 flex items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors text-lg leading-none"
+            >
+              ×
+            </button>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-accent mb-2">
+              {selectedGroup.length} projects here
+            </p>
+            <ul className="space-y-1 max-h-48 overflow-y-auto">
+              {selectedGroup.map((g) => (
+                <li key={projKey(g)}>
+                  <Link
+                    href={g.units.length === 1 ? listingUrl(g.units[0]) : `/listings?q=${encodeURIComponent(g.projectName)}`}
+                    onClick={() => trackEvent("listings_map_popup_click", { project_name: g.projectName, unit_count: g.units.length })}
+                    className="flex items-center justify-between gap-3 rounded-lg px-2 py-2.5 -mx-2 hover:bg-muted"
+                  >
+                    <span className="font-medium text-primary text-sm truncate">{g.projectName}</span>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {g.units.length} {g.units.length === 1 ? "unit" : "units"}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
 
       {selected && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 w-[calc(100%-2rem)] max-w-sm">
           <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-border/40 relative">
             <button
               type="button"
-              onClick={() => setSelectedProject(null)}
+              onClick={() => setSelectedKeys([])}
               aria-label="Close preview"
               className="absolute top-2 right-2 z-10 w-7 h-7 flex items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors text-lg leading-none"
             >
