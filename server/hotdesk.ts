@@ -384,9 +384,13 @@ async function loadListing(id: number): Promise<ListingRow | null> {
  * id into listings.hotdesk_listing_id (off for tests, so they never write to
  * our database).
  */
-export async function syncOne(placesId: number, opts: { persist: boolean }): Promise<SyncResult> {
+export async function syncOne(
+  placesId: number,
+  opts: { persist: boolean; /** Tests only: pretend the listing has these values. */ testOverrides?: Partial<ListingRow> },
+): Promise<SyncResult> {
   const notes: string[] = [];
-  const row = await loadListing(placesId);
+  const loaded = await loadListing(placesId);
+  const row = loaded && opts.testOverrides ? { ...loaded, ...opts.testOverrides } : loaded;
   const existing = await findOnHotdesk(placesId, row?.hotdesk_listing_id);
 
   // Not for Hotdesk (sale, test, deleted): hide it there if it's still showing.
