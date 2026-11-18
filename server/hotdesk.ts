@@ -300,6 +300,8 @@ type HdListing = {
   id: number;
   title: string;
   status: number;
+  /** "Available again" date from Hotdesk's Rented popup (YYYY-MM-DD). */
+  availableFrom?: string | null;
   owner?: number[];
   rules?: Record<string, any>;
   metaData?: Record<string, any>;
@@ -480,11 +482,12 @@ export async function syncOne(
       existing.status === STATUS.inactive ? ["waiting for Hotdesk approval (Inactive)"]
       : existing.status !== want ? [want === STATUS.rented ? "would mark Rented" : "would mark Active"]
       : [];
+    if (existing.status !== STATUS.inactive && want === STATUS.active && existing.availableFrom) statusNote.push("would clear available-again date");
     return out({ action: same && !statusNote.some((n) => n.startsWith("would")) ? "unchanged" : "updated", hotdeskId: existing.id, status: existing.status, notes: [...(same ? [] : ["details changed"]), ...statusNote, ...notes] });
   }
 
   let hotdeskId: number;
-  let status: number;
+  let current: HdListing;
   let action: SyncAction;
   if (!existing) {
     const created = await api<HdListing>("POST", "/listing/", {
@@ -497,11 +500,11 @@ export async function syncOne(
     hotdeskId = created.id;
     action = "created";
     if (p.photos.length) await uploadPhotos(hotdeskId, p.photos);
-    status = (await api<HdListing>("GET", `/listing/${hotdeskId}/`)).status;
+    current = await api<HdListing>("GET", `/listing/${hotdeskId}/`);
   } else if (existing.metaData?.placesHash === placesHash && idOf(existing.workspace) === ws.id) {
     hotdeskId = existing.id;
     action = "unchanged";
-    status = existing.status;
+    current = existing;
   } else {
     hotdeskId = existing.id;
     action = "updated";
@@ -520,17 +523,26 @@ export async function syncOne(
       await uploadPhotos(hotdeskId, p.photos);
       notes.push("photos updated");
     }
-    status = (await api<HdListing>("GET", `/listing/${hotdeskId}/`)).status;
+    current = await api<HdListing>("GET", `/listing/${hotdeskId}/`);
   }
 
   // Rented ↔ available, only while Hotdesk has the office live (1 or 3).
+  // An available office also loses any "available again" date left by
+  // Hotdesk's Rented popup, so its page doesn't say "Available from <date>".
+  let status = current.status;
   if (status === STATUS.inactive) {
     notes.push("waiting for Hotdesk approval (Inactive)");
-  } else if (status !== want) {
-    await api("PUT", `/listing/${hotdeskId}/`, { status: want });
-    notes.push(want === STATUS.rented ? "marked Rented on Hotdesk" : "marked Active on Hotdesk");
-    status = want;
-    if (action === "unchanged") action = "updated";
+  } else {
+    const change: Record<string, unknown> = {};
+    if (status !== want) change.status = want;
+    if (want === STATUS.active && current.availableFrom) change.availableFrom = null;
+    if (Object.keys(change).length) {
+      await api("PUT", `/listing/${hotdeskId}/`, change);
+      if (change.status) notes.push(want === STATUS.rented ? "marked Rented on Hotdesk" : "marked Active on Hotdesk");
+      if ("availableFrom" in change) notes.push("cleared available-again date");
+      status = want;
+      if (action === "unchanged") action = "updated";
+    }
   }
 
   if (opts.persist && row.hotdesk_listing_id !== hotdeskId && supabaseAdmin) {
