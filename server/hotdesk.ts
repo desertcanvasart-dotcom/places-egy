@@ -24,6 +24,7 @@ import {
 } from "../client/src/lib/enums";
 import { cleanListingTitle, listingSnippet } from "../client/src/lib/listing-text";
 import { canonicalListingPath } from "./listing-redirect";
+import { createHash } from "node:crypto";
 import { supabaseAdmin } from "./supabase";
 
 const SITE = "https://places-egy.com";
@@ -316,6 +317,31 @@ async function ourWorkspaces(): Promise<Map<string, HdWorkspace>> {
   return byTitle;
 }
 
+// Hotdesk's developer list, matched to ours by name ("MARAKEZ" = "Marakez",
+// "Al-Futtaim" = "Al Futtaim", "SKY — Park St." = "SKY"). A developer Hotdesk
+// doesn't list is simply not sent. If the list can't be read, the office is
+// still synced, just without a developer.
+const devKey = (s: string) =>
+  s.toLowerCase().replace(/\b(developments?|developers?|group|egypt)\b/g, "").replace(/[^a-z0-9]/g, "");
+let developerCache: { at: number; byKey: Map<string, number> } | null = null;
+
+async function hotdeskDeveloperId(placesDeveloper: string | null): Promise<number | null> {
+  if (!placesDeveloper) return null;
+  if (!developerCache || Date.now() - developerCache.at > 30 * 60_000) {
+    const byKey = new Map<string, number>();
+    try {
+      const page = await api<{ results: { id: number; name: string }[] }>("GET", "/developer/?limit=500");
+      for (const d of page.results ?? []) if (d?.name && d.id) byKey.set(devKey(d.name), d.id);
+    } catch (e) {
+      console.warn(`[hotdesk] developer list unavailable: ${e instanceof Error ? e.message : String(e)}`);
+    }
+    developerCache = { at: Date.now(), byKey };
+  }
+  const { byKey } = developerCache;
+  const ours = getEnumLabel(DEVELOPER_OPTIONS, placesDeveloper) || placesDeveloper;
+  return byKey.get(devKey(ours)) ?? byKey.get(devKey(placesDeveloper)) ?? byKey.get(devKey(ours.split(/[—–-]\s/)[0])) ?? null;
+}
+
 const idOf = (v: number | { id: number } | undefined) => (typeof v === "object" && v ? v.id : v);
 
 // Our office on Hotdesk: by the saved id (checked to really be ours), else by
@@ -368,9 +394,8 @@ async function uploadPhotos(hotdeskId: number, urls: string[]): Promise<void> {
 
 // ── Sync ───────────────────────────────────────────────────────────────────
 
-export type SyncResult =
-  | { action: "created" | "updated"; hotdeskId: number; status: number; notes: string[] }
-  | { action: "hidden" | "skipped"; hotdeskId: number | null; notes: string[] };
+export type SyncAction = "created" | "updated" | "unchanged" | "hidden" | "skipped";
+export type SyncResult = { action: SyncAction; hotdeskId: number | null; status?: number; notes: string[]; dryRun?: true };
 
 async function loadListing(id: number): Promise<ListingRow | null> {
   if (!supabaseAdmin) throw new Error("Supabase not configured");
@@ -380,14 +405,19 @@ async function loadListing(id: number): Promise<ListingRow | null> {
 }
 
 /**
- * Brings Hotdesk in line with one PLACES listing. `persist` saves the Hotdesk
- * id into listings.hotdesk_listing_id (off for tests, so they never write to
- * our database).
+ * Brings Hotdesk in line with one PLACES listing.
+ *   persist: save the Hotdesk id into listings.hotdesk_listing_id (off for
+ *            tests, so they never write to our database).
+ *   dryRun:  only read from Hotdesk and report what would change.
+ * Each office carries a fingerprint of what we last sent (metaData.placesHash),
+ * so an office whose listing hasn't changed costs one read and no writes.
  */
 export async function syncOne(
   placesId: number,
-  opts: { persist: boolean; /** Tests only: pretend the listing has these values. */ testOverrides?: Partial<ListingRow> },
+  opts: { persist: boolean; dryRun?: boolean; /** Tests only: pretend the listing has these values. */ testOverrides?: Partial<ListingRow> },
 ): Promise<SyncResult> {
+  const dry = opts.dryRun === true;
+  const out = (r: SyncResult): SyncResult => (dry ? { ...r, dryRun: true } : r);
   const notes: string[] = [];
   const loaded = await loadListing(placesId);
   const row = loaded && opts.testOverrides ? { ...loaded, ...opts.testOverrides } : loaded;
@@ -395,23 +425,20 @@ export async function syncOne(
 
   // Not for Hotdesk (sale, test, deleted): hide it there if it's still showing.
   if (!row || !isHotdeskEligible(row)) {
-    if (!existing) return { action: "skipped", hotdeskId: null, notes: ["not a rent listing; nothing on Hotdesk"] };
-    if (existing.status !== STATUS.inactive) {
-      await api("PUT", `/listing/${existing.id}/`, { status: STATUS.inactive });
-      notes.push("set to Inactive on Hotdesk");
-    }
-    return { action: "hidden", hotdeskId: existing.id, notes };
+    if (!existing) return out({ action: "skipped", hotdeskId: null, notes: ["not a rent listing; nothing on Hotdesk"] });
+    if (existing.status === STATUS.inactive) return out({ action: "unchanged", hotdeskId: existing.id, status: existing.status, notes: ["already Inactive on Hotdesk"] });
+    if (!dry) await api("PUT", `/listing/${existing.id}/`, { status: STATUS.inactive });
+    return out({ action: "hidden", hotdeskId: existing.id, status: STATUS.inactive, notes: ["set to Inactive on Hotdesk"] });
   }
 
   const p = toHotdeskListing(row);
   const problems = hotdeskWarnings(p);
   if (!p.workspace_title || !p.rules.price.month) {
-    return { action: "skipped", hotdeskId: existing?.id ?? null, notes: problems };
+    return out({ action: "skipped", hotdeskId: existing?.id ?? null, notes: problems });
   }
   const ws = (await ourWorkspaces()).get(p.workspace_title);
-  if (!ws) return { action: "skipped", hotdeskId: existing?.id ?? null, notes: [`workspace "${p.workspace_title}" not found on Hotdesk`] };
+  if (!ws) return out({ action: "skipped", hotdeskId: existing?.id ?? null, notes: [`workspace "${p.workspace_title}" not found on Hotdesk`] });
 
-  const ourMeta = { placesListingId: row.id, placesUrl: p.places_url, placesPhotos: p.photos };
   const ourRules = {
     currency: p.rules.currency,
     price: { month: p.rules.price.month },
@@ -421,25 +448,44 @@ export async function syncOne(
     quantity: p.rules.quantity,
     workingHours: p.rules.workingHours,
   };
+  const postalCode = ws.metaData?.detailedLocation?.postalCode;
   const location = (prev: Record<string, any> | undefined) => ({
     ...(prev ?? {}),
     address: p.rules.address,
     area: p.rules.area_name ?? prev?.area ?? "",
     buildingName: p.rules.building ?? prev?.buildingName ?? "-",
     streetName: prev?.streetName || "-",
-    postalCode: ws.metaData?.detailedLocation?.postalCode || prev?.postalCode || "00000",
+    postalCode: postalCode || prev?.postalCode || "00000",
   });
+  const developer = await hotdeskDeveloperId(row.developer);
   const common = {
     title: p.title,
     type: OFFICE_ROOM_TYPE,
     quickBooking: false,
     ...(p.finishingType ? { finishingType: p.finishingType } : {}),
+    ...(developer ? { developer } : {}),
     descriptions: { en: p.description },
   };
+  const placesHash = createHash("sha1")
+    .update(JSON.stringify([common, ourRules, p.rules.address, p.rules.area_name, p.rules.building, postalCode, ws.id, p.photos]))
+    .digest("hex");
+  const ourMeta = { placesListingId: row.id, placesUrl: p.places_url, placesPhotos: p.photos, placesHash };
+  const want = p.availability.status === "rented" ? STATUS.rented : STATUS.active;
+  if (problems.length) notes.push(`data to improve: ${problems.join(", ")}`);
+
+  if (dry) {
+    if (!existing) return out({ action: "created", hotdeskId: null, status: STATUS.inactive, notes: ["new office (arrives Inactive, waiting for Hotdesk approval)", ...notes] });
+    const same = existing.metaData?.placesHash === placesHash && idOf(existing.workspace) === ws.id;
+    const statusNote =
+      existing.status === STATUS.inactive ? ["waiting for Hotdesk approval (Inactive)"]
+      : existing.status !== want ? [want === STATUS.rented ? "would mark Rented" : "would mark Active"]
+      : [];
+    return out({ action: same && !statusNote.some((n) => n.startsWith("would")) ? "unchanged" : "updated", hotdeskId: existing.id, status: existing.status, notes: [...(same ? [] : ["details changed"]), ...statusNote, ...notes] });
+  }
 
   let hotdeskId: number;
-  let current: HdListing;
-  let action: "created" | "updated";
+  let status: number;
+  let action: SyncAction;
   if (!existing) {
     const created = await api<HdListing>("POST", "/listing/", {
       ...common,
@@ -451,7 +497,11 @@ export async function syncOne(
     hotdeskId = created.id;
     action = "created";
     if (p.photos.length) await uploadPhotos(hotdeskId, p.photos);
-    current = await api<HdListing>("GET", `/listing/${hotdeskId}/`);
+    status = (await api<HdListing>("GET", `/listing/${hotdeskId}/`)).status;
+  } else if (existing.metaData?.placesHash === placesHash && idOf(existing.workspace) === ws.id) {
+    hotdeskId = existing.id;
+    action = "unchanged";
+    status = existing.status;
   } else {
     hotdeskId = existing.id;
     action = "updated";
@@ -470,44 +520,50 @@ export async function syncOne(
       await uploadPhotos(hotdeskId, p.photos);
       notes.push("photos updated");
     }
-    current = await api<HdListing>("GET", `/listing/${hotdeskId}/`);
+    status = (await api<HdListing>("GET", `/listing/${hotdeskId}/`)).status;
   }
 
   // Rented ↔ available, only while Hotdesk has the office live (1 or 3).
-  const want = p.availability.status === "rented" ? STATUS.rented : STATUS.active;
-  if (current.status === STATUS.inactive) {
+  if (status === STATUS.inactive) {
     notes.push("waiting for Hotdesk approval (Inactive)");
-  } else if (current.status !== want) {
+  } else if (status !== want) {
     await api("PUT", `/listing/${hotdeskId}/`, { status: want });
     notes.push(want === STATUS.rented ? "marked Rented on Hotdesk" : "marked Active on Hotdesk");
-    current.status = want;
+    status = want;
+    if (action === "unchanged") action = "updated";
   }
 
   if (opts.persist && row.hotdesk_listing_id !== hotdeskId && supabaseAdmin) {
     const { error } = await supabaseAdmin.from("listings").update({ hotdesk_listing_id: hotdeskId }).eq("id", placesId);
     if (error) notes.push(`could not save Hotdesk id: ${error.message}`);
   }
-  if (problems.length) notes.push(`data to improve: ${problems.join(", ")}`);
-  return { action, hotdeskId, status: current.status, notes };
+  return { action, hotdeskId, status, notes };
 }
 
-// One sync at a time; repeated saves of the same listing while it waits are merged.
+// One sync at a time (admin saves and the full check share this line);
+// repeated saves of the same listing while it waits are merged.
 let chain: Promise<unknown> = Promise.resolve();
 const waiting = new Set<number>();
+
+function serial<T>(fn: () => Promise<T>): Promise<T> {
+  const run = chain.then(fn);
+  chain = run.catch(() => undefined);
+  return run;
+}
+
+const errText = (e: unknown) => (e instanceof Error ? e.message : String(e)).slice(0, 300);
 
 function enqueue(placesId: number): void {
   if (waiting.has(placesId)) return;
   waiting.add(placesId);
-  chain = chain
-    .then(async () => {
-      waiting.delete(placesId);
-      const r = await syncOne(placesId, { persist: true });
-      console.log(`[hotdesk] #${placesId} ${r.action}${r.hotdeskId ? ` → ${r.hotdeskId}` : ""}${r.notes.length ? ` (${r.notes.join("; ")})` : ""}`);
-    })
-    .catch((e) => {
-      waiting.delete(placesId);
-      console.warn(`[hotdesk] #${placesId} sync failed: ${e instanceof Error ? e.message : String(e)}`);
-    });
+  serial(async () => {
+    waiting.delete(placesId);
+    const r = await syncOne(placesId, { persist: true });
+    console.log(`[hotdesk] #${placesId} ${r.action}${r.hotdeskId ? ` → ${r.hotdeskId}` : ""}${r.notes.length ? ` (${r.notes.join("; ")})` : ""}`);
+  }).catch((e) => {
+    waiting.delete(placesId);
+    console.warn(`[hotdesk] #${placesId} sync failed: ${errText(e)}`);
+  });
 }
 
 // Called after every admin create/update/delete. Never throws and never
@@ -528,6 +584,135 @@ export function syncListingToHotdesk(
     }
     enqueue(id);
   } catch (e) {
-    console.warn(`[hotdesk] #${id} not queued: ${e instanceof Error ? e.message : String(e)}`);
+    console.warn(`[hotdesk] #${id} not queued: ${errText(e)}`);
   }
+}
+
+// ── Full check (first send + nightly) ──────────────────────────────────────
+// Walks every rent listing plus every office we already have on Hotdesk, so
+// it also catches saves that failed while Hotdesk was down and offices whose
+// listing was deleted. Runs in the background, one listing at a time, a short
+// pause between each; stops by itself after repeated failures.
+
+const PAUSE_MS = 400;
+const MAX_FAILS_IN_A_ROW = 5;
+
+export type SweepReport = {
+  dryRun: boolean;
+  startedAt: string;
+  finishedAt: string | null;
+  total: number;
+  done: number;
+  counts: Record<SyncAction | "failed", number>;
+  stoppedEarly: string | null;
+  failures: { id: number; error: string }[];
+  /** Listings Hotdesk can't take yet and why (missing price, location, ...). */
+  skipped: { id: number; why: string }[];
+};
+
+let sweep: SweepReport | null = null;
+let sweepRunning = false;
+
+export const lastSweep = () => sweep;
+export const sweepIsRunning = () => sweepRunning;
+
+// Our offices on Hotdesk by PLACES id (read from the "#<id>" title suffix).
+async function ourOfficesByPlacesId(): Promise<Map<number, number>> {
+  if (!userId) await login();
+  const base = new URL(apiBase()!);
+  const found = new Map<number, number>();
+  let path: string | null = `/listing/?owner=${userId}&limit=100`;
+  for (let page = 0; path && page < 100; page++) {
+    const r: { results: HdListing[]; next?: string | null } = await api("GET", path);
+    for (const l of r.results) {
+      const m = /#(\d+)\s*$/.exec(l.title ?? "");
+      if (m && titleIsOurs(l.title, Number(m[1]))) found.set(Number(m[1]), l.id);
+    }
+    const next: URL | null = r.next ? new URL(r.next, base) : null;
+    path = next && next.host === base.host ? next.pathname + next.search : null;
+  }
+  return found;
+}
+
+async function rentListingIds(): Promise<number[]> {
+  if (!supabaseAdmin) throw new Error("Supabase not configured");
+  const ids: number[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabaseAdmin
+      .from("listings")
+      .select("id, transaction_type, is_test")
+      .order("id", { ascending: true })
+      .range(from, from + 999);
+    if (error) throw error;
+    ids.push(...(data as ListingRow[]).filter(isHotdeskEligible).map((l) => l.id));
+    if (data.length < 1000) break;
+  }
+  return ids;
+}
+
+/**
+ * Starts a full check in the background. Returns false if one is already
+ * running. Writes to Hotdesk only when dryRun is false AND the mode is live.
+ * `onlyIds` limits the check to some listings and `persist: false` skips
+ * saving Hotdesk ids (both for tests only).
+ */
+export function startSweep(opts: { dryRun: boolean; onlyIds?: number[]; persist?: boolean }): boolean {
+  if (sweepRunning) return false;
+  const dryRun = opts.dryRun || hotdeskMode() !== "live";
+  sweepRunning = true;
+  const report: SweepReport = {
+    dryRun,
+    startedAt: new Date().toISOString(),
+    finishedAt: null,
+    total: 0,
+    done: 0,
+    counts: { created: 0, updated: 0, unchanged: 0, hidden: 0, skipped: 0, failed: 0 },
+    stoppedEarly: null,
+    failures: [],
+    skipped: [],
+  };
+  sweep = report;
+  void (async () => {
+    try {
+      const onHotdesk = await ourOfficesByPlacesId();
+      const ids = opts.onlyIds?.length
+        ? opts.onlyIds
+        : Array.from(new Set([...(await rentListingIds()), ...Array.from(onHotdesk.keys())])).sort((a, b) => a - b);
+      report.total = ids.length;
+      let failsInARow = 0;
+      for (const id of ids) {
+        try {
+          const r = await serial(() => syncOne(id, { persist: !dryRun && opts.persist !== false, dryRun }));
+          report.counts[r.action] += 1;
+          if (r.action === "skipped" && onHotdesk.has(id) === false && !r.notes[0]?.startsWith("not a rent")) {
+            report.skipped.push({ id, why: r.notes.join(", ") });
+          }
+          if (!dryRun && r.action !== "unchanged" && r.action !== "skipped") {
+            console.log(`[hotdesk:check] #${id} ${r.action}${r.hotdeskId ? ` → ${r.hotdeskId}` : ""}${r.notes.length ? ` (${r.notes.join("; ")})` : ""}`);
+          }
+          failsInARow = 0;
+        } catch (e) {
+          report.counts.failed += 1;
+          report.failures.push({ id, error: errText(e) });
+          console.warn(`[hotdesk:check] #${id} failed: ${errText(e)}`);
+          if (++failsInARow >= MAX_FAILS_IN_A_ROW) {
+            report.stoppedEarly = `${MAX_FAILS_IN_A_ROW} failures in a row; Hotdesk may be down. The next check picks up the rest.`;
+            break;
+          }
+        }
+        report.done += 1;
+        await new Promise((r) => setTimeout(r, PAUSE_MS));
+      }
+    } catch (e) {
+      report.stoppedEarly = `could not start: ${errText(e)}`;
+    } finally {
+      report.finishedAt = new Date().toISOString();
+      sweepRunning = false;
+      const c = report.counts;
+      console.log(
+        `[hotdesk:check] ${dryRun ? "dry run " : ""}done ${report.done}/${report.total}: ${c.created} new, ${c.updated} updated, ${c.unchanged} unchanged, ${c.hidden} hidden, ${c.skipped} skipped, ${c.failed} failed${report.stoppedEarly ? ` (stopped: ${report.stoppedEarly})` : ""}`,
+      );
+    }
+  })();
+  return true;
 }

@@ -1,12 +1,12 @@
 import { invalidateInventory } from "./seo/data";
-import { syncListingToHotdesk, hotdeskMode, isHotdeskEligible, toHotdeskListing, hotdeskWarnings, type ListingRow } from "./hotdesk";
+import { syncListingToHotdesk, hotdeskMode, isHotdeskEligible, toHotdeskListing, hotdeskWarnings, startSweep, lastSweep, sweepIsRunning, type ListingRow } from "./hotdesk";
 import { uploadVariants } from "./image-variants";
 import { forgetListing } from "./listing-redirect";
 import type { Express, Request, Response } from "express";
 import { type Server } from "http";
 import multer from "multer";
 import { supabaseAdmin } from "./supabase";
-import { requireAdmin } from "./admin-auth";
+import { requireAdmin, safeEqual } from "./admin-auth";
 import { strictLimiter, adminLimiter, uploadLimiter } from "./rate-limit";
 import { listingInsertSchema, listingUpdateSchema } from "./listing-schema";
 import { dealInsertSchema, dealUpdateSchema } from "./deal-schema";
@@ -1407,6 +1407,29 @@ export async function registerRoutes(
       res.json({ ok: true });
     },
   );
+
+  // Full Hotdesk check: the first send at launch, then nightly from
+  // cron-job.org (catches saves that failed while Hotdesk was down and
+  // offices whose listing was deleted). Starts in the background and returns
+  // at once; GET shows the latest run. Dry run unless ?apply=1, and writes
+  // only when HOTDESK_SYNC_MODE=live. Auth: x-cron-token (cron) or the admin
+  // password.
+  const cronOrAdmin = (req: Request, res: Response, next: () => void) => {
+    const cronToken = process.env.CRON_TOKEN;
+    const provided = req.header("x-cron-token");
+    if (cronToken && provided && safeEqual(provided, cronToken)) return next();
+    return requireAdmin(req, res, next);
+  };
+  app.post("/api/admin/hotdesk/check", adminLimiter, cronOrAdmin, (req: Request, res: Response) => {
+    const apply = req.query.apply === "1";
+    if (hotdeskMode() === "off") return res.status(409).json({ message: "Hotdesk sync is off (HOTDESK_SYNC_MODE)" });
+    if (apply && hotdeskMode() !== "live") return res.status(409).json({ message: "Only a dry run is allowed until HOTDESK_SYNC_MODE=live" });
+    if (!startSweep({ dryRun: !apply })) return res.status(409).json({ message: "A Hotdesk check is already running", report: lastSweep() });
+    res.status(202).json({ started: true, dryRun: !apply });
+  });
+  app.get("/api/admin/hotdesk/check", adminLimiter, cronOrAdmin, (_req: Request, res: Response) => {
+    res.json({ mode: hotdeskMode(), running: sweepIsRunning(), report: lastSweep() });
+  });
 
   // What Hotdesk would receive for every eligible (rent, non-test) listing,
   // plus data problems to fix before launch. Read-only.
