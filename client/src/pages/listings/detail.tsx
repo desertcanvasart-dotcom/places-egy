@@ -488,10 +488,13 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
                       value={getEnumLabel(MAINTENANCE_STATUS_OPTIONS, listing.maintenance_status)}
                     />
                   )}
-                  {listing.floor != null && (
+                  {/* 0 is the admin form's default, not data: "Floor 0 / Parking
+                      spots 0" showed on units that are whole buildings or have
+                      parking. Hidden like a zero maintenance fee. */}
+                  {listing.floor != null && Number(listing.floor) !== 0 && (
                     <DetailRow icon={Building2} label="Floor" value={String(listing.floor)} />
                   )}
-                  {listing.parking != null && (
+                  {listing.parking != null && Number(listing.parking) !== 0 && (
                     <DetailRow icon={CarFront} label="Parking spots" value={String(listing.parking)} />
                   )}
                   {listing.delivery_date && (

@@ -301,7 +301,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
                 <DetailBlock icon={Building2} label="Handover condition" value={getEnumLabel(FURNISHING_OPTIONS, listing.furnishing)} />
                 {!!listing.maintenance_fees && listing.maintenance_status !== "included" && <DetailBlock icon={Building2} label="Maintenance Fees" value={`${listing.maintenance_fees.toLocaleString()} ${listingCurrency(listing)}`} />}
                 {listing.maintenance_status && <DetailBlock icon={Building2} label="Maintenance" value={getEnumLabel(MAINTENANCE_STATUS_OPTIONS, listing.maintenance_status)} />}
-                {listing.floor != null && <DetailBlock icon={Building2} label="Floor" value={listing.floor} />}
+                {listing.floor != null && Number(listing.floor) !== 0 && <DetailBlock icon={Building2} label="Floor" value={listing.floor} />}
                 {listing.delivery_date && <DetailBlock icon={Calendar} label="Delivery date" value={listing.delivery_date} />}
                 {listing.parking != null && <DetailBlock icon={CarFront} label="Parking" value={listing.parking} />}
               </div>
@@ -676,7 +676,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
               <DetailBlock icon={Building2} label="Handover condition" value={getEnumLabel(FURNISHING_OPTIONS, listing.furnishing)} />
               {!!listing.maintenance_fees && listing.maintenance_status !== "included" && <DetailBlock icon={Building2} label="Maintenance Fees" value={`${listing.maintenance_fees.toLocaleString()} ${listingCurrency(listing)}`} />}
               {listing.maintenance_status && <DetailBlock icon={Building2} label="Maintenance" value={getEnumLabel(MAINTENANCE_STATUS_OPTIONS, listing.maintenance_status)} />}
-              {listing.floor != null && <DetailBlock icon={Building2} label="Floor" value={listing.floor} />}
+              {listing.floor != null && Number(listing.floor) !== 0 && <DetailBlock icon={Building2} label="Floor" value={listing.floor} />}
               {listing.delivery_date && <DetailBlock icon={Calendar} label="Delivery date" value={listing.delivery_date} />}
               {listing.parking != null && <DetailBlock icon={CarFront} label="Parking" value={listing.parking} />}
             </div>
