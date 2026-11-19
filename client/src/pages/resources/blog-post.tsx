@@ -226,7 +226,7 @@ export default function BlogPostPage({ lang = "en" }: { lang?: BlogLang }) {
           { name: post.title, url: `${basePath}/${post.slug}` },
         ])}
       />
-      <SchemaMarkup schema={blogPostingSchema(post)} />
+      <SchemaMarkup schema={blogPostingSchema(post, basePath)} />
       <Navbar />
 
       <section className="pt-24 md:pt-32 pb-6 md:pb-8">

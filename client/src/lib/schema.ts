@@ -1,3 +1,5 @@
+import { listingSnippet } from "./listing-text";
+
 const BASE_URL = "https://places-egy.com";
 
 const LOCATIONS = [
@@ -150,9 +152,8 @@ export function listingSchema(listing: {
   location?: string | null;
   area_sqm?: number | null;
 }) {
-  // Schema.org Product doesn't have a native floor-size field, so unit specs
-  // (area, transaction type, subtype) ride along as additionalProperty entries.
-  // Google reads these for rich-result eligibility on Product pages.
+  // Unit specs (area, transaction type, subtype) ride along as
+  // additionalProperty entries.
   const additionalProperty: { "@type": "PropertyValue"; name: string; value: string | number; unitCode?: string }[] = [];
   if (listing.area_sqm) {
     additionalProperty.push({ "@type": "PropertyValue", name: "Floor area", value: listing.area_sqm, unitCode: "MTK" });
@@ -175,14 +176,18 @@ export function listingSchema(listing: {
     .replace(/^-+|-+$/g, "");
   const url = `${BASE_URL}/listings/${listing.id}${titleSlug ? `-${titleSlug}` : ""}`;
 
+  // Plain RealEstateListing, not Product: typing a lease as a Product made
+  // Google check every listing as a shop item (GSC Merchant listings warned
+  // about missing shipping and return policies on all of them). Descriptions
+  // are stored as Markdown; schema gets plain text.
+  const plainDescription = listing.description ? listingSnippet(listing.description, 5000) : "";
   return {
     "@context": "https://schema.org",
-    "@type": ["Product", "RealEstateListing"],
-    "@id": `${url}#product`,
+    "@type": "RealEstateListing",
+    "@id": `${url}#listing`,
     name: listing.title,
-    sku: String(listing.id),
     url,
-    ...(listing.description && { description: listing.description }),
+    ...(plainDescription && { description: plainDescription }),
     ...(listing.images?.length && {
       image: listing.images.map((url) => ({
         "@type": "ImageObject",
@@ -348,8 +353,9 @@ export function blogPostingSchema(post: {
   featuredImage?: { url: string; width?: number; height?: number };
   categories: { name: string }[];
   tags?: { name: string }[];
-}) {
-  const url = `${BASE_URL}/blog/${post.slug}`;
+}, basePath: "/blog" | "/ar/blog" = "/blog") {
+  // Arabic posts live under /ar/blog; /blog/<arabic-slug> only 301s there.
+  const url = `${BASE_URL}${basePath}/${post.slug}`;
   // wordCount is required for Article rich-result eligibility on long-form posts.
   const wordCount = post.content
     .replace(/<[^>]*>/g, " ")
