@@ -8,6 +8,7 @@ import { AccountsManager } from "@/components/admin/AccountsManager";
 import { HotdeskManager } from "@/components/admin/HotdeskManager";
 import { ExchangeRatePanel } from "@/components/admin/ExchangeRatePanel";
 import { PricePreview } from "@/components/admin/PricePreview";
+import { defaultOutdoorRate } from "@/lib/listing-pricing";
 import { ProjectPinInput } from "@/components/admin/ProjectPinInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -474,7 +475,7 @@ function ListingFormDialog({
 
             <div className="space-y-1.5">
               <Label className="text-sm font-medium text-primary">
-                {(form.transaction_type ?? "").toLowerCase() === "rent" ? "Monthly rent" : "Price"} ({form.currency || "choose currency"}) <span className="text-accent">*</span>
+                {(form.transaction_type ?? "").toLowerCase() === "rent" ? "Monthly rent" : "Price"}, indoor only ({form.currency || "choose currency"}) <span className="text-accent">*</span>
               </Label>
               <Input type="number" value={form.price ?? ""} onChange={(e) => set("price", toNum(e.target.value))} className="bg-white" />
             </div>
@@ -501,15 +502,26 @@ function ListingFormDialog({
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium text-primary">Outdoor price per m² ({form.currency || "choose currency"})</Label>
+              <Label className="text-sm font-medium text-primary">
+                Outdoor price per m² ({form.currency || "choose currency"}): only if the landlord quotes one
+              </Label>
               <Input
                 type="number"
                 value={form.outdoor_price_per_meter ?? ""}
                 onChange={(e) => set("outdoor_price_per_meter", toNum(e.target.value))}
-                placeholder={form.outdoor_area_sqm ? "0 if included free" : "—"}
+                placeholder={
+                  !form.outdoor_area_sqm
+                    ? "—"
+                    : defaultOutdoorRate(form.price_per_meter)
+                      ? `Empty = 25% of the indoor rate (${defaultOutdoorRate(form.price_per_meter)!.toLocaleString("en-US")})`
+                      : "Empty = 25% of the indoor rate"
+                }
                 disabled={!form.outdoor_area_sqm}
                 className="bg-white"
               />
+              <p className="text-xs text-muted-foreground">
+                Outdoor space is always charged, shown separately from the indoor price. The landlord's written rate prevails.
+              </p>
             </div>
 
             <label className="md:col-span-2 flex items-center gap-2 text-sm text-primary">
@@ -634,7 +646,7 @@ function ListingFormDialog({
               <ul className="list-disc pl-5 space-y-1 text-xs">
                 {issues.map((i) => (
                   <li key={i.rule} className={i.severity === "block" ? "text-destructive" : undefined}>
-                    <span className="font-medium">{i.severity === "block" ? "Must fix: " : ""}{i.rule}</span>
+                    <span className="font-medium">{i.severity === "block" ? "Must fix: " : i.severity === "info" ? "Confirm: " : ""}{i.rule}</span>
                     {i.conflicting ? ` (${i.conflicting})` : ""}. {i.fix}
                   </li>
                 ))}

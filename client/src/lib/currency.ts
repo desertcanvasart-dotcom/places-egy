@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import type { Listing } from "@/lib/supabase";
+import { totalPrice } from "@/lib/listing-pricing";
 
 // Per-listing currency. Admin chooses USD or EGP for every listing; the
 // price entered IS that currency and is never converted in the database.
@@ -65,9 +66,14 @@ export function formatRateDate(asOf: string | null): string {
   return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
 
-/** The listing's price normalised to EGP, or null when it has no price. */
-export function priceInEgp(listing: Pick<Listing, "price" | "currency">, rate = latest.rate): number | null {
-  const p = Number(listing.price) || 0;
+/** The listing's TOTAL price (indoor + outdoor, see listing-pricing.ts)
+ *  normalised to EGP, or null when it has no price. */
+export function priceInEgp(
+  listing: Pick<Listing, "price" | "currency"> &
+    Partial<Pick<Listing, "price_per_meter" | "area_sqm" | "outdoor_area_sqm" | "outdoor_price_per_meter" | "price_is_lump_sum">>,
+  rate = latest.rate,
+): number | null {
+  const p = totalPrice(listing);
   if (p <= 0) return null;
   return listingCurrency(listing) === "USD" ? Math.round(p * rate) : p;
 }

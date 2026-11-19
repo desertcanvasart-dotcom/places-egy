@@ -1,5 +1,6 @@
 // Data-quality rules for listings. Used by scripts/validate-listings.ts (report)
 // and the admin form (warnings before save). Keep free of "@/" imports.
+import { OUTDOOR_RATE_SHARE, defaultOutdoorRate } from "./listing-pricing";
 
 export interface CheckableListing {
   id?: number;
@@ -25,8 +26,10 @@ export interface ListingIssue {
   conflicting: string;
   fix: string;
   /** "block": impossible values; the admin form won't save until fixed.
+   *  "info": the editor confirms once in the form (e.g. a landlord-quoted
+   *  outdoor rate); left out of the weekly report.
    *  Absent: a warning the editor can confirm and save anyway. */
-  severity?: "block";
+  severity?: "block" | "info";
 }
 
 // "USD 45 / SQM", "$45/sqm", "$ 45 per m²"
@@ -38,23 +41,6 @@ function usdTotalMatches(description: string | null | undefined, area: number | 
   if (!m || !area || !price) return false;
   const total = Number(m[1].replace(/,/g, "")) * area;
   return total > 0 && Math.abs(total - price) / price < 0.02;
-}
-
-// Expected price range from a rate per m². The outdoor area is added at its
-// own rate when one is set; when it isn't, how the outdoor area is charged is
-// unknown (that pricing rule is the owner's call), so anything from "indoor
-// only" to "indoor + outdoor at the indoor rate" is accepted.
-export function expectedPriceRange(
-  rate: number,
-  area: number,
-  outdoorArea?: number | null,
-  outdoorRate?: number | null,
-): [number, number] {
-  const indoor = rate * area;
-  if (!outdoorArea) return [indoor, indoor];
-  // 0 is a real answer ("the outdoor area is included free"), not "unknown".
-  if (outdoorRate != null) return [indoor + outdoorRate * outdoorArea, indoor + outdoorRate * outdoorArea];
-  return [indoor, indoor + rate * outdoorArea];
 }
 
 const fmtN = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 2 });
@@ -153,9 +139,9 @@ export function listingIssues(l: CheckableListing): ListingIssue[] {
         current: `area ${area}`,
         conflicting: `title: ${main} m² + ${extra} m²`,
         fix:
-          `Set area to ${main} (the unit) and describe the ${extra} m² as outdoor/terrace` +
+          `Set area to ${main} (the unit) and Outdoor area to ${extra}` +
           (priceFromWrongArea
-            ? `. The price (${priceNow.toLocaleString("en-US")}) is ${rateNum.toLocaleString("en-US")} × ${area}; at that rate the ${main} m² unit is ${(rateNum * main).toLocaleString("en-US")}, plus the outdoor area at its own rate`
+            ? `. The price (${priceNow.toLocaleString("en-US")}) is ${rateNum.toLocaleString("en-US")} × ${area}; at that rate the ${main} m² unit is ${(rateNum * main).toLocaleString("en-US")} (indoor price), and the ${extra} m² outdoor is added separately at ${Math.round(OUTDOOR_RATE_SHARE * 100)}% (${(rateNum * OUTDOOR_RATE_SHARE).toLocaleString("en-US")}/m²) unless the landlord quotes another rate`
             : ""),
         severity: "block",
       });
@@ -211,54 +197,69 @@ export function listingIssues(l: CheckableListing): ListingIssue[] {
   const lumpSum = !!l.price_is_lump_sum;
   const outdoorArea = l.outdoor_area_sqm == null ? null : Number(l.outdoor_area_sqm);
   const outdoorRate = l.outdoor_price_per_meter == null ? null : Number(l.outdoor_price_per_meter);
-
-  // Price vs the "Price per meter" field × area (+ outdoor). These three are
-  // typed separately and are what the card shows side by side ("20,250
-  // EGP/month · 45 EGP/m² · 450 m²"), so they must agree. Off by more than
-  // 2x blocks saving (a wrong currency, area or a rate typed as a total);
-  // a smaller gap is a warning (a negotiated discount, rounding).
   const ppm = l.price_per_meter == null ? null : Number(l.price_per_meter);
+
+  // Price = INDOOR price (listing-pricing.ts): price per m² × area. Outdoor is
+  // added separately, so it must not be in the price. These are typed
+  // separately and shown side by side on the card, so they must agree. Off by
+  // more than 2x blocks saving (wrong currency/area, a rate typed as a total);
+  // a smaller gap is a warning (negotiated discount, rounding).
   if (!lumpSum && ppm && ppm > 0 && price && area) {
-    const [lo, hi] = expectedPriceRange(ppm, area, outdoorArea, outdoorRate);
-    if (price < lo * 0.97 || price > hi * 1.03) {
-      const off = price < lo ? lo / price : price / hi;
-      const formula =
-        `${fmtN(ppm)} × ${fmtN(area)} m²` +
-        (outdoorArea ? (outdoorRate != null ? ` + ${fmtN(outdoorRate)} × ${fmtN(outdoorArea)} m² outdoor` : ` (+ outdoor ${fmtN(outdoorArea)} m², rate not set)`) : "");
+    const indoor = ppm * area;
+    if (Math.abs(price - indoor) / indoor > 0.03) {
+      const off = price < indoor ? indoor / price : price / indoor;
+      const oRate = outdoorRate ?? defaultOutdoorRate(ppm) ?? 0;
+      const includesOutdoor = !!outdoorArea && Math.abs(price - (indoor + oRate * outdoorArea)) / price < 0.03;
       issues.push({
-        rule: "price doesn't match price per m² × area",
+        rule: includesOutdoor ? "price includes the outdoor area" : "price doesn't match price per m² × area",
         field: "price/price_per_meter/area_sqm",
         current: `price ${fmtN(price)}`,
-        conflicting: `${formula} = ${lo === hi ? fmtN(lo) : `${fmtN(lo)}–${fmtN(hi)}`}`,
-        fix: "Correct the price, the price per m² or the area. If the price is one total (e.g. a whole building), tick \"Price is a lump sum\"",
-        ...(off > 2 ? { severity: "block" as const } : {}),
+        conflicting: `${fmtN(ppm)} × ${fmtN(area)} m² = ${fmtN(indoor)}`,
+        fix: includesOutdoor
+          ? `Enter the indoor price only (${fmtN(indoor)}); the outdoor amount is added separately`
+          : "Correct the price, the price per m² or the area. If the price is one total (e.g. a whole building), tick \"Price is a lump sum\"",
+        // Outdoor in the price is counted twice (it's also added separately).
+        ...(off > 2 || includesOutdoor ? { severity: "block" as const } : {}),
       });
     }
   }
 
-  // Outdoor area with no rate: the price may or may not include it. Shown so
-  // the editor states it explicitly (until the owner sets one rule).
-  if (outdoorArea && outdoorRate == null && !lumpSum) {
-    issues.push({
-      rule: "outdoor area has no rate",
-      field: "outdoor_price_per_meter",
-      current: `${fmtN(outdoorArea)} m² outdoor`,
-      conflicting: "",
-      fix: "Enter the outdoor rate per m² (0 if the outdoor area is free), or tick \"Price is a lump sum\" if the price covers everything",
-    });
+  // Outdoor space is always charged, at 25% of the indoor rate unless the
+  // landlord's written quote says otherwise (the quote prevails, so these are
+  // warnings, not blocks).
+  if (outdoorArea && !lumpSum && outdoorRate != null) {
+    const def = defaultOutdoorRate(ppm);
+    if (outdoorRate === 0) {
+      issues.push({
+        rule: "outdoor area entered as free",
+        field: "outdoor_price_per_meter",
+        current: "0",
+        conflicting: def ? `default ${Math.round(OUTDOOR_RATE_SHARE * 100)}% = ${fmtN(def)}/m²` : "",
+        fix: "Outdoor space is always charged. Keep 0 only if the landlord's written quote says the outdoor area is free",
+      });
+    } else if (def && Math.abs(outdoorRate - def) / def > 0.02) {
+      issues.push({
+        rule: `outdoor rate isn't the ${Math.round(OUTDOOR_RATE_SHARE * 100)}% default`,
+        field: "outdoor_price_per_meter",
+        current: `${fmtN(outdoorRate)}/m²`,
+        conflicting: `default ${fmtN(def)}/m²`,
+        fix: "Fine if this is the landlord's written quote (it prevails); otherwise clear it to use the default",
+        severity: "info",
+      });
+    }
   }
 
   // Rate stated in the description ("EGP 1,100 / SQM") vs price ÷ area.
   const rate = (l.description ?? "").match(/(?:egp|usd|le|\$)\s*([\d,]+(?:\.\d+)?)\s*(?:\/|per)\s*(?:sqm|sq\.?\s*m|m²|m2|meter|metre)/i);
   if (rate && price && area && !lumpSum) {
-    const [lo, hi] = expectedPriceRange(Number(rate[1].replace(/,/g, "")), area, outdoorArea, outdoorRate);
-    if (lo > 0 && (price < lo * 0.9 || price > hi * 1.1)) {
+    const expected = Number(rate[1].replace(/,/g, "")) * area;
+    if (expected > 0 && Math.abs(expected - price) / expected > 0.1) {
       issues.push({
         rule: "price doesn't match the rate × area in the description",
         field: "price/area_sqm",
         current: `price ${fmtN(price)}`,
-        conflicting: `${rate[0].trim()} × ${fmtN(area)} m²${outdoorArea ? " (+ outdoor)" : ""} = ${lo === hi ? fmtN(lo) : `${fmtN(lo)}–${fmtN(hi)}`}`,
-        fix: "Correct the price, the area or the rate in the description",
+        conflicting: `${rate[0].trim()} × ${fmtN(area)} m² = ${fmtN(expected)}`,
+        fix: "Correct the price, the area or the rate in the description (the price is the indoor price only)",
       });
     }
   }

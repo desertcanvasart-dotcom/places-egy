@@ -1,4 +1,5 @@
 import { listingSnippet } from "./listing-text";
+import { totalPrice } from "./listing-pricing";
 
 const BASE_URL = "https://places-egy.com";
 
@@ -151,6 +152,10 @@ export function listingSchema(listing: {
   subtype?: string | null;
   location?: string | null;
   area_sqm?: number | null;
+  price_per_meter?: number | null;
+  outdoor_area_sqm?: number | null;
+  outdoor_price_per_meter?: number | null;
+  price_is_lump_sum?: boolean | null;
 }) {
   // Unit specs (area, transaction type, subtype) ride along as
   // additionalProperty entries.
@@ -204,7 +209,8 @@ export function listingSchema(listing: {
     offers: {
       "@type": "Offer",
       priceCurrency: listing.currency === "USD" ? "USD" : "EGP",
-      ...(listing.price && { price: listing.price }),
+      // Total incl. outdoor space (charged separately; see listing-pricing.ts).
+      ...(listing.price && { price: totalPrice(listing) || listing.price }),
       availability: "https://schema.org/InStock",
       url,
       seller: { "@id": `${BASE_URL}/#organization` },

@@ -66,6 +66,11 @@ Open http://localhost:3001
 - `/blog/where-to-buy-office-cairo-guide`
 - `/developers/palm-hills-1`
 
+**Pricing rules (agreed 19 Nov)**: price = indoor only; outdoor is always charged and
+shown separately, at 25% of the indoor rate unless the landlord's written quote says
+otherwise (the quote prevails); budget filters/sorting use the total; maintenance
+applies to the outdoor area too.
+
 **Pages**
 - `/` – no cookie banner from Egypt; one popup at a time.
 - `/contact` – "Send us your requirements" form shows.
@@ -77,7 +82,10 @@ Open http://localhost:3001
 - Add listing: Currency starts empty and Save stays disabled until it is chosen.
 - Enter USD, 20250 price, 450 area, 45 per m²: the preview shows "20,250 USD / month ≈ EGP …".
 - Switch the currency to EGP with "$45 / SQM" in the description: Save is blocked ("price is a USD amount saved as EGP").
-- Enter 650 area + 350 outdoor: the preview shows "650 m² + 350 m² outdoor".
+- Enter EGP, 715000 price, 650 area, 1100 per m², 350 outdoor: the preview shows
+  715,000 (indoor) + outdoor 350 m² × 275 (25% of the indoor rate) = 96,250 → Total 811,250 / month.
+- Type 500 in "Outdoor price per m²": the preview switches to "landlord's rate" and asks you to confirm.
+- Enter the indoor + outdoor total as the price (e.g. 811,250): Save is blocked ("price includes the outdoor area").
 - Exchange rate tab: shows the automatic rate and its time. (Setting a manual
   rate here changes it on the live site too.)
 
