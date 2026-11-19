@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS public.exchange_rates (
 );
 
 INSERT INTO public.exchange_rates (pair, auto_rate, auto_source, auto_fetched_at)
-VALUES ('USD_EGP', 56.09, 'initial value (2026-10-28 constant)', now())
+VALUES ('USD_EGP', 56.09, 'initial value (2026-10-28 constant)', NULL)
 ON CONFLICT (pair) DO NOTHING;
 
 -- Server-only table (service role). Visitors get the rate from /api/fx/usd-egp.
