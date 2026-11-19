@@ -36,25 +36,25 @@ const FIXES: Fix[] = [
 
   // Outdoor pricing rules (agreed 2026-11-19, client/src/lib/listing-pricing.ts):
   // price = indoor only; outdoor always charged, shown separately, at 25% of
-  // the indoor rate unless the landlord's written quote gives another rate.
+  // the indoor rate unless the description quotes another rate (a quoted rate prevails).
   // outdoor_price_per_meter stays empty when the 25% default applies.
 
   // #855: area held the 350 m² outdoor area and the rent was 1,100 × 350.
   { id: 855, field: "area_sqm", from: 350, to: 650, why: "description: Indoor Area 650 SQM" },
   { id: 855, field: "outdoor_area_sqm", from: null, to: 350, why: "description: Outdoor Area 350 SQM (25% default rate = 275/m²)" },
-  { id: 855, field: "price", from: 385000, to: 715000, why: "landlord's rate EGP 1,100 × 650 m² indoor; outdoor 96,250 shown separately" },
+  { id: 855, field: "price", from: 385000, to: 715000, why: "quoted rate EGP 1,100 × 650 m² indoor; outdoor 96,250 shown separately" },
 
   // #845: price 863,000 = 1,000 × 721 + 500 × 284 (outdoor folded into the price).
   { id: 845, field: "outdoor_area_sqm", from: null, to: 284, why: "description: Roof Terrace 284 SQM" },
-  { id: 845, field: "outdoor_price_per_meter", from: null, to: 500, why: "description: Roof Terrace Rate EGP 500 / SQM (landlord's quote prevails over 25%)" },
+  { id: 845, field: "outdoor_price_per_meter", from: null, to: 500, why: "description: Roof Terrace Rate EGP 500 / SQM (quoted rate prevails over 25%)" },
   { id: 845, field: "price", from: 863000, to: 721000, why: "indoor only: EGP 1,000 × 721 m²; roof 142,000 shown separately (total unchanged)" },
 
   // Outdoor area stated in the description, price already indoor-only.
   { id: 837, field: "outdoor_area_sqm", from: null, to: 250, why: "description: Outdoor Area 250 SQM (25% default = 275/m²)" },
   { id: 802, field: "outdoor_area_sqm", from: null, to: 790, why: "description: Outdoor Area 790 SQM" },
-  { id: 802, field: "outdoor_price_per_meter", from: null, to: 12, why: "description: Outdoor Rent Rate USD 12 / SQM (landlord's quote)" },
+  { id: 802, field: "outdoor_price_per_meter", from: null, to: 12, why: "description: Outdoor Rent Rate USD 12 / SQM (quoted rate)" },
   { id: 344, field: "outdoor_area_sqm", from: null, to: 790, why: "description: Outdoor Area 790 SQM" },
-  { id: 344, field: "outdoor_price_per_meter", from: null, to: 12, why: "description: USD 12 for the outdoor area (landlord's quote)" },
+  { id: 344, field: "outdoor_price_per_meter", from: null, to: 12, why: "description: USD 12 for the outdoor area (quoted rate)" },
   { id: 610, field: "outdoor_area_sqm", from: null, to: 1154, why: "description: Outdoor Area 1,154 SQM, rent \"based on indoor area only\" (25% default = 300/m²)" },
   { id: 147, field: "outdoor_area_sqm", from: null, to: 150, why: "description: Outdoor Area 150 SQM (25% default = 400/m²)" },
   { id: 233, field: "outdoor_area_sqm", from: null, to: 32, why: "title/description: 632 SQM + 32 SQM (25% default = 350/m²)" },
@@ -69,13 +69,13 @@ const FIXES: Fix[] = [
 
 // Shown in the dry run for a person to decide; never applied by this script.
 const REVIEW = [
-  "#49: price 2,355,000 EGP = USD 30/m² × 1,570 m² converted at 50 EGP/$ by hand. Original quote: USD 47,100/month. Set currency USD + price 47,100 if the landlord quotes USD.",
+  "#49: price 2,355,000 EGP = USD 30/m² × 1,570 m² converted at 50 EGP/$ by hand. Original quote: USD 47,100/month. Set currency USD + price 47,100 if the original quote is in USD.",
   "#50: price 2,749,991 EGP ≈ USD 55/m² × 1,000 m² converted at ~50 by hand. Original quote: USD 55,000/month.",
-  "#596: 7,350,000 ≈ EGP 850 × 8,650 m² (indoor 7,050 + outdoor 1,600 at the full rate). By the rules: indoor 5,992,500 + outdoor 1,600 × 212.5 = 340,000. Confirm with the landlord before changing.",
+  "#596: 7,350,000 ≈ EGP 850 × 8,650 m² (indoor 7,050 + outdoor 1,600 at the full rate). By the rules: indoor 5,992,500 + outdoor 1,600 × 212.5 = 340,000. Confirm the quote before changing.",
   "#808: priced on 664 m² (632 indoor + 32 outdoor) at 1,400; looks like a duplicate of #233.",
   "#87: area 557 but description says built-up 577 SQM; outdoor 150 SQM. Confirm the area.",
-  "Roof mentioned without its size (#338, #244, #803, #770, #716, #814, #73, #246, #472, #277, #171, #306, #288): ask the landlord for the roof m², then enter it as Outdoor area.",
-  "#773, #512, #346, #144, #602, #491, #289, #511: price impossible for the area (see listing-data-issues.csv). Check against the landlord's quote.",
+  "Roof mentioned without its size (#338, #244, #803, #770, #716, #814, #73, #246, #472, #277, #171, #306, #288): confirm the roof m², then enter it as Outdoor area.",
+  "#773, #512, #346, #144, #602, #491, #289, #511: price impossible for the area (see listing-data-issues.csv). Check against the original quote.",
 ];
 
 const url = process.env.SUPABASE_URL;

@@ -2,8 +2,9 @@
 //
 //  1. `price` is the INDOOR rent/price: the unit itself (price per m² × area).
 //  2. Outdoor space (terrace, roof, garden) is ALWAYS charged, shown separately.
-//  3. Outdoor rate = 25% of the indoor rate per m², unless the landlord's
-//     written quote says otherwise; the landlord's quote prevails.
+//  3. Outdoor rate = 25% of the indoor rate per m², unless the written quote
+//     for the property gives another rate; a quoted rate prevails. (Listings
+//     are entered by the PLACES team; there is no landlord role in the system.)
 //  4. Total = indoor + outdoor. Budget filters and price sorting use the total.
 //  5. Maintenance applies to the outdoor area too.
 //
@@ -31,7 +32,7 @@ export function defaultOutdoorRate(indoorRate: number | null | undefined): numbe
   return r > 0 ? round2(r * OUTDOOR_RATE_SHARE) : null;
 }
 
-/** Outdoor rate in effect: the stored one (landlord's quote) or 25% of the indoor rate. */
+/** Outdoor rate in effect: the stored one (a quoted rate) or 25% of the indoor rate. */
 export function effectiveOutdoorRate(l: Priced): number | null {
   if (l.outdoor_price_per_meter != null) return Number(l.outdoor_price_per_meter);
   return defaultOutdoorRate(l.price_per_meter);

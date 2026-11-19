@@ -467,7 +467,7 @@ function ListingFormDialog({
             </div>
 
             <SelectField
-              label="Currency the landlord quoted *"
+              label="Currency of the price *"
               value={form.currency ?? ""}
               options={ENUM_OPTIONS.currency}
               onChange={(v) => set("currency", v)}
@@ -503,7 +503,7 @@ function ListingFormDialog({
 
             <div className="space-y-1.5">
               <Label className="text-sm font-medium text-primary">
-                Outdoor price per m² ({form.currency || "choose currency"}): only if the landlord quotes one
+                Outdoor price per m² ({form.currency || "choose currency"}): only if a different rate was quoted
               </Label>
               <Input
                 type="number"
@@ -520,7 +520,7 @@ function ListingFormDialog({
                 className="bg-white"
               />
               <p className="text-xs text-muted-foreground">
-                Outdoor space is always charged, shown separately from the indoor price. The landlord's written rate prevails.
+                Outdoor space is always charged, shown separately from the indoor price. Fill this only when a different outdoor rate was quoted for the property; it then prevails.
               </p>
             </div>
 

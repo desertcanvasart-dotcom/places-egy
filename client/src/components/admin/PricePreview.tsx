@@ -51,7 +51,7 @@ export function PricePreview({ form }: { form: PriceFields }) {
                 + outdoor {n(Number(form.outdoor_area_sqm))} m² × {n(oRate ?? 0)} {cur}/m² ={" "}
                 <span className="text-primary font-medium">{n(outdoor)} {cur}</span>{" "}
                 <span className="text-xs">
-                  ({oIsDefault ? `${Math.round(OUTDOOR_RATE_SHARE * 100)}% of the indoor rate` : "landlord's rate"})
+                  ({oIsDefault ? `${Math.round(OUTDOOR_RATE_SHARE * 100)}% of the indoor rate` : "quoted rate"})
                 </span>
               </p>
               <p className="text-sm text-primary font-semibold">

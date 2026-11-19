@@ -26,7 +26,7 @@ export interface ListingIssue {
   conflicting: string;
   fix: string;
   /** "block": impossible values; the admin form won't save until fixed.
-   *  "info": the editor confirms once in the form (e.g. a landlord-quoted
+   *  "info": the editor confirms once in the form (e.g. a quoted
    *  outdoor rate); left out of the weekly report.
    *  Absent: a warning the editor can confirm and save anyway. */
   severity?: "block" | "info";
@@ -141,7 +141,7 @@ export function listingIssues(l: CheckableListing): ListingIssue[] {
         fix:
           `Set area to ${main} (the unit) and Outdoor area to ${extra}` +
           (priceFromWrongArea
-            ? `. The price (${priceNow.toLocaleString("en-US")}) is ${rateNum.toLocaleString("en-US")} × ${area}; at that rate the ${main} m² unit is ${(rateNum * main).toLocaleString("en-US")} (indoor price), and the ${extra} m² outdoor is added separately at ${Math.round(OUTDOOR_RATE_SHARE * 100)}% (${(rateNum * OUTDOOR_RATE_SHARE).toLocaleString("en-US")}/m²) unless the landlord quotes another rate`
+            ? `. The price (${priceNow.toLocaleString("en-US")}) is ${rateNum.toLocaleString("en-US")} × ${area}; at that rate the ${main} m² unit is ${(rateNum * main).toLocaleString("en-US")} (indoor price), and the ${extra} m² outdoor is added separately at ${Math.round(OUTDOOR_RATE_SHARE * 100)}% (${(rateNum * OUTDOOR_RATE_SHARE).toLocaleString("en-US")}/m²) unless a different outdoor rate was quoted`
             : ""),
         severity: "block",
       });
@@ -225,7 +225,7 @@ export function listingIssues(l: CheckableListing): ListingIssue[] {
   }
 
   // Outdoor space is always charged, at 25% of the indoor rate unless the
-  // landlord's written quote says otherwise (the quote prevails, so these are
+  // written quote for the property says otherwise (the quote prevails, so these are
   // warnings, not blocks).
   if (outdoorArea && !lumpSum && outdoorRate != null) {
     const def = defaultOutdoorRate(ppm);
@@ -235,7 +235,7 @@ export function listingIssues(l: CheckableListing): ListingIssue[] {
         field: "outdoor_price_per_meter",
         current: "0",
         conflicting: def ? `default ${Math.round(OUTDOOR_RATE_SHARE * 100)}% = ${fmtN(def)}/m²` : "",
-        fix: "Outdoor space is always charged. Keep 0 only if the landlord's written quote says the outdoor area is free",
+        fix: "Outdoor space is always charged. Keep 0 only if the quote for this property says the outdoor area is free",
       });
     } else if (def && Math.abs(outdoorRate - def) / def > 0.02) {
       issues.push({
@@ -243,7 +243,7 @@ export function listingIssues(l: CheckableListing): ListingIssue[] {
         field: "outdoor_price_per_meter",
         current: `${fmtN(outdoorRate)}/m²`,
         conflicting: `default ${fmtN(def)}/m²`,
-        fix: "Fine if this is the landlord's written quote (it prevails); otherwise clear it to use the default",
+        fix: "Fine if this rate was quoted for this property (a quote prevails); otherwise clear it to use the default",
         severity: "info",
       });
     }

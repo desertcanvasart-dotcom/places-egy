@@ -208,7 +208,7 @@ async function fetchListingIssues(): Promise<WeeklyMetrics["listingIssues"]> {
     let toCheck = 0;
     const top: Array<{ id: number; title: string; rule: string; mustFix: boolean }> = [];
     for (const l of rows) {
-      // "info" items (e.g. a landlord-quoted outdoor rate) were confirmed in the form.
+      // "info" items (e.g. a quoted outdoor rate) were confirmed in the form.
       const found = listingIssues(l).filter((i) => i.severity !== "info");
       const block = found.find((i) => i.severity === "block");
       if (block) mustFix++;
