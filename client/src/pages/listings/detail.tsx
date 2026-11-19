@@ -12,7 +12,8 @@ import { breadcrumbSchema, listingSchema } from "@/lib/schema";
 import { supabase, type Listing } from "@/lib/supabase";
 import { DEVELOPER_OPTIONS, FURNISHING_OPTIONS, MAINTENANCE_STATUS_OPTIONS, getEnumLabel } from "@/lib/enums";
 import { listingUrl, parseListingId } from "@/lib/listings";
-import { formatEgpShort, listingCurrency, priceInEgp, USD_EGP_RATE } from "@/lib/currency";
+import { formatEgpShort, formatRateDate, listingCurrency, priceInEgp, useUsdEgpRate } from "@/lib/currency";
+import { extraAreaWord, maintenanceArea, outdoorAmount, totalPrice } from "@/lib/listing-pricing";
 import { supabaseImage, supabaseImageOnError } from "@/lib/image-url";
 import { trackEvent } from "@/lib/analytics";
 import { openCalendly } from "@/lib/calendly";
@@ -82,6 +83,7 @@ export default function ListingDetailPage() {
 
 // Separated so the hooks below run after the id-validity guard above.
 function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
+  const fx = useUsdEgpRate();
   const [, setLocation] = useLocation();
   const [imageIndex, setImageIndex] = useState(0);
   const [viewingOpen, setViewingOpen] = useState(false);
@@ -120,14 +122,18 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {
       if (!listing?.transaction_type) return [];
-      const { data, error } = await supabase
-        .from<Listing>("listings")
-        .select(
-          "id,title,transaction_type,property_type,subtype,developer,project,location,location_area,price,currency,area_sqm,furnishing,images,rental_status,rental_end,updated_at,price_per_meter,maintenance_fees,maintenance_status,floor,parking,delivery_date",
-        )
-        .eq("is_test", false)
-        .eq("property_type", "admin")
-        .eq("transaction_type", listing.transaction_type);
+      const base =
+        "id,title,transaction_type,property_type,subtype,developer,project,location,location_area,price,currency,area_sqm,furnishing,images,rental_status,rental_end,updated_at,price_per_meter,maintenance_fees,maintenance_status,floor,parking,delivery_date";
+      const query = (cols: string) =>
+        supabase
+          .from<Listing>("listings")
+          .select(cols)
+          .eq("is_test", false)
+          .eq("property_type", "admin")
+          .eq("transaction_type", listing.transaction_type);
+      let { data, error } = await query(`${base},outdoor_area_sqm,outdoor_price_per_meter,outdoor_area_type,price_is_lump_sum`);
+      // Before sql/listings-outdoor-and-fx.sql runs, those columns don't exist.
+      if (error) ({ data, error } = await query(base));
       if (error) throw error;
       return data ?? [];
     },
@@ -344,8 +350,25 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
                       {listing.transaction_type?.toLowerCase() === "rent" ? " / month" : ""}
                     </span>
                   </div>
-                  {listingCurrency(listing) === "USD" && priceInEgp(listing) != null && (
-                    <p className="text-xs text-muted-foreground mt-1">≈ {formatEgpShort(priceInEgp(listing)!)} at {USD_EGP_RATE} EGP/USD</p>
+                  {outdoorAmount(listing) > 0 && (
+                    <div className="text-sm text-muted-foreground mt-1 space-y-0.5">
+                      <p>
+                        Indoor ({Number(listing.area_sqm).toLocaleString("en-US")} m²) · + {extraAreaWord(listing)}{" "}
+                        {Number(listing.outdoor_area_sqm).toLocaleString("en-US")} m² at{" "}
+                        {Number(listing.outdoor_price_per_meter).toLocaleString("en-US")} {listingCurrency(listing)}/m²:{" "}
+                        {outdoorAmount(listing).toLocaleString("en-US")} {listingCurrency(listing)}
+                      </p>
+                      <p className="font-semibold text-primary">
+                        Total {totalPrice(listing).toLocaleString("en-US")} {listingCurrency(listing)}
+                        {listing.transaction_type?.toLowerCase() === "rent" ? " / month" : ""}
+                      </p>
+                    </div>
+                  )}
+                  {listingCurrency(listing) === "USD" && priceInEgp(listing, fx.rate) != null && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      ≈ {formatEgpShort(priceInEgp(listing, fx.rate)!)}{outdoorAmount(listing) > 0 ? " total" : ""} at {fx.rate.toFixed(2)} EGP/USD
+                      {formatRateDate(fx.asOf) ? ` (${formatRateDate(fx.asOf)})` : ""}
+                    </p>
                   )}
                 </div>
               )}
@@ -461,7 +484,19 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
                     <DetailRow icon={Building2} label="Developer" value={getEnumLabel(DEVELOPER_OPTIONS, listing.developer)} />
                   )}
                   {listing.area_sqm != null && (
-                    <DetailRow icon={Maximize} label="Built-up area" value={`${listing.area_sqm} m²`} />
+                    <DetailRow icon={Maximize} label="Built-up area" value={`${Number(listing.area_sqm).toLocaleString("en-US")} m²`} />
+                  )}
+                  {listing.outdoor_area_sqm != null && listing.outdoor_area_sqm > 0 && (
+                    <DetailRow
+                      icon={Maximize}
+                      label={extraAreaWord(listing) === "outdoor" ? "Outdoor area" : extraAreaWord(listing).replace(/^./, (c) => c.toUpperCase())}
+                      value={
+                        `${Number(listing.outdoor_area_sqm).toLocaleString("en-US")} m²` +
+                        (listing.outdoor_price_per_meter != null
+                          ? ` at ${Number(listing.outdoor_price_per_meter).toLocaleString("en-US")} ${listingCurrency(listing)}/m²`
+                          : "")
+                      }
+                    />
                   )}
                   {listing.price_per_meter != null && (
                     <DetailRow
@@ -485,13 +520,22 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
                     <DetailRow
                       icon={Building2}
                       label="Maintenance"
-                      value={getEnumLabel(MAINTENANCE_STATUS_OPTIONS, listing.maintenance_status)}
+                      value={
+                        getEnumLabel(MAINTENANCE_STATUS_OPTIONS, listing.maintenance_status) +
+                        // Maintenance is charged on the outdoor area too.
+                        (Number(listing.outdoor_area_sqm) > 0
+                          ? ` (on indoor + ${extraAreaWord(listing)}: ${maintenanceArea(listing).toLocaleString("en-US")} m²)`
+                          : "")
+                      }
                     />
                   )}
-                  {listing.floor != null && (
+                  {/* 0 is the admin form's default, not data: "Floor 0 / Parking
+                      spots 0" showed on units that are whole buildings or have
+                      parking. Hidden like a zero maintenance fee. */}
+                  {listing.floor != null && Number(listing.floor) !== 0 && (
                     <DetailRow icon={Building2} label="Floor" value={String(listing.floor)} />
                   )}
-                  {listing.parking != null && (
+                  {listing.parking != null && Number(listing.parking) !== 0 && (
                     <DetailRow icon={CarFront} label="Parking spots" value={String(listing.parking)} />
                   )}
                   {listing.delivery_date && (

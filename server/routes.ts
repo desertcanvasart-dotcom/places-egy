@@ -44,6 +44,7 @@ import {
 import { handleCalendlyWebhook } from "./calendly-webhook";
 import { regenerateMarketReportHandler } from "./regenerate-report";
 import { weeklyReportHandler } from "./weekly-report";
+import { getUsdEgpRate, setManualUsdEgpRate } from "./fx";
 import { nurtureFollowupsHandler } from "./nurture";
 import { registerProjectCoordsRoutes } from "./project-coords-routes";
 import {
@@ -108,6 +109,17 @@ async function proxyToWp(path: string, res: Response) {
     console.error("[blog] WP proxy error:", err);
     return res.status(502).json({ error: "Failed to reach WordPress" });
   }
+}
+
+// Columns added by sql/listings-outdoor-and-fx.sql. If this code runs before
+// that migration, admin saves retry without them instead of failing.
+const NEW_LISTING_COLUMNS = ["outdoor_area_sqm", "outdoor_price_per_meter", "outdoor_area_type", "price_is_lump_sum"] as const;
+const missingNewColumns = (msg: string) =>
+  /column|schema cache|42703|PGRST204/i.test(msg) && NEW_LISTING_COLUMNS.some((c) => msg.includes(c));
+function withoutNewColumns<T extends Record<string, unknown>>(row: T): T {
+  const copy = { ...row };
+  for (const c of NEW_LISTING_COLUMNS) delete (copy as Record<string, unknown>)[c];
+  return copy;
 }
 
 export async function registerRoutes(
@@ -238,6 +250,29 @@ export async function registerRoutes(
   // GET /api/deals — public. The homepage deal carousel reads the active deals
   // (max 3) ordered by sort_order then newest. Uses the service-role client but
   // only ever returns active rows, so it's safe to expose unauthenticated.
+  // USD→EGP rate for "≈ EGP" hints and cross-currency filtering (server/fx.ts).
+  app.get("/api/fx/usd-egp", async (_req: Request, res: Response) => {
+    const fx = await getUsdEgpRate();
+    res.set("Cache-Control", "public, max-age=900");
+    res.json({ rate: fx.rate, kind: fx.kind, asOf: fx.asOf });
+  });
+
+  // Admin: read the full rate state (incl. the API value under an override).
+  app.get("/api/admin/fx/usd-egp", adminLimiter, requireAdmin, async (_req: Request, res: Response) => {
+    res.json(await getUsdEgpRate());
+  });
+
+  // Admin: set a manual rate ({ rate: 52.5 }) or clear it ({ rate: null }).
+  app.put("/api/admin/fx/usd-egp", adminLimiter, requireAdmin, async (req: Request, res: Response) => {
+    const raw = req.body?.rate;
+    const rate = raw === null || raw === "" || raw === undefined ? null : Number(raw);
+    try {
+      res.json(await setManualUsdEgpRate(rate));
+    } catch (err) {
+      res.status(400).json({ message: (err as Error).message });
+    }
+  });
+
   app.get("/api/deals", async (_req: Request, res: Response) => {
     if (!supabaseAdmin) return res.json([]);
     const { data, error } = await supabaseAdmin
@@ -949,11 +984,14 @@ export async function registerRoutes(
       if (!parsed.success) {
         return res.status(400).json({ message: "Invalid listing payload" });
       }
-      const { error, data } = await supabaseAdmin
+      let { error, data } = await supabaseAdmin
         .from("listings")
         .insert(parsed.data)
         .select()
         .single();
+      if (error && missingNewColumns(error.message)) {
+        ({ error, data } = await supabaseAdmin.from("listings").insert(withoutNewColumns(parsed.data)).select().single());
+      }
       if (error) return res.status(400).json({ message: error.message });
       syncListingToHotdesk(data, data.id, "created");
       invalidateInventory();
@@ -979,12 +1017,11 @@ export async function registerRoutes(
       if (!parsed.success) {
         return res.status(400).json({ message: "Invalid listing payload" });
       }
-      const { error, data } = await supabaseAdmin
-        .from("listings")
-        .update({ ...parsed.data, updated_at: new Date().toISOString() })
-        .eq("id", id)
-        .select()
-        .single();
+      const changes = { ...parsed.data, updated_at: new Date().toISOString() };
+      let { error, data } = await supabaseAdmin.from("listings").update(changes).eq("id", id).select().single();
+      if (error && missingNewColumns(error.message)) {
+        ({ error, data } = await supabaseAdmin.from("listings").update(withoutNewColumns(changes)).eq("id", id).select().single());
+      }
       if (error) return res.status(400).json({ message: error.message });
       forgetListing(id);
       syncListingToHotdesk(data, id, "updated");
