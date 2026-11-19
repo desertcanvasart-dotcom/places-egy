@@ -44,6 +44,7 @@ import {
 import { handleCalendlyWebhook } from "./calendly-webhook";
 import { regenerateMarketReportHandler } from "./regenerate-report";
 import { weeklyReportHandler } from "./weekly-report";
+import { getUsdEgpRate, setManualUsdEgpRate } from "./fx";
 import { nurtureFollowupsHandler } from "./nurture";
 import { registerProjectCoordsRoutes } from "./project-coords-routes";
 import {
@@ -238,6 +239,29 @@ export async function registerRoutes(
   // GET /api/deals — public. The homepage deal carousel reads the active deals
   // (max 3) ordered by sort_order then newest. Uses the service-role client but
   // only ever returns active rows, so it's safe to expose unauthenticated.
+  // USD→EGP rate for "≈ EGP" hints and cross-currency filtering (server/fx.ts).
+  app.get("/api/fx/usd-egp", async (_req: Request, res: Response) => {
+    const fx = await getUsdEgpRate();
+    res.set("Cache-Control", "public, max-age=900");
+    res.json({ rate: fx.rate, kind: fx.kind, asOf: fx.asOf });
+  });
+
+  // Admin: read the full rate state (incl. the API value under an override).
+  app.get("/api/admin/fx/usd-egp", adminLimiter, requireAdmin, async (_req: Request, res: Response) => {
+    res.json(await getUsdEgpRate());
+  });
+
+  // Admin: set a manual rate ({ rate: 52.5 }) or clear it ({ rate: null }).
+  app.put("/api/admin/fx/usd-egp", adminLimiter, requireAdmin, async (req: Request, res: Response) => {
+    const raw = req.body?.rate;
+    const rate = raw === null || raw === "" || raw === undefined ? null : Number(raw);
+    try {
+      res.json(await setManualUsdEgpRate(rate));
+    } catch (err) {
+      res.status(400).json({ message: (err as Error).message });
+    }
+  });
+
   app.get("/api/deals", async (_req: Request, res: Response) => {
     if (!supabaseAdmin) return res.json([]);
     const { data, error } = await supabaseAdmin
