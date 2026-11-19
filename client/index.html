@@ -103,18 +103,35 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
 
-      // Default: deny everything until user consents (EU compliance)
+      // Consent is asked for only where the law requires opt-in (EEA, UK,
+      // Switzerland), detected from the browser's time zone. Everyone else
+      // (almost all visitors, in Egypt and the Gulf) gets anonymous analytics
+      // by default so GA4 and Clarity see real lead clicks; ad storage stays
+      // denied until "Accept all". A saved "Reject" is always honoured.
+      // CookieBanner.tsx reads window.__consentRequired to decide whether to show.
+      window.__consentRequired = (function () {
+        try {
+          var tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+          return /^(Europe\/|Atlantic\/(Reykjavik|Canary|Madeira|Azores|Faroe)|Arctic\/)/.test(tz);
+        } catch (e) {
+          return true;
+        }
+      })();
+      var saved = null;
+      try { saved = localStorage.getItem('cookie_consent'); } catch (e) {}
+      window.__analyticsAllowed =
+        saved === 'accepted' || (!window.__consentRequired && saved !== 'rejected');
+
       gtag('consent', 'default', {
         ad_storage: 'denied',
         ad_user_data: 'denied',
         ad_personalization: 'denied',
-        analytics_storage: 'denied',
+        analytics_storage: window.__analyticsAllowed ? 'granted' : 'denied',
         wait_for_update: 500
       });
 
       // Restore stored consent if user already chose
       try {
-        var saved = localStorage.getItem('cookie_consent');
         if (saved === 'accepted') {
           gtag('consent', 'update', {
             ad_storage: 'granted',
@@ -151,12 +168,9 @@
         })(window, document, "clarity", "script", window.__CLARITY_PROJECT_ID);
       };
 
-      // Load Clarity now if the user already consented in a prior session.
-      try {
-        if (localStorage.getItem('cookie_consent') === 'accepted') {
-          window.__loadClarity();
-        }
-      } catch (e) {}
+      // Load Clarity now if analytics is allowed (prior "Accept all", or a
+      // visitor outside the opt-in regions who hasn't rejected).
+      if (window.__analyticsAllowed) window.__loadClarity();
     </script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
