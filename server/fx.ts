@@ -43,6 +43,9 @@ type Row = {
 let row: Row | null = null;
 let loadedFromDbAt = 0;
 let refreshing: Promise<void> | null = null;
+// After a failed fetch, wait before trying the rate API again.
+let lastAttemptAt = 0;
+const RETRY_MS = 10 * 60 * 1000;
 
 const num = (v: unknown) => (v == null || v === "" ? null : Number(v));
 
@@ -96,7 +99,10 @@ function current(): FxRate {
   if (row?.manual_rate) {
     return { rate: row.manual_rate, kind: "manual", asOf: row.manual_set_at, source: "set by admin", autoRate, autoAsOf };
   }
-  if (autoRate) return { rate: autoRate, kind: "auto", asOf: autoAsOf, source: row?.auto_source ?? null, autoRate, autoAsOf };
+  if (autoRate) {
+    const placeholder = (row?.auto_source ?? "").startsWith("initial");
+    return { rate: autoRate, kind: placeholder ? "fallback" : "auto", asOf: placeholder ? null : autoAsOf, source: row?.auto_source ?? null, autoRate, autoAsOf };
+  }
   return { rate: FALLBACK_RATE, kind: "fallback", asOf: null, source: null, autoRate: null, autoAsOf: null };
 }
 
@@ -107,13 +113,19 @@ function current(): FxRate {
  */
 export async function getUsdEgpRate(): Promise<FxRate> {
   const stale = () => {
-    const at = row?.auto_fetched_at ? Date.parse(row.auto_fetched_at) : 0;
+    // The migration seeds a placeholder row (auto_source "initial value…");
+    // it's never a real fetched rate, so refresh it straight away.
+    if (!row?.auto_source || row.auto_source.startsWith("initial")) return true;
+    const at = row.auto_fetched_at ? Date.parse(row.auto_fetched_at) : 0;
     return Date.now() - at > REFRESH_MS;
   };
-  if (!refreshing && (loadedFromDbAt === 0 || stale())) {
+  if (!refreshing && (loadedFromDbAt === 0 || (stale() && Date.now() - lastAttemptAt > RETRY_MS))) {
     refreshing = (async () => {
       if (loadedFromDbAt === 0 || Date.now() - loadedFromDbAt > 60_000) await readDb();
-      if (stale()) await fetchAuto();
+      if (stale() && Date.now() - lastAttemptAt > RETRY_MS) {
+        lastAttemptAt = Date.now();
+        await fetchAuto();
+      }
     })().finally(() => {
       refreshing = null;
     });
