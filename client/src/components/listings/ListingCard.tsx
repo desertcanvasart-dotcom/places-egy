@@ -303,7 +303,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
                 {listing.maintenance_status && <DetailBlock icon={Building2} label="Maintenance" value={getEnumLabel(MAINTENANCE_STATUS_OPTIONS, listing.maintenance_status)} />}
                 {listing.floor != null && Number(listing.floor) !== 0 && <DetailBlock icon={Building2} label="Floor" value={listing.floor} />}
                 {listing.delivery_date && <DetailBlock icon={Calendar} label="Delivery date" value={listing.delivery_date} />}
-                {listing.parking != null && <DetailBlock icon={CarFront} label="Parking" value={listing.parking} />}
+                {listing.parking != null && Number(listing.parking) !== 0 && <DetailBlock icon={CarFront} label="Parking" value={listing.parking} />}
               </div>
               <div className="grid grid-cols-2 gap-3 pt-1">
                 <a href={`tel:${PHONE}`} onClick={handleCallClick}><Button className="w-full bg-primary hover:bg-primary/90 text-white"><Phone className="w-4 h-4 mr-2" /> Call Us</Button></a>
@@ -678,7 +678,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
               {listing.maintenance_status && <DetailBlock icon={Building2} label="Maintenance" value={getEnumLabel(MAINTENANCE_STATUS_OPTIONS, listing.maintenance_status)} />}
               {listing.floor != null && Number(listing.floor) !== 0 && <DetailBlock icon={Building2} label="Floor" value={listing.floor} />}
               {listing.delivery_date && <DetailBlock icon={Calendar} label="Delivery date" value={listing.delivery_date} />}
-              {listing.parking != null && <DetailBlock icon={CarFront} label="Parking" value={listing.parking} />}
+              {listing.parking != null && Number(listing.parking) !== 0 && <DetailBlock icon={CarFront} label="Parking" value={listing.parking} />}
             </div>
 
             {/* CTA buttons */}
