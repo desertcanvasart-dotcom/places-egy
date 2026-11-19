@@ -10,6 +10,8 @@ export interface CheckableListing {
   maintenance_status?: string | null;
   maintenance_fees?: number | null;
   currency?: string | null;
+  price?: number | null;
+  transaction_type?: string | null;
 }
 
 export interface ListingIssue {
@@ -18,6 +20,9 @@ export interface ListingIssue {
   current: string;
   conflicting: string;
   fix: string;
+  /** "block": impossible values; the admin form won't save until fixed.
+   *  Absent: a warning the editor can confirm and save anyway. */
+  severity?: "block";
 }
 
 const AREA_MIN = 10;
@@ -83,6 +88,75 @@ export function listingIssues(l: CheckableListing): ListingIssue[] {
       current: `area ${area}`,
       conflicting: `title says ${sizes.join(" / ")} m²`,
       fix: "Correct whichever is wrong (title or area)",
+    });
+  }
+
+  // "650 SQM + 350 SQM Outdoor": the first figure is the unit itself; the
+  // second is a terrace/roof/outdoor add-on. Area should be the first.
+  const plus = title.match(/(\d[\d,.]*)\s*(?:sq\.?\s*m|sqm|m²|m2)\s*\+\s*(\d[\d,.]*)\s*(?:sq\.?\s*m|sqm|m²|m2)/i);
+  if (plus && area) {
+    const main = Number(plus[1].replace(/,/g, ""));
+    const extra = Number(plus[2].replace(/,/g, ""));
+    if (Math.abs(main - area) >= 1 && Math.abs(main + extra - area) >= 1) {
+      issues.push({
+        rule: "area field isn't the main area from the title",
+        field: "area_sqm",
+        current: `area ${area}`,
+        conflicting: `title: ${main} m² + ${extra} m²`,
+        fix: `Set area to ${main} (the unit) and mention the ${extra} m² extra in the description`,
+      });
+    }
+  }
+
+  // Price sanity, from price per m². Catches a per-m² rate or the area typed
+  // into the price field (e.g. USD 33 for 1,700 m²; USD 560 for 560 m²).
+  const price = l.price == null ? null : Number(l.price);
+  if (price == null || price <= 0) {
+    issues.push({ rule: "price missing", field: "price", current: String(price ?? ""), conflicting: "", fix: "Enter the price (rent per month, or total sale price)", severity: "block" });
+  } else if (area && area >= AREA_MIN) {
+    const perM2 = price / area;
+    const usd = (l.currency ?? "").toUpperCase() === "USD";
+    const sale = l.transaction_type === "sale" || l.transaction_type === "income-property";
+    const [lo, hi] = sale ? (usd ? [150, 15_000] : [5_000, 600_000]) : usd ? [2, 150] : [50, 8_000];
+    if (perM2 < lo || perM2 > hi) {
+      const unit = `${usd ? "USD" : "EGP"}${sale ? "" : "/month"}`;
+      issues.push({
+        rule: `price is ${perM2 < lo ? "too low" : "too high"} for the area`,
+        field: "price",
+        current: `${price.toLocaleString("en-US")} ${unit}`,
+        conflicting: `= ${perM2.toLocaleString("en-US", { maximumFractionDigits: 1 })} per m² (expected ${lo.toLocaleString("en-US")}–${hi.toLocaleString("en-US")})`,
+        fix: perM2 < lo
+          ? `If ${price.toLocaleString("en-US")} is the rate per m², the ${sale ? "price" : "monthly rent"} is ${(price * area).toLocaleString("en-US")} ${unit}`
+          : "Check the price, currency and area",
+        severity: "block",
+      });
+    }
+  }
+
+  // Rate stated in the description ("EGP 1,100 / SQM") vs price ÷ area.
+  const rate = (l.description ?? "").match(/(?:egp|usd|le)\s*([\d,]+(?:\.\d+)?)\s*(?:\/|per)\s*(?:sqm|sq\.?\s*m|m²|m2|meter|metre)/i);
+  if (rate && price && area) {
+    const expected = Number(rate[1].replace(/,/g, "")) * area;
+    if (expected > 0 && Math.abs(expected - price) / expected > 0.1) {
+      issues.push({
+        rule: "price doesn't match the rate × area in the description",
+        field: "price/area_sqm",
+        current: `price ${price.toLocaleString("en-US")}`,
+        conflicting: `${rate[0].trim()} × ${area} m² = ${expected.toLocaleString("en-US")}`,
+        fix: "Correct the price, the area or the rate in the description",
+      });
+    }
+  }
+
+  // Empty title segment, e.g. "Office for Rent in Hyde Park – | Finished".
+  if (/[–—-]\s*\||\|\s*\||\|\s*[–—-]|[|–—-]\s*$/.test(title.trim())) {
+    issues.push({
+      rule: "title has an empty part",
+      field: "title",
+      current: title,
+      conflicting: "",
+      fix: "Fill in the missing part (usually the size) or use Generate title",
+      severity: "block",
     });
   }
 

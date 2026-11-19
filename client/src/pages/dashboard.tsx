@@ -262,6 +262,7 @@ function ListingFormDialog({
   const [uploading, setUploading] = useState(false);
   const [issuesChecked, setIssuesChecked] = useState(false);
   const issues = useMemo(() => listingIssues(form), [form]);
+  const blocking = issues.filter((i) => i.severity === "block");
 
   useEffect(() => {
     setIssuesChecked(false);
@@ -588,16 +589,22 @@ function ListingFormDialog({
               <p className="font-semibold">Check before saving</p>
               <ul className="list-disc pl-5 space-y-1 text-xs">
                 {issues.map((i) => (
-                  <li key={i.rule}>
-                    <span className="font-medium">{i.rule}</span>
+                  <li key={i.rule} className={i.severity === "block" ? "text-destructive" : undefined}>
+                    <span className="font-medium">{i.severity === "block" ? "Must fix: " : ""}{i.rule}</span>
                     {i.conflicting ? ` (${i.conflicting})` : ""}. {i.fix}
                   </li>
                 ))}
               </ul>
-              <label className="flex items-center gap-2 text-xs font-medium">
-                <Checkbox checked={issuesChecked} onCheckedChange={(v) => setIssuesChecked(v === true)} />
-                I've checked these and want to save anyway
-              </label>
+              {blocking.length > 0 ? (
+                <p className="text-xs font-medium text-destructive">
+                  Fix the "Must fix" items to save. Visitors see these values on the site.
+                </p>
+              ) : (
+                <label className="flex items-center gap-2 text-xs font-medium">
+                  <Checkbox checked={issuesChecked} onCheckedChange={(v) => setIssuesChecked(v === true)} />
+                  I've checked these and want to save anyway
+                </label>
+              )}
             </div>
           )}
 
@@ -607,7 +614,13 @@ function ListingFormDialog({
             </Button>
             <Button
               onClick={() => saveMutation.mutate(form)}
-              disabled={saveMutation.isPending || !form.title.trim() || form.price == null || (issues.length > 0 && !issuesChecked)}
+              disabled={
+                saveMutation.isPending ||
+                !form.title.trim() ||
+                form.price == null ||
+                blocking.length > 0 ||
+                (issues.length > 0 && !issuesChecked)
+              }
               className="flex-1 bg-primary text-white"
             >
               {saveMutation.isPending ? "Saving..." : isEditing ? "Update" : "Create"}

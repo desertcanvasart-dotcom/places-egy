@@ -28,7 +28,7 @@ async function main() {
   for (let from = 0; ; from += 1000) {
     const { data, error } = await db
       .from("listings")
-      .select("id,title,description,area_sqm,furnishing,maintenance_status,maintenance_fees,currency,price,is_test")
+      .select("id,title,description,area_sqm,furnishing,maintenance_status,maintenance_fees,currency,price,transaction_type,is_test")
       .order("id")
       .range(from, from + 999);
     if (error) throw error;
