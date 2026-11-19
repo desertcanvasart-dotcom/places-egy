@@ -52,7 +52,8 @@ export function expectedPriceRange(
 ): [number, number] {
   const indoor = rate * area;
   if (!outdoorArea) return [indoor, indoor];
-  if (outdoorRate) return [indoor + outdoorRate * outdoorArea, indoor + outdoorRate * outdoorArea];
+  // 0 is a real answer ("the outdoor area is included free"), not "unknown".
+  if (outdoorRate != null) return [indoor + outdoorRate * outdoorArea, indoor + outdoorRate * outdoorArea];
   return [indoor, indoor + rate * outdoorArea];
 }
 
@@ -223,7 +224,7 @@ export function listingIssues(l: CheckableListing): ListingIssue[] {
       const off = price < lo ? lo / price : price / hi;
       const formula =
         `${fmtN(ppm)} × ${fmtN(area)} m²` +
-        (outdoorArea ? (outdoorRate ? ` + ${fmtN(outdoorRate)} × ${fmtN(outdoorArea)} m² outdoor` : ` (+ outdoor ${fmtN(outdoorArea)} m², rate not set)`) : "");
+        (outdoorArea ? (outdoorRate != null ? ` + ${fmtN(outdoorRate)} × ${fmtN(outdoorArea)} m² outdoor` : ` (+ outdoor ${fmtN(outdoorArea)} m², rate not set)`) : "");
       issues.push({
         rule: "price doesn't match price per m² × area",
         field: "price/price_per_meter/area_sqm",
@@ -237,7 +238,7 @@ export function listingIssues(l: CheckableListing): ListingIssue[] {
 
   // Outdoor area with no rate: the price may or may not include it. Shown so
   // the editor states it explicitly (until the owner sets one rule).
-  if (outdoorArea && !outdoorRate && !lumpSum) {
+  if (outdoorArea && outdoorRate == null && !lumpSum) {
     issues.push({
       rule: "outdoor area has no rate",
       field: "outdoor_price_per_meter",
