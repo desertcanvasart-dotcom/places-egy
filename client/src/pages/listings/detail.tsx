@@ -122,14 +122,18 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {
       if (!listing?.transaction_type) return [];
-      const { data, error } = await supabase
-        .from<Listing>("listings")
-        .select(
-          "id,title,transaction_type,property_type,subtype,developer,project,location,location_area,price,currency,area_sqm,furnishing,images,rental_status,rental_end,updated_at,price_per_meter,outdoor_area_sqm,outdoor_price_per_meter,outdoor_area_type,price_is_lump_sum,maintenance_fees,maintenance_status,floor,parking,delivery_date",
-        )
-        .eq("is_test", false)
-        .eq("property_type", "admin")
-        .eq("transaction_type", listing.transaction_type);
+      const base =
+        "id,title,transaction_type,property_type,subtype,developer,project,location,location_area,price,currency,area_sqm,furnishing,images,rental_status,rental_end,updated_at,price_per_meter,maintenance_fees,maintenance_status,floor,parking,delivery_date";
+      const query = (cols: string) =>
+        supabase
+          .from<Listing>("listings")
+          .select(cols)
+          .eq("is_test", false)
+          .eq("property_type", "admin")
+          .eq("transaction_type", listing.transaction_type);
+      let { data, error } = await query(`${base},outdoor_area_sqm,outdoor_price_per_meter,outdoor_area_type,price_is_lump_sum`);
+      // Before sql/listings-outdoor-and-fx.sql runs, those columns don't exist.
+      if (error) ({ data, error } = await query(base));
       if (error) throw error;
       return data ?? [];
     },

@@ -111,6 +111,17 @@ async function proxyToWp(path: string, res: Response) {
   }
 }
 
+// Columns added by sql/listings-outdoor-and-fx.sql. If this code runs before
+// that migration, admin saves retry without them instead of failing.
+const NEW_LISTING_COLUMNS = ["outdoor_area_sqm", "outdoor_price_per_meter", "outdoor_area_type", "price_is_lump_sum"] as const;
+const missingNewColumns = (msg: string) =>
+  /column|schema cache|42703|PGRST204/i.test(msg) && NEW_LISTING_COLUMNS.some((c) => msg.includes(c));
+function withoutNewColumns<T extends Record<string, unknown>>(row: T): T {
+  const copy = { ...row };
+  for (const c of NEW_LISTING_COLUMNS) delete (copy as Record<string, unknown>)[c];
+  return copy;
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express,
@@ -973,11 +984,14 @@ export async function registerRoutes(
       if (!parsed.success) {
         return res.status(400).json({ message: "Invalid listing payload" });
       }
-      const { error, data } = await supabaseAdmin
+      let { error, data } = await supabaseAdmin
         .from("listings")
         .insert(parsed.data)
         .select()
         .single();
+      if (error && missingNewColumns(error.message)) {
+        ({ error, data } = await supabaseAdmin.from("listings").insert(withoutNewColumns(parsed.data)).select().single());
+      }
       if (error) return res.status(400).json({ message: error.message });
       syncListingToHotdesk(data, data.id, "created");
       invalidateInventory();
@@ -1003,12 +1017,11 @@ export async function registerRoutes(
       if (!parsed.success) {
         return res.status(400).json({ message: "Invalid listing payload" });
       }
-      const { error, data } = await supabaseAdmin
-        .from("listings")
-        .update({ ...parsed.data, updated_at: new Date().toISOString() })
-        .eq("id", id)
-        .select()
-        .single();
+      const changes = { ...parsed.data, updated_at: new Date().toISOString() };
+      let { error, data } = await supabaseAdmin.from("listings").update(changes).eq("id", id).select().single();
+      if (error && missingNewColumns(error.message)) {
+        ({ error, data } = await supabaseAdmin.from("listings").update(withoutNewColumns(changes)).eq("id", id).select().single());
+      }
       if (error) return res.status(400).json({ message: error.message });
       forgetListing(id);
       syncListingToHotdesk(data, id, "updated");
