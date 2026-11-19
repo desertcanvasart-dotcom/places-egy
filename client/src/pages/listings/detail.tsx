@@ -459,7 +459,10 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
                     className="listing-description"
                     dangerouslySetInnerHTML={{
                       __html: DOMPurify.sanitize(
-                        marked.parse(listing.description, { async: false }) as string,
+                        // Descriptions often start with "# Title" in Markdown; the
+                        // page already has its H1 (the listing title), so headings
+                        // inside the description start at H2.
+                        (marked.parse(listing.description, { async: false }) as string).replace(/<(\/?)h1\b/gi, "<$1h2"),
                       ),
                     }}
                   />
