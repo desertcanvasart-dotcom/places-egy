@@ -12,7 +12,7 @@ import { breadcrumbSchema, listingSchema } from "@/lib/schema";
 import { supabase, type Listing } from "@/lib/supabase";
 import { DEVELOPER_OPTIONS, FURNISHING_OPTIONS, MAINTENANCE_STATUS_OPTIONS, getEnumLabel } from "@/lib/enums";
 import { listingUrl, parseListingId } from "@/lib/listings";
-import { formatEgpShort, listingCurrency, priceInEgp, USD_EGP_RATE } from "@/lib/currency";
+import { formatEgpShort, formatRateDate, listingCurrency, priceInEgp, useUsdEgpRate } from "@/lib/currency";
 import { supabaseImage, supabaseImageOnError } from "@/lib/image-url";
 import { trackEvent } from "@/lib/analytics";
 import { openCalendly } from "@/lib/calendly";
@@ -82,6 +82,7 @@ export default function ListingDetailPage() {
 
 // Separated so the hooks below run after the id-validity guard above.
 function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
+  const fx = useUsdEgpRate();
   const [, setLocation] = useLocation();
   const [imageIndex, setImageIndex] = useState(0);
   const [viewingOpen, setViewingOpen] = useState(false);
@@ -123,7 +124,7 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
       const { data, error } = await supabase
         .from<Listing>("listings")
         .select(
-          "id,title,transaction_type,property_type,subtype,developer,project,location,location_area,price,currency,area_sqm,furnishing,images,rental_status,rental_end,updated_at,price_per_meter,maintenance_fees,maintenance_status,floor,parking,delivery_date",
+          "id,title,transaction_type,property_type,subtype,developer,project,location,location_area,price,currency,area_sqm,furnishing,images,rental_status,rental_end,updated_at,price_per_meter,outdoor_area_sqm,outdoor_price_per_meter,price_is_lump_sum,maintenance_fees,maintenance_status,floor,parking,delivery_date",
         )
         .eq("is_test", false)
         .eq("property_type", "admin")
@@ -344,8 +345,11 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
                       {listing.transaction_type?.toLowerCase() === "rent" ? " / month" : ""}
                     </span>
                   </div>
-                  {listingCurrency(listing) === "USD" && priceInEgp(listing) != null && (
-                    <p className="text-xs text-muted-foreground mt-1">≈ {formatEgpShort(priceInEgp(listing)!)} at {USD_EGP_RATE} EGP/USD</p>
+                  {listingCurrency(listing) === "USD" && priceInEgp(listing, fx.rate) != null && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      ≈ {formatEgpShort(priceInEgp(listing, fx.rate)!)} at {fx.rate.toFixed(2)} EGP/USD
+                      {formatRateDate(fx.asOf) ? ` (${formatRateDate(fx.asOf)})` : ""}
+                    </p>
                   )}
                 </div>
               )}
@@ -461,7 +465,19 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
                     <DetailRow icon={Building2} label="Developer" value={getEnumLabel(DEVELOPER_OPTIONS, listing.developer)} />
                   )}
                   {listing.area_sqm != null && (
-                    <DetailRow icon={Maximize} label="Built-up area" value={`${listing.area_sqm} m²`} />
+                    <DetailRow icon={Maximize} label="Built-up area" value={`${Number(listing.area_sqm).toLocaleString("en-US")} m²`} />
+                  )}
+                  {listing.outdoor_area_sqm != null && listing.outdoor_area_sqm > 0 && (
+                    <DetailRow
+                      icon={Maximize}
+                      label="Outdoor area"
+                      value={
+                        `${Number(listing.outdoor_area_sqm).toLocaleString("en-US")} m²` +
+                        (listing.outdoor_price_per_meter
+                          ? ` at ${Number(listing.outdoor_price_per_meter).toLocaleString("en-US")} ${listingCurrency(listing)}/m²`
+                          : "")
+                      }
+                    />
                   )}
                   {listing.price_per_meter != null && (
                     <DetailRow

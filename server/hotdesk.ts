@@ -39,6 +39,9 @@ export interface ListingRow {
   currency: string | null;
   price_per_meter: number | null;
   area_sqm: number | null;
+  outdoor_area_sqm?: number | null;
+  outdoor_price_per_meter?: number | null;
+  price_is_lump_sum?: boolean | null;
   floor: number | null;
   parking: number | null;
   furnishing: string | null;

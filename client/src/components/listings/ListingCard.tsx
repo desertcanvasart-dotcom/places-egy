@@ -14,11 +14,11 @@ import { SchemaMarkup } from "@/components/SchemaMarkup";
 import { listingSchema } from "@/lib/schema";
 import { listingUrl } from "@/lib/listings";
 import { FavoriteButton } from "@/components/FavoriteButton";
-import { formatEgpShort, listingCurrency, priceInEgp } from "@/lib/currency";
+import { formatEgpShort, listingCurrency, priceInEgp, useUsdEgpRate } from "@/lib/currency";
 import { supabaseImage, supabaseImageOnError } from "@/lib/image-url";
 import { trackEvent } from "@/lib/analytics";
 import { Lock } from "lucide-react";
-import { cleanListingTitle, rentedLabel } from "@/lib/listing-text";
+import { areaLabel, cleanListingTitle, rentedLabel } from "@/lib/listing-text";
 
 const PHONE = "01063618217";
 
@@ -199,7 +199,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
                 {listing.area_sqm && (
                   <span className="flex items-center gap-1">
                     <Maximize className="w-3 h-3 text-accent" />
-                    {listing.area_sqm} m²
+                    {areaLabel(listing)}
                   </span>
                 )}
                 {listing.furnishing && (
@@ -296,7 +296,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <DetailBlock icon={MapPin} label="Project" value={listing.project} />
-                <DetailBlock icon={Maximize} label="Area" value={listing.area_sqm ? `${listing.area_sqm} m²` : null} />
+                <DetailBlock icon={Maximize} label="Area" value={listing.area_sqm ? `${areaLabel(listing)}` : null} />
                 {listing.price_per_meter != null && <DetailBlock icon={Building2} label="Price/m²" value={`${listing.price_per_meter.toLocaleString()} ${listingCurrency(listing)}`} />}
                 <DetailBlock icon={Building2} label="Handover condition" value={getEnumLabel(FURNISHING_OPTIONS, listing.furnishing)} />
                 {!!listing.maintenance_fees && listing.maintenance_status !== "included" && <DetailBlock icon={Building2} label="Maintenance Fees" value={`${listing.maintenance_fees.toLocaleString()} ${listingCurrency(listing)}`} />}
@@ -397,7 +397,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
         <div className="mt-auto pt-3">
           <div className="border-t border-border/60 pt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
             {listing.area_sqm ? (
-              <span className="inline-flex items-center gap-1.5"><Maximize className="w-3.5 h-3.5 text-primary/70" />{listing.area_sqm.toLocaleString()} m²</span>
+              <span className="inline-flex items-center gap-1.5"><Maximize className="w-3.5 h-3.5 text-primary/70" />{areaLabel(listing)}</span>
             ) : null}
             {listing.furnishing && (
               <span className="inline-flex items-center gap-1.5"><Building2 className="w-3.5 h-3.5 text-primary/70" />{getEnumLabel(FURNISHING_OPTIONS, listing.furnishing)}</span>
@@ -520,7 +520,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
                 <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Area</span>
                 <div className="flex items-center gap-1.5 font-medium text-foreground">
                   <Maximize className="w-3.5 h-3.5 text-accent" />
-                  {listing.area_sqm} m²
+                  {areaLabel(listing)}
                 </div>
               </div>
               <div className="flex flex-col gap-1">
@@ -671,7 +671,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
             {/* Details grid */}
             <div className="grid grid-cols-3 gap-3">
               <DetailBlock icon={MapPin} label="Project" value={listing.project} />
-              <DetailBlock icon={Maximize} label="Area" value={listing.area_sqm ? `${listing.area_sqm} m²` : null} />
+              <DetailBlock icon={Maximize} label="Area" value={listing.area_sqm ? `${areaLabel(listing)}` : null} />
               {listing.price_per_meter != null && <DetailBlock icon={Building2} label="Price/m²" value={`${listing.price_per_meter.toLocaleString()} ${listingCurrency(listing)}`} />}
               <DetailBlock icon={Building2} label="Handover condition" value={getEnumLabel(FURNISHING_OPTIONS, listing.furnishing)} />
               {!!listing.maintenance_fees && listing.maintenance_status !== "included" && <DetailBlock icon={Building2} label="Maintenance Fees" value={`${listing.maintenance_fees.toLocaleString()} ${listingCurrency(listing)}`} />}
@@ -715,8 +715,9 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
 
 // "≈ EGP 1.1M" under USD prices, so they can be compared with EGP listings.
 function EgpHint({ listing, block }: { listing: Listing; block?: boolean }) {
+  const fx = useUsdEgpRate();
   if (listingCurrency(listing) !== "USD") return null;
-  const egp = priceInEgp(listing);
+  const egp = priceInEgp(listing, fx.rate);
   if (egp == null) return null;
   const text = `≈ ${formatEgpShort(egp)}`;
   return block ? <p className="text-[11px] text-muted-foreground">{text}</p> : <span className="text-[11px] text-muted-foreground ml-1">{text}</span>;

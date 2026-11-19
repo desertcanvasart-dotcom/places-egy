@@ -3,7 +3,7 @@
 import { readFileSync, existsSync } from "fs";
 import path from "path";
 import { FURNISHING_OPTIONS, getEnumLabel } from "../../client/src/lib/enums";
-import { cleanListingTitle, listingSnippet, rentedLabel } from "../../client/src/lib/listing-text";
+import { areaLabel, cleanListingTitle, listingSnippet, rentedLabel } from "../../client/src/lib/listing-text";
 import { rankSimilar } from "../../client/src/lib/similar-listings";
 import { LOCATION_CONTENT } from "../../client/src/lib/location-content";
 import { breadcrumbSchema, faqSchema, itemListSchema, listingSchema } from "../../client/src/lib/schema";
@@ -296,7 +296,7 @@ export async function renderListing(l: SeoListing): Promise<string> {
 
   const rows: Array<[string, string]> = [
     ["Price", esc(formatPrice(l))],
-    ["Area", l.area_sqm ? `${esc(Number(l.area_sqm).toLocaleString("en-US"))} m²` : "On request"],
+    ["Area", l.area_sqm ? esc(areaLabel(l)) : "On request"],
     ["Location", locSlug ? `<a href="/locations/${locSlug}">${esc(l.location ?? "")}</a>` : esc(l.location ?? "")],
     ...(l.location_area ? ([["Area / district", esc(l.location_area)]] as Array<[string, string]>) : []),
     ...(condition ? ([["Condition", esc(condition)]] as Array<[string, string]>) : []),
