@@ -12,6 +12,10 @@ export interface CheckableListing {
   currency?: string | null;
   price?: number | null;
   transaction_type?: string | null;
+  price_per_meter?: number | null;
+  outdoor_area_sqm?: number | null;
+  outdoor_price_per_meter?: number | null;
+  price_is_lump_sum?: boolean | null;
 }
 
 export interface ListingIssue {
@@ -24,6 +28,35 @@ export interface ListingIssue {
    *  Absent: a warning the editor can confirm and save anyway. */
   severity?: "block";
 }
+
+// "USD 45 / SQM", "$45/sqm", "$ 45 per m²"
+const USD_RATE = /(?:usd|\$)\s*([\d,]+(?:\.\d+)?)\s*(?:\/|per)\s*(?:sqm|sq\.?\s*m|m²|m2|meter|metre)/i;
+
+// True when price = the description's USD rate × area (within 2%).
+function usdTotalMatches(description: string | null | undefined, area: number | null, price: number | null): boolean {
+  const m = (description ?? "").match(USD_RATE);
+  if (!m || !area || !price) return false;
+  const total = Number(m[1].replace(/,/g, "")) * area;
+  return total > 0 && Math.abs(total - price) / price < 0.02;
+}
+
+// Expected price range from a rate per m². The outdoor area is added at its
+// own rate when one is set; when it isn't, how the outdoor area is charged is
+// unknown (that pricing rule is the owner's call), so anything from "indoor
+// only" to "indoor + outdoor at the indoor rate" is accepted.
+export function expectedPriceRange(
+  rate: number,
+  area: number,
+  outdoorArea?: number | null,
+  outdoorRate?: number | null,
+): [number, number] {
+  const indoor = rate * area;
+  if (!outdoorArea) return [indoor, indoor];
+  if (outdoorRate) return [indoor + outdoorRate * outdoorArea, indoor + outdoorRate * outdoorArea];
+  return [indoor, indoor + rate * outdoorArea];
+}
+
+const fmtN = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 2 });
 
 const AREA_MIN = 10;
 const AREA_MAX = 50_000;
@@ -97,13 +130,33 @@ export function listingIssues(l: CheckableListing): ListingIssue[] {
   if (plus && area) {
     const main = Number(plus[1].replace(/,/g, ""));
     const extra = Number(plus[2].replace(/,/g, ""));
+    if (Math.abs(main - area) < 1 && !l.outdoor_area_sqm) {
+      issues.push({
+        rule: "outdoor area from the title isn't entered",
+        field: "outdoor_area_sqm",
+        current: "empty",
+        conflicting: `title: ${main} m² + ${extra} m²`,
+        fix: `Enter ${extra} in Outdoor area (and its rate, if it's priced separately)`,
+      });
+    }
     if (Math.abs(main - area) >= 1 && Math.abs(main + extra - area) >= 1) {
+      // When the area holds the add-on (#855: 350 outdoor instead of 650
+      // indoor), the price was usually computed from it too.
+      const rateM = (l.description ?? "").match(/(?:egp|usd|le|\$)\s*([\d,]+(?:\.\d+)?)\s*(?:\/|per)\s*(?:sqm|sq\.?\s*m|m²|m2|meter|metre)/i);
+      const rateNum = rateM ? Number(rateM[1].replace(/,/g, "")) : 0;
+      const priceNow = l.price == null ? 0 : Number(l.price);
+      const priceFromWrongArea = rateNum > 0 && priceNow > 0 && Math.abs(rateNum * area - priceNow) / priceNow < 0.02;
       issues.push({
         rule: "area field isn't the main area from the title",
         field: "area_sqm",
         current: `area ${area}`,
         conflicting: `title: ${main} m² + ${extra} m²`,
-        fix: `Set area to ${main} (the unit) and mention the ${extra} m² extra in the description`,
+        fix:
+          `Set area to ${main} (the unit) and describe the ${extra} m² as outdoor/terrace` +
+          (priceFromWrongArea
+            ? `. The price (${priceNow.toLocaleString("en-US")}) is ${rateNum.toLocaleString("en-US")} × ${area}; at that rate the ${main} m² unit is ${(rateNum * main).toLocaleString("en-US")}, plus the outdoor area at its own rate`
+            : ""),
+        severity: "block",
       });
     }
   }
@@ -118,7 +171,9 @@ export function listingIssues(l: CheckableListing): ListingIssue[] {
     const usd = (l.currency ?? "").toUpperCase() === "USD";
     const sale = l.transaction_type === "sale" || l.transaction_type === "income-property";
     const [lo, hi] = sale ? (usd ? [150, 15_000] : [5_000, 600_000]) : usd ? [2, 150] : [50, 8_000];
-    if (perM2 < lo || perM2 > hi) {
+    // A USD amount saved as EGP is reported by its own rule below, with the right fix.
+    const usdSavedAsEgp = !usd && usdTotalMatches(l.description, area, price);
+    if ((perM2 < lo || perM2 > hi) && !usdSavedAsEgp) {
       const unit = `${usd ? "USD" : "EGP"}${sale ? "" : "/month"}`;
       issues.push({
         rule: `price is ${perM2 < lo ? "too low" : "too high"} for the area`,
@@ -133,19 +188,89 @@ export function listingIssues(l: CheckableListing): ListingIssue[] {
     }
   }
 
+  // USD amount saved as EGP: the description says "$45 / SQM" and the price
+  // equals 45 × area, but the currency field is EGP. The page then shows
+  // "20,250 EGP / month" for a $20,250 unit (about 56x too cheap) and the
+  // EGP budget filter ranks it among the cheapest offices.
+  const usdRate = (l.description ?? "").match(USD_RATE);
+  if (usdRate && price && area && (l.currency ?? "EGP").toUpperCase() === "EGP") {
+    const usdTotal = Number(usdRate[1].replace(/,/g, "")) * area;
+    if (usdTotalMatches(l.description, area, price)) {
+      issues.push({
+        rule: "price is a USD amount saved as EGP",
+        field: "currency",
+        current: `${price.toLocaleString("en-US")} EGP`,
+        conflicting: `description: ${usdRate[0].trim()} × ${area} m² = $${usdTotal.toLocaleString("en-US")}`,
+        fix: "Set currency to USD",
+        severity: "block",
+      });
+    }
+  }
+
+  const lumpSum = !!l.price_is_lump_sum;
+  const outdoorArea = l.outdoor_area_sqm == null ? null : Number(l.outdoor_area_sqm);
+  const outdoorRate = l.outdoor_price_per_meter == null ? null : Number(l.outdoor_price_per_meter);
+
+  // Price vs the "Price per meter" field × area (+ outdoor). These three are
+  // typed separately and are what the card shows side by side ("20,250
+  // EGP/month · 45 EGP/m² · 450 m²"), so they must agree. Off by more than
+  // 2x blocks saving (a wrong currency, area or a rate typed as a total);
+  // a smaller gap is a warning (a negotiated discount, rounding).
+  const ppm = l.price_per_meter == null ? null : Number(l.price_per_meter);
+  if (!lumpSum && ppm && ppm > 0 && price && area) {
+    const [lo, hi] = expectedPriceRange(ppm, area, outdoorArea, outdoorRate);
+    if (price < lo * 0.97 || price > hi * 1.03) {
+      const off = price < lo ? lo / price : price / hi;
+      const formula =
+        `${fmtN(ppm)} × ${fmtN(area)} m²` +
+        (outdoorArea ? (outdoorRate ? ` + ${fmtN(outdoorRate)} × ${fmtN(outdoorArea)} m² outdoor` : ` (+ outdoor ${fmtN(outdoorArea)} m², rate not set)`) : "");
+      issues.push({
+        rule: "price doesn't match price per m² × area",
+        field: "price/price_per_meter/area_sqm",
+        current: `price ${fmtN(price)}`,
+        conflicting: `${formula} = ${lo === hi ? fmtN(lo) : `${fmtN(lo)}–${fmtN(hi)}`}`,
+        fix: "Correct the price, the price per m² or the area. If the price is one total (e.g. a whole building), tick \"Price is a lump sum\"",
+        ...(off > 2 ? { severity: "block" as const } : {}),
+      });
+    }
+  }
+
+  // Outdoor area with no rate: the price may or may not include it. Shown so
+  // the editor states it explicitly (until the owner sets one rule).
+  if (outdoorArea && !outdoorRate && !lumpSum) {
+    issues.push({
+      rule: "outdoor area has no rate",
+      field: "outdoor_price_per_meter",
+      current: `${fmtN(outdoorArea)} m² outdoor`,
+      conflicting: "",
+      fix: "Enter the outdoor rate per m² (0 if the outdoor area is free), or tick \"Price is a lump sum\" if the price covers everything",
+    });
+  }
+
   // Rate stated in the description ("EGP 1,100 / SQM") vs price ÷ area.
-  const rate = (l.description ?? "").match(/(?:egp|usd|le)\s*([\d,]+(?:\.\d+)?)\s*(?:\/|per)\s*(?:sqm|sq\.?\s*m|m²|m2|meter|metre)/i);
-  if (rate && price && area) {
-    const expected = Number(rate[1].replace(/,/g, "")) * area;
-    if (expected > 0 && Math.abs(expected - price) / expected > 0.1) {
+  const rate = (l.description ?? "").match(/(?:egp|usd|le|\$)\s*([\d,]+(?:\.\d+)?)\s*(?:\/|per)\s*(?:sqm|sq\.?\s*m|m²|m2|meter|metre)/i);
+  if (rate && price && area && !lumpSum) {
+    const [lo, hi] = expectedPriceRange(Number(rate[1].replace(/,/g, "")), area, outdoorArea, outdoorRate);
+    if (lo > 0 && (price < lo * 0.9 || price > hi * 1.1)) {
       issues.push({
         rule: "price doesn't match the rate × area in the description",
         field: "price/area_sqm",
-        current: `price ${price.toLocaleString("en-US")}`,
-        conflicting: `${rate[0].trim()} × ${area} m² = ${expected.toLocaleString("en-US")}`,
+        current: `price ${fmtN(price)}`,
+        conflicting: `${rate[0].trim()} × ${fmtN(area)} m²${outdoorArea ? " (+ outdoor)" : ""} = ${lo === hi ? fmtN(lo) : `${fmtN(lo)}–${fmtN(hi)}`}`,
         fix: "Correct the price, the area or the rate in the description",
       });
     }
+  }
+
+  // The description talks in one currency, the currency field says the other.
+  const cur = (l.currency ?? "").toUpperCase();
+  const desc = l.description ?? "";
+  const mentionsUsd = /(?:\busd\b|\$\s*\d|\d\s*\$|دولار)/i.test(desc);
+  const mentionsEgp = /(?:\begp\b|\ble\b|\bl\.e\b|جنيه|ج\.م)/i.test(desc);
+  if (cur === "EGP" && mentionsUsd && !mentionsEgp && !(price && area && usdTotalMatches(desc, area, price))) {
+    issues.push({ rule: "description prices are in USD, currency is EGP", field: "currency", current: "EGP", conflicting: "description mentions USD/$ only", fix: "Set currency to USD, or correct the description" });
+  } else if (cur === "USD" && mentionsEgp && !mentionsUsd) {
+    issues.push({ rule: "description prices are in EGP, currency is USD", field: "currency", current: "USD", conflicting: "description mentions EGP only", fix: "Set currency to EGP, or correct the description" });
   }
 
   // Empty title segment, e.g. "Office for Rent in Hyde Park – | Finished".
@@ -207,7 +332,7 @@ export function listingIssues(l: CheckableListing): ListingIssue[] {
 
   // Currency
   if (!l.currency) {
-    issues.push({ rule: "currency missing", field: "currency", current: "", conflicting: "", fix: "Set EGP or USD" });
+    issues.push({ rule: "currency missing", field: "currency", current: "", conflicting: "", fix: "Choose EGP or USD: the currency the price is quoted in", severity: "block" });
   }
 
   return issues;

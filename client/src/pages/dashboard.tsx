@@ -6,6 +6,8 @@ import { ClientLogosManager } from "@/components/admin/ClientLogosManager";
 import { LeadsManager } from "@/components/admin/LeadsManager";
 import { AccountsManager } from "@/components/admin/AccountsManager";
 import { HotdeskManager } from "@/components/admin/HotdeskManager";
+import { ExchangeRatePanel } from "@/components/admin/ExchangeRatePanel";
+import { PricePreview } from "@/components/admin/PricePreview";
 import { ProjectPinInput } from "@/components/admin/ProjectPinInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -91,7 +93,9 @@ const EMPTY_FORM: ListingForm = {
   location: "",
   location_area: "",
   price: 0,
-  currency: "EGP",
+  // No default: the editor must choose. A pre-selected EGP is how USD prices
+  // ended up shown as EGP (e.g. "20,250 EGP / month" for a $20,250 unit).
+  currency: "",
   area_sqm: 0,
   transaction_type: "",
   furnishing: "",
@@ -100,6 +104,9 @@ const EMPTY_FORM: ListingForm = {
   delivery_date: "",
   parking: 0,
   price_per_meter: 0,
+  outdoor_area_sqm: null,
+  outdoor_price_per_meter: null,
+  price_is_lump_sum: false,
   maintenance_fees: 0,
   maintenance_status: "",
   floor: 0,
@@ -458,25 +465,62 @@ function ListingFormDialog({
               <ProjectPinInput projectName={form.project} />
             </div>
 
-            <SelectField label="Currency" value={form.currency} options={ENUM_OPTIONS.currency} onChange={(v) => set("currency", v)} />
+            <SelectField
+              label="Currency the landlord quoted *"
+              value={form.currency ?? ""}
+              options={ENUM_OPTIONS.currency}
+              onChange={(v) => set("currency", v)}
+            />
 
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium text-primary">Price ({form.currency}) <span className="text-accent">*</span></Label>
+              <Label className="text-sm font-medium text-primary">
+                {(form.transaction_type ?? "").toLowerCase() === "rent" ? "Monthly rent" : "Price"} ({form.currency || "choose currency"}) <span className="text-accent">*</span>
+              </Label>
               <Input type="number" value={form.price ?? ""} onChange={(e) => set("price", toNum(e.target.value))} className="bg-white" />
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium text-primary">Area (sqm)</Label>
+              <Label className="text-sm font-medium text-primary">Area (m²): the unit itself, without terrace/roof</Label>
               <Input type="number" value={form.area_sqm ?? ""} onChange={(e) => set("area_sqm", toNum(e.target.value))} className="bg-white" />
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium text-primary">Price per meter ({form.currency})</Label>
+              <Label className="text-sm font-medium text-primary">Price per m² ({form.currency || "choose currency"})</Label>
               <Input type="number" value={form.price_per_meter ?? ""} onChange={(e) => set("price_per_meter", toNum(e.target.value))} className="bg-white" />
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium text-primary">Maintenance Fees ({form.currency})</Label>
+              <Label className="text-sm font-medium text-primary">Outdoor / terrace / roof area (m²)</Label>
+              <Input
+                type="number"
+                value={form.outdoor_area_sqm ?? ""}
+                onChange={(e) => set("outdoor_area_sqm", toNum(e.target.value))}
+                placeholder="Leave empty if none"
+                className="bg-white"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium text-primary">Outdoor price per m² ({form.currency || "choose currency"})</Label>
+              <Input
+                type="number"
+                value={form.outdoor_price_per_meter ?? ""}
+                onChange={(e) => set("outdoor_price_per_meter", toNum(e.target.value))}
+                placeholder={form.outdoor_area_sqm ? "0 if included free" : "—"}
+                disabled={!form.outdoor_area_sqm}
+                className="bg-white"
+              />
+            </div>
+
+            <label className="md:col-span-2 flex items-center gap-2 text-sm text-primary">
+              <Checkbox checked={!!form.price_is_lump_sum} onCheckedChange={(v) => set("price_is_lump_sum", v === true)} />
+              Price is a lump sum (one total for the whole unit/building, not price per m² × area)
+            </label>
+
+            <PricePreview form={form} />
+
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium text-primary">Maintenance Fees ({form.currency || "choose currency"})</Label>
               <Input type="number" value={form.maintenance_fees ?? ""} onChange={(e) => set("maintenance_fees", toNum(e.target.value))} className="bg-white" />
             </div>
 
@@ -636,7 +680,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
   const queryClient = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
   const [editListing, setEditListing] = useState<ListingForm | null>(null);
-  const [tab, setTab] = useState<"listings" | "deals" | "logos" | "leads" | "accounts" | "hotdesk">("listings");
+  const [tab, setTab] = useState<"listings" | "deals" | "logos" | "leads" | "accounts" | "hotdesk" | "fx">("listings");
   const { data: listings = [], isLoading } = useQuery<Listing[]>({
     queryKey: ["admin-listings"],
     queryFn: async () => {
@@ -775,6 +819,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
             { key: "leads", label: "Leads" },
             { key: "accounts", label: "Accounts" },
             { key: "hotdesk", label: "Hotdesk" },
+            { key: "fx", label: "Exchange rate" },
           ] as const).map(({ key, label }) => (
             <button
               key={key}
@@ -800,6 +845,8 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
           <AccountsManager />
         ) : tab === "hotdesk" ? (
           <HotdeskManager />
+        ) : tab === "fx" ? (
+          <ExchangeRatePanel />
         ) : isLoading ? (
           <p className="text-muted-foreground text-center py-8 md:py-12">Loading listings...</p>
         ) : listings.length === 0 ? (
