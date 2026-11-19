@@ -1,19 +1,25 @@
-// PLACES pricing rules for indoor + outdoor space (agreed 2026-11-19):
+// PLACES pricing rules for a unit with an extra area (outdoor, roof, terrace,
+// garden). Agreed 2026-11-19; listings are entered by the PLACES team.
 //
-//  1. `price` is the INDOOR rent/price: the unit itself (price per m² × area).
-//  2. Outdoor space (terrace, roof, garden) is ALWAYS charged, shown separately.
-//  3. Outdoor rate = 25% of the indoor rate per m², unless the written quote
-//     for the property gives another rate; a quoted rate prevails. (Listings
-//     are entered by the PLACES team; there is no landlord role in the system.)
-//  4. Total = indoor + outdoor. Budget filters and price sorting use the total.
-//  5. Maintenance applies to the outdoor area too.
+//  1. `price` is the INDOOR price: the unit itself (price per m² × area).
+//  2. The extra area is charged separately and shown separately. The team
+//     enters its type, size and price per m² freely for each listing
+//     (no fixed percentage of the indoor rate).
+//  3. Total = indoor + extra area. Budget filters and price sorting use it.
+//  4. Maintenance applies to the extra area too.
 //
-// A listing marked "price is a lump sum" (a whole building quoted as one
-// figure) already includes everything; no outdoor amount is added.
+// A listing marked "price is a lump sum" (one figure for everything, e.g. a
+// whole building) adds nothing on top.
 //
 // Keep free of "@/" imports: the server and scripts import this file.
 
-export const OUTDOOR_RATE_SHARE = 0.25;
+export const EXTRA_AREA_TYPES = [
+  { value: "outdoor", label: "Outdoor area" },
+  { value: "roof", label: "Roof" },
+  { value: "terrace", label: "Terrace" },
+  { value: "garden", label: "Garden" },
+] as const;
+export type ExtraAreaType = (typeof EXTRA_AREA_TYPES)[number]["value"];
 
 type Priced = {
   price?: number | null;
@@ -21,38 +27,35 @@ type Priced = {
   area_sqm?: number | null;
   outdoor_area_sqm?: number | null;
   outdoor_price_per_meter?: number | null;
+  outdoor_area_type?: string | null;
   price_is_lump_sum?: boolean | null;
 };
 
-const round2 = (n: number) => Math.round(n * 100) / 100;
-
-/** The default outdoor rate for an indoor rate: 25% of it. */
-export function defaultOutdoorRate(indoorRate: number | null | undefined): number | null {
-  const r = Number(indoorRate) || 0;
-  return r > 0 ? round2(r * OUTDOOR_RATE_SHARE) : null;
+/** "roof", "terrace"… in lower case for running text; "outdoor" by default. */
+export function extraAreaWord(l: Pick<Priced, "outdoor_area_type">): string {
+  const t = EXTRA_AREA_TYPES.find((x) => x.value === l.outdoor_area_type);
+  return t ? (t.value === "outdoor" ? "outdoor" : t.value) : "outdoor";
 }
 
-/** Outdoor rate in effect: the stored one (a quoted rate) or 25% of the indoor rate. */
-export function effectiveOutdoorRate(l: Priced): number | null {
-  if (l.outdoor_price_per_meter != null) return Number(l.outdoor_price_per_meter);
-  return defaultOutdoorRate(l.price_per_meter);
+/** True when the extra area exists but its price per m² hasn't been entered. */
+export function extraAreaUnpriced(l: Priced): boolean {
+  return !!Number(l.outdoor_area_sqm) && !l.price_is_lump_sum && l.outdoor_price_per_meter == null;
 }
 
-/** Monthly (or sale) amount for the outdoor area, or 0 when none / lump sum / unknown rate. */
+/** Amount for the extra area (area × its price per m²), or 0 when none / lump sum / not priced. */
 export function outdoorAmount(l: Priced): number {
   const area = Number(l.outdoor_area_sqm) || 0;
-  if (!area || l.price_is_lump_sum) return 0;
-  const rate = effectiveOutdoorRate(l);
-  return rate ? Math.round(area * rate) : 0;
+  if (!area || l.price_is_lump_sum || l.outdoor_price_per_meter == null) return 0;
+  return Math.round(area * Number(l.outdoor_price_per_meter));
 }
 
-/** Indoor price + outdoor amount: what the tenant/buyer actually pays. */
+/** Indoor price + extra area: what the tenant/buyer actually pays. */
 export function totalPrice(l: Priced): number {
   const indoor = Number(l.price) || 0;
   return indoor > 0 ? indoor + outdoorAmount(l) : 0;
 }
 
-/** Area that maintenance is charged on (indoor + outdoor). */
+/** Area that maintenance is charged on (indoor + extra area). */
 export function maintenanceArea(l: Priced): number {
   return (Number(l.area_sqm) || 0) + (Number(l.outdoor_area_sqm) || 0);
 }

@@ -37,6 +37,7 @@ const listingFields = z
     // Terrace/roof/outdoor space, kept apart from area_sqm (the unit itself).
     outdoor_area_sqm: z.number().finite().nonnegative().nullable().optional(),
     outdoor_price_per_meter: z.number().finite().nonnegative().nullable().optional(),
+    outdoor_area_type: z.enum(["outdoor", "roof", "terrace", "garden"]).nullable().optional(),
     // Price quoted as one total (e.g. a whole building), not rate × area.
     price_is_lump_sum: z.boolean().optional(),
     maintenance_fees: z.number().finite().nonnegative().nullable().optional(),

@@ -8,7 +8,7 @@ import { AccountsManager } from "@/components/admin/AccountsManager";
 import { HotdeskManager } from "@/components/admin/HotdeskManager";
 import { ExchangeRatePanel } from "@/components/admin/ExchangeRatePanel";
 import { PricePreview } from "@/components/admin/PricePreview";
-import { defaultOutdoorRate } from "@/lib/listing-pricing";
+import { EXTRA_AREA_TYPES } from "@/lib/listing-pricing";
 import { ProjectPinInput } from "@/components/admin/ProjectPinInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -107,6 +107,7 @@ const EMPTY_FORM: ListingForm = {
   price_per_meter: 0,
   outdoor_area_sqm: null,
   outdoor_price_per_meter: null,
+  outdoor_area_type: null,
   price_is_lump_sum: false,
   maintenance_fees: 0,
   maintenance_status: "",
@@ -490,37 +491,47 @@ function ListingFormDialog({
               <Input type="number" value={form.price_per_meter ?? ""} onChange={(e) => set("price_per_meter", toNum(e.target.value))} className="bg-white" />
             </div>
 
+            {/* Extra area: type, size and its own price per m², all entered freely. */}
+            <SelectField
+              label="Extra area type"
+              value={form.outdoor_area_type ?? ""}
+              options={EXTRA_AREA_TYPES.map((t) => ({ value: t.value, label: t.label }))}
+              onChange={(v) => set("outdoor_area_type", v || null)}
+              clearable
+            />
+
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium text-primary">Outdoor / terrace / roof area (m²)</Label>
+              <Label className="text-sm font-medium text-primary">
+                {form.outdoor_area_type ? EXTRA_AREA_TYPES.find((t) => t.value === form.outdoor_area_type)?.label : "Extra area"} (m²)
+              </Label>
               <Input
                 type="number"
                 value={form.outdoor_area_sqm ?? ""}
-                onChange={(e) => set("outdoor_area_sqm", toNum(e.target.value))}
+                onChange={(e) => {
+                  const v = toNum(e.target.value);
+                  set("outdoor_area_sqm", v);
+                  if (v && !form.outdoor_area_type) set("outdoor_area_type", "outdoor");
+                }}
                 placeholder="Leave empty if none"
                 className="bg-white"
               />
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 md:col-span-2">
               <Label className="text-sm font-medium text-primary">
-                Outdoor price per m² ({form.currency || "choose currency"}): only if a different rate was quoted
+                {form.outdoor_area_type ? EXTRA_AREA_TYPES.find((t) => t.value === form.outdoor_area_type)?.label : "Extra area"} price per m² (
+                {form.currency || "choose currency"}){form.outdoor_area_sqm ? <span className="text-accent"> *</span> : null}
               </Label>
               <Input
                 type="number"
                 value={form.outdoor_price_per_meter ?? ""}
                 onChange={(e) => set("outdoor_price_per_meter", toNum(e.target.value))}
-                placeholder={
-                  !form.outdoor_area_sqm
-                    ? "—"
-                    : defaultOutdoorRate(form.price_per_meter)
-                      ? `Empty = 25% of the indoor rate (${defaultOutdoorRate(form.price_per_meter)!.toLocaleString("en-US")})`
-                      : "Empty = 25% of the indoor rate"
-                }
+                placeholder={form.outdoor_area_sqm ? "Any amount; 0 if included in the indoor price" : "—"}
                 disabled={!form.outdoor_area_sqm}
                 className="bg-white"
               />
               <p className="text-xs text-muted-foreground">
-                Outdoor space is always charged, shown separately from the indoor price. Fill this only when a different outdoor rate was quoted for the property; it then prevails.
+                Charged and shown separately from the indoor price. Enter whatever rate applies to this property.
               </p>
             </div>
 

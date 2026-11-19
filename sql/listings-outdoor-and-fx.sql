@@ -6,14 +6,22 @@
 --
 -- Run in the Supabase SQL editor as project owner.
 
--- 1. Listings: outdoor/terrace area kept apart from the unit's own area, and
+-- 1. Listings: an extra area (outdoor/roof/terrace/garden) kept apart from the unit's own area, and
 --    a flag for prices quoted as one total (whole buildings) rather than
 --    rate × area. Example the old schema couldn't hold: #855, 650 m² indoor
 --    + 350 m² outdoor, where the outdoor figure ended up in area_sqm.
+--    The extra area has a type (outdoor / roof / terrace / garden) and its own
+--    price per m², entered freely per listing.
 ALTER TABLE public.listings
   ADD COLUMN IF NOT EXISTS outdoor_area_sqm numeric,
   ADD COLUMN IF NOT EXISTS outdoor_price_per_meter numeric,
+  ADD COLUMN IF NOT EXISTS outdoor_area_type text,
   ADD COLUMN IF NOT EXISTS price_is_lump_sum boolean NOT NULL DEFAULT false;
+
+ALTER TABLE public.listings DROP CONSTRAINT IF EXISTS listings_outdoor_area_type_check;
+ALTER TABLE public.listings
+  ADD CONSTRAINT listings_outdoor_area_type_check
+  CHECK (outdoor_area_type IS NULL OR outdoor_area_type IN ('outdoor', 'roof', 'terrace', 'garden'));
 
 ALTER TABLE public.listings DROP CONSTRAINT IF EXISTS listings_outdoor_nonneg_check;
 ALTER TABLE public.listings

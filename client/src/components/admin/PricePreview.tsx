@@ -1,5 +1,5 @@
 import { formatEgpShort, formatRateDate, useUsdEgpRate } from "@/lib/currency";
-import { OUTDOOR_RATE_SHARE, effectiveOutdoorRate, maintenanceArea, outdoorAmount, totalPrice } from "@/lib/listing-pricing";
+import { extraAreaUnpriced, extraAreaWord, maintenanceArea, outdoorAmount, totalPrice } from "@/lib/listing-pricing";
 import { areaLabel } from "@/lib/listing-text";
 
 type PriceFields = {
@@ -9,6 +9,7 @@ type PriceFields = {
   area_sqm?: number | null;
   outdoor_area_sqm?: number | null;
   outdoor_price_per_meter?: number | null;
+  outdoor_area_type?: string | null;
   price_is_lump_sum?: boolean | null;
   transaction_type?: string | null;
 };
@@ -27,8 +28,8 @@ export function PricePreview({ form }: { form: PriceFields }) {
   const area = Number(form.area_sqm) || 0;
   const outdoor = outdoorAmount(form);
   const total = totalPrice(form);
-  const oRate = effectiveOutdoorRate(form);
-  const oIsDefault = form.outdoor_price_per_meter == null;
+  const oRate = Number(form.outdoor_price_per_meter) || 0;
+  const word = extraAreaWord(form);
 
   return (
     <div className="md:col-span-2 rounded-xl border border-primary/15 bg-primary/[0.03] px-4 py-3 space-y-1.5">
@@ -42,23 +43,23 @@ export function PricePreview({ form }: { form: PriceFields }) {
             <span className="text-sm text-muted-foreground">
               {cur}
               {per}
-              {outdoor ? " (indoor)" : ""}
+              {Number(form.outdoor_area_sqm) > 0 && !form.price_is_lump_sum ? " (indoor)" : ""}
             </span>
           </p>
           {outdoor > 0 && (
             <>
               <p className="text-sm text-muted-foreground">
-                + outdoor {n(Number(form.outdoor_area_sqm))} m² × {n(oRate ?? 0)} {cur}/m² ={" "}
-                <span className="text-primary font-medium">{n(outdoor)} {cur}</span>{" "}
-                <span className="text-xs">
-                  ({oIsDefault ? `${Math.round(OUTDOOR_RATE_SHARE * 100)}% of the indoor rate` : "quoted rate"})
-                </span>
+                + {word} {n(Number(form.outdoor_area_sqm))} m² × {n(oRate)} {cur}/m² ={" "}
+                <span className="text-primary font-medium">{n(outdoor)} {cur}</span>
               </p>
               <p className="text-sm text-primary font-semibold">
                 Total {n(total)} {cur}
                 {per}
               </p>
             </>
+          )}
+          {extraAreaUnpriced(form) && (
+            <p className="text-sm text-destructive">Enter the {word} price per m² (0 if it's included).</p>
           )}
           {cur === "USD" && total > 0 && (
             <p className="text-xs text-muted-foreground">
@@ -79,7 +80,7 @@ export function PricePreview({ form }: { form: PriceFields }) {
             </p>
           )}
           {Number(form.outdoor_area_sqm) > 0 && (
-            <p className="text-xs text-muted-foreground">Maintenance applies to {n(maintenanceArea(form))} m² (indoor + outdoor).</p>
+            <p className="text-xs text-muted-foreground">Maintenance applies to {n(maintenanceArea(form))} m² (indoor + {word}).</p>
           )}
         </>
       )}

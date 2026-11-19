@@ -11,12 +11,22 @@
 import { readFileSync, writeFileSync } from "fs";
 import { createClient } from "@supabase/supabase-js";
 
-type Field = "currency" | "area_sqm" | "outdoor_area_sqm" | "outdoor_price_per_meter" | "price" | "price_is_lump_sum";
+type Field = "currency" | "area_sqm" | "outdoor_area_sqm" | "outdoor_price_per_meter" | "outdoor_area_type" | "price" | "price_is_lump_sum";
 type Fix = { id: number; field: Field; from: number | string | boolean | null; to: number | string | boolean; why: string };
 
 // USD amounts saved as EGP: in every case the description's USD rate × area
 // equals the stored price exactly, so only the currency is wrong.
 const usd = (id: number, why: string): Fix => ({ id, field: "currency", from: "EGP", to: "USD", why });
+
+// Extra area: type + size, and its price per m² when the description states one.
+function extra(id: number, type: string, area: number, rate: number | null, why: string): Fix[] {
+  const out: Fix[] = [
+    { id, field: "outdoor_area_type", from: null, to: type, why },
+    { id, field: "outdoor_area_sqm", from: null, to: area, why },
+  ];
+  if (rate != null) out.push({ id, field: "outdoor_price_per_meter", from: null, to: rate, why: `${why} (rate as stated)` });
+  return out;
+}
 
 const FIXES: Fix[] = [
   usd(844, "description USD 36/m² × 450 m² = 16,200"),
@@ -34,47 +44,43 @@ const FIXES: Fix[] = [
   usd(250, "description USD 28/m² × 1,424 m² = 39,872"),
   usd(244, "description USD 18/m² × 1,160 m² = 20,880 (stored 20,990)"),
 
-  // Outdoor pricing rules (agreed 2026-11-19, client/src/lib/listing-pricing.ts):
-  // price = indoor only; outdoor always charged, shown separately, at 25% of
-  // the indoor rate unless the description quotes another rate (a quoted rate prevails).
-  // outdoor_price_per_meter stays empty when the 25% default applies.
-
-  // #855: area held the 350 m² outdoor area and the rent was 1,100 × 350.
+  // Extra-area rules (agreed 2026-11-19, client/src/lib/listing-pricing.ts):
+  // price = indoor only; the extra area (outdoor/roof/terrace/garden) is
+  // shown separately with its own price per m², entered freely per listing.
+  // Rates are set here only where the description states one; the others
+  // are listed below for the team to enter in the admin.
+  ...extra(855, "outdoor", 350, null, "description: Outdoor Area 350 SQM"),
   { id: 855, field: "area_sqm", from: 350, to: 650, why: "description: Indoor Area 650 SQM" },
-  { id: 855, field: "outdoor_area_sqm", from: null, to: 350, why: "description: Outdoor Area 350 SQM (25% default rate = 275/m²)" },
-  { id: 855, field: "price", from: 385000, to: 715000, why: "quoted rate EGP 1,100 × 650 m² indoor; outdoor 96,250 shown separately" },
+  { id: 855, field: "price", from: 385000, to: 715000, why: "description rate EGP 1,100 × 650 m² indoor (was 1,100 × 350)" },
 
-  // #845: price 863,000 = 1,000 × 721 + 500 × 284 (outdoor folded into the price).
-  { id: 845, field: "outdoor_area_sqm", from: null, to: 284, why: "description: Roof Terrace 284 SQM" },
-  { id: 845, field: "outdoor_price_per_meter", from: null, to: 500, why: "description: Roof Terrace Rate EGP 500 / SQM (quoted rate prevails over 25%)" },
+  // #845: price 863,000 = 1,000 × 721 + 500 × 284 (roof folded into the price).
+  ...extra(845, "roof", 284, 500, "description: Roof Terrace 284 SQM at EGP 500 / SQM"),
   { id: 845, field: "price", from: 863000, to: 721000, why: "indoor only: EGP 1,000 × 721 m²; roof 142,000 shown separately (total unchanged)" },
 
-  // Outdoor area stated in the description, price already indoor-only.
-  { id: 837, field: "outdoor_area_sqm", from: null, to: 250, why: "description: Outdoor Area 250 SQM (25% default = 275/m²)" },
-  { id: 802, field: "outdoor_area_sqm", from: null, to: 790, why: "description: Outdoor Area 790 SQM" },
-  { id: 802, field: "outdoor_price_per_meter", from: null, to: 12, why: "description: Outdoor Rent Rate USD 12 / SQM (quoted rate)" },
-  { id: 344, field: "outdoor_area_sqm", from: null, to: 790, why: "description: Outdoor Area 790 SQM" },
-  { id: 344, field: "outdoor_price_per_meter", from: null, to: 12, why: "description: USD 12 for the outdoor area (quoted rate)" },
-  { id: 610, field: "outdoor_area_sqm", from: null, to: 1154, why: "description: Outdoor Area 1,154 SQM, rent \"based on indoor area only\" (25% default = 300/m²)" },
-  { id: 147, field: "outdoor_area_sqm", from: null, to: 150, why: "description: Outdoor Area 150 SQM (25% default = 400/m²)" },
-  { id: 233, field: "outdoor_area_sqm", from: null, to: 32, why: "title/description: 632 SQM + 32 SQM (25% default = 350/m²)" },
-  { id: 86, field: "outdoor_area_sqm", from: null, to: 492, why: "description: Terrace Area 492 SQM (25% default = USD 13.75/m²)" },
+  ...extra(802, "outdoor", 790, 12, "description: Outdoor Area 790 SQM at USD 12 / SQM"),
+  ...extra(344, "outdoor", 790, 12, "description: Outdoor Area 790 SQM, USD 12 for the outdoor area"),
+  ...extra(837, "outdoor", 250, null, "description: Outdoor Area 250 SQM"),
+  ...extra(610, "outdoor", 1154, null, "description: Outdoor Area 1,154 SQM, rent \"based on indoor area only\""),
+  ...extra(147, "outdoor", 150, null, "description: Outdoor Area 150 SQM"),
+  ...extra(233, "outdoor", 32, null, "title/description: 632 SQM + 32 SQM"),
+  ...extra(86, "terrace", 492, null, "description: Terrace Area 492 SQM"),
 
-  // Sales quoted as one total that already covers the terrace.
-  { id: 196, field: "outdoor_area_sqm", from: null, to: 55, why: "title: 166 SQM + 55 SQM Outdoor" },
+  // Sales quoted as one total that already covers the extra area.
+  ...extra(196, "outdoor", 55, null, "title: 166 SQM + 55 SQM Outdoor"),
   { id: 196, field: "price_is_lump_sum", from: false, to: true, why: "description: Total Price EGP 53,000,000 (covers indoor + outdoor)" },
-  { id: 197, field: "outdoor_area_sqm", from: null, to: 78, why: "title: 168 SQM + 78 SQM Terrace" },
+  ...extra(197, "terrace", 78, null, "title: 168 SQM + 78 SQM Terrace"),
   { id: 197, field: "price_is_lump_sum", from: false, to: true, why: "description: Total Price EGP 36,000,000 (covers indoor + terrace)" },
 ];
 
 // Shown in the dry run for a person to decide; never applied by this script.
 const REVIEW = [
+  "Enter the extra-area price per m² in the admin (not stated in the description): #855 (350 m² outdoor), #837 (250), #610 (1,154), #147 (150), #233 (32), #86 (492 terrace). Until then their pages show the extra area without a price and the weekly report lists them.",
   "#49: price 2,355,000 EGP = USD 30/m² × 1,570 m² converted at 50 EGP/$ by hand. Original quote: USD 47,100/month. Set currency USD + price 47,100 if the original quote is in USD.",
   "#50: price 2,749,991 EGP ≈ USD 55/m² × 1,000 m² converted at ~50 by hand. Original quote: USD 55,000/month.",
-  "#596: 7,350,000 ≈ EGP 850 × 8,650 m² (indoor 7,050 + outdoor 1,600 at the full rate). By the rules: indoor 5,992,500 + outdoor 1,600 × 212.5 = 340,000. Confirm the quote before changing.",
+  "#596: 7,350,000 ≈ EGP 850 × 8,650 m² (indoor 7,050 + outdoor 1,600 at the full indoor rate). Indoor price would be 5,992,500 + the outdoor 1,600 m² at whatever rate applies. Confirm the quote before changing.",
   "#808: priced on 664 m² (632 indoor + 32 outdoor) at 1,400; looks like a duplicate of #233.",
   "#87: area 557 but description says built-up 577 SQM; outdoor 150 SQM. Confirm the area.",
-  "Roof mentioned without its size (#338, #244, #803, #770, #716, #814, #73, #246, #472, #277, #171, #306, #288): confirm the roof m², then enter it as Outdoor area.",
+  "Roof mentioned without its size (#338, #244, #803, #770, #716, #814, #73, #246, #472, #277, #171, #306, #288): confirm the roof m², then enter it as the extra area (type Roof) with its price per m².",
   "#773, #512, #346, #144, #602, #491, #289, #511: price impossible for the area (see listing-data-issues.csv). Check against the original quote.",
 ];
 
@@ -100,7 +106,7 @@ async function main() {
   const apply = process.argv.includes("--apply");
 
   const ids = Array.from(new Set(FIXES.map((f) => f.id)));
-  const { data, error } = await db.from("listings").select("id,currency,area_sqm,outdoor_area_sqm,outdoor_price_per_meter,price,price_is_lump_sum").in("id", ids);
+  const { data, error } = await db.from("listings").select("id,currency,area_sqm,outdoor_area_sqm,outdoor_price_per_meter,outdoor_area_type,price,price_is_lump_sum").in("id", ids);
   if (error) throw error;
   const byId = new Map((data as Array<Record<string, unknown> & { id: number }>).map((r) => [r.id, r]));
 

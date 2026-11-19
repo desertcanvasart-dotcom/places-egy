@@ -35,6 +35,8 @@ export type Listing = {
   // Terrace/roof/outdoor space, separate from area_sqm (the unit itself).
   outdoor_area_sqm?: number | null;
   outdoor_price_per_meter?: number | null;
+  // "outdoor" | "roof" | "terrace" | "garden"
+  outdoor_area_type?: string | null;
   // Price quoted as one total (whole building), not rate × area.
   price_is_lump_sum?: boolean;
   maintenance_fees: number;

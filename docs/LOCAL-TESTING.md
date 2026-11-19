@@ -66,10 +66,10 @@ Open http://localhost:3001
 - `/blog/where-to-buy-office-cairo-guide`
 - `/developers/palm-hills-1`
 
-**Pricing rules (agreed 19 Nov)**: price = indoor only; outdoor is always charged and
-shown separately, at 25% of the indoor rate unless a different outdoor rate was quoted
-for the property (the quoted rate prevails); budget filters/sorting use the total; maintenance
-applies to the outdoor area too.
+**Pricing rules (agreed 19 Nov)**: price = indoor only; an extra area (outdoor, roof,
+terrace or garden) is entered with its own size and price per m², freely, and shown
+separately; budget filters/sorting use the total; maintenance applies to the extra
+area too.
 
 **Pages**
 - `/` – no cookie banner from Egypt; one popup at a time.
@@ -82,10 +82,11 @@ applies to the outdoor area too.
 - Add listing: Currency starts empty and Save stays disabled until it is chosen.
 - Enter USD, 20250 price, 450 area, 45 per m²: the preview shows "20,250 USD / month ≈ EGP …".
 - Switch the currency to EGP with "$45 / SQM" in the description: Save is blocked ("price is a USD amount saved as EGP").
-- Enter EGP, 715000 price, 650 area, 1100 per m², 350 outdoor: the preview shows
-  715,000 (indoor) + outdoor 350 m² × 275 (25% of the indoor rate) = 96,250 → Total 811,250 / month.
-- Type 500 in "Outdoor price per m²": the preview switches to "quoted rate" and asks you to confirm.
-- Enter the indoor + outdoor total as the price (e.g. 811,250): Save is blocked ("price includes the outdoor area").
+- Enter EGP, 715000 price, 650 area, 1100 per m², extra area type Roof, 350 m²:
+  Save is blocked until the roof price per m² is entered (0 if included).
+- Enter 300 as the roof price per m²: the preview shows 715,000 (indoor) + roof 350 m² × 300 =
+  105,000 → Total 820,000 / month.
+- Enter the indoor + roof total as the price (e.g. 820,000): Save is blocked ("price includes the roof area").
 - Exchange rate tab: shows the automatic rate and its time. (Setting a manual
   rate here changes it on the live site too.)
 

@@ -4,7 +4,7 @@ import { readFileSync, existsSync } from "fs";
 import path from "path";
 import { FURNISHING_OPTIONS, getEnumLabel } from "../../client/src/lib/enums";
 import { areaLabel, cleanListingTitle, listingSnippet, rentedLabel } from "../../client/src/lib/listing-text";
-import { outdoorAmount, totalPrice } from "../../client/src/lib/listing-pricing";
+import { extraAreaWord, outdoorAmount, totalPrice } from "../../client/src/lib/listing-pricing";
 import { rankSimilar } from "../../client/src/lib/similar-listings";
 import { LOCATION_CONTENT } from "../../client/src/lib/location-content";
 import { breadcrumbSchema, faqSchema, itemListSchema, listingSchema } from "../../client/src/lib/schema";
@@ -60,16 +60,16 @@ export function locationSlugFor(displayName: string | null): string | null {
 
 export function formatPrice(
   l: Pick<SeoListing, "price" | "currency" | "transaction_type"> &
-    Partial<Pick<SeoListing, "price_per_meter" | "area_sqm" | "outdoor_area_sqm" | "outdoor_price_per_meter" | "price_is_lump_sum">>,
+    Partial<Pick<SeoListing, "price_per_meter" | "area_sqm" | "outdoor_area_sqm" | "outdoor_price_per_meter" | "outdoor_area_type" | "price_is_lump_sum">>,
 ): string {
   if (!l.price) return "Price on request";
   const cur = l.currency || "EGP";
   const per = l.transaction_type === "rent" ? " / month" : "";
   const amount = `${Number(l.price).toLocaleString("en-US")} ${cur}${per}`;
-  // Outdoor space is charged separately (client/src/lib/listing-pricing.ts).
+  // The extra area is charged separately (client/src/lib/listing-pricing.ts).
   const outdoor = outdoorAmount(l);
   if (!outdoor) return amount;
-  return `${amount} + ${outdoor.toLocaleString("en-US")} ${cur} outdoor (${Number(l.outdoor_area_sqm).toLocaleString("en-US")} m²) = ${totalPrice(l).toLocaleString("en-US")} ${cur}${per} total`;
+  return `${amount} + ${outdoor.toLocaleString("en-US")} ${cur} ${extraAreaWord(l)} (${Number(l.outdoor_area_sqm).toLocaleString("en-US")} m²) = ${totalPrice(l).toLocaleString("en-US")} ${cur}${per} total`;
 }
 
 export function listingTitle(l: Pick<SeoListing, "title">): string {

@@ -1,6 +1,6 @@
 // Data-quality rules for listings. Used by scripts/validate-listings.ts (report)
 // and the admin form (warnings before save). Keep free of "@/" imports.
-import { OUTDOOR_RATE_SHARE, defaultOutdoorRate } from "./listing-pricing";
+import { extraAreaWord } from "./listing-pricing";
 
 export interface CheckableListing {
   id?: number;
@@ -16,6 +16,7 @@ export interface CheckableListing {
   price_per_meter?: number | null;
   outdoor_area_sqm?: number | null;
   outdoor_price_per_meter?: number | null;
+  outdoor_area_type?: string | null;
   price_is_lump_sum?: boolean | null;
 }
 
@@ -119,11 +120,11 @@ export function listingIssues(l: CheckableListing): ListingIssue[] {
     const extra = Number(plus[2].replace(/,/g, ""));
     if (Math.abs(main - area) < 1 && !l.outdoor_area_sqm) {
       issues.push({
-        rule: "outdoor area from the title isn't entered",
+        rule: "extra area from the title isn't entered",
         field: "outdoor_area_sqm",
         current: "empty",
         conflicting: `title: ${main} m² + ${extra} m²`,
-        fix: `Enter ${extra} in Outdoor area (and its rate, if it's priced separately)`,
+        fix: `Enter ${extra} as the extra area (outdoor/roof/terrace) with its price per m²`,
       });
     }
     if (Math.abs(main - area) >= 1 && Math.abs(main + extra - area) >= 1) {
@@ -139,9 +140,9 @@ export function listingIssues(l: CheckableListing): ListingIssue[] {
         current: `area ${area}`,
         conflicting: `title: ${main} m² + ${extra} m²`,
         fix:
-          `Set area to ${main} (the unit) and Outdoor area to ${extra}` +
+          `Set area to ${main} (the unit) and the extra area to ${extra}` +
           (priceFromWrongArea
-            ? `. The price (${priceNow.toLocaleString("en-US")}) is ${rateNum.toLocaleString("en-US")} × ${area}; at that rate the ${main} m² unit is ${(rateNum * main).toLocaleString("en-US")} (indoor price), and the ${extra} m² outdoor is added separately at ${Math.round(OUTDOOR_RATE_SHARE * 100)}% (${(rateNum * OUTDOOR_RATE_SHARE).toLocaleString("en-US")}/m²) unless a different outdoor rate was quoted`
+            ? `. The price (${priceNow.toLocaleString("en-US")}) is ${rateNum.toLocaleString("en-US")} × ${area}; at that rate the ${main} m² unit is ${(rateNum * main).toLocaleString("en-US")} (indoor price), and the ${extra} m² is entered separately with its own price per m²`
             : ""),
         severity: "block",
       });
@@ -208,15 +209,15 @@ export function listingIssues(l: CheckableListing): ListingIssue[] {
     const indoor = ppm * area;
     if (Math.abs(price - indoor) / indoor > 0.03) {
       const off = price < indoor ? indoor / price : price / indoor;
-      const oRate = outdoorRate ?? defaultOutdoorRate(ppm) ?? 0;
-      const includesOutdoor = !!outdoorArea && Math.abs(price - (indoor + oRate * outdoorArea)) / price < 0.03;
+      const includesOutdoor =
+        !!outdoorArea && outdoorRate != null && outdoorRate > 0 && Math.abs(price - (indoor + outdoorRate * outdoorArea)) / price < 0.03;
       issues.push({
-        rule: includesOutdoor ? "price includes the outdoor area" : "price doesn't match price per m² × area",
+        rule: includesOutdoor ? `price includes the ${extraAreaWord(l)} area` : "price doesn't match price per m² × area",
         field: "price/price_per_meter/area_sqm",
         current: `price ${fmtN(price)}`,
         conflicting: `${fmtN(ppm)} × ${fmtN(area)} m² = ${fmtN(indoor)}`,
         fix: includesOutdoor
-          ? `Enter the indoor price only (${fmtN(indoor)}); the outdoor amount is added separately`
+          ? `Enter the indoor price only (${fmtN(indoor)}); the ${extraAreaWord(l)} amount is added separately`
           : "Correct the price, the price per m² or the area. If the price is one total (e.g. a whole building), tick \"Price is a lump sum\"",
         // Outdoor in the price is counted twice (it's also added separately).
         ...(off > 2 || includesOutdoor ? { severity: "block" as const } : {}),
@@ -224,29 +225,17 @@ export function listingIssues(l: CheckableListing): ListingIssue[] {
     }
   }
 
-  // Outdoor space is always charged, at 25% of the indoor rate unless the
-  // written quote for the property says otherwise (the quote prevails, so these are
-  // warnings, not blocks).
-  if (outdoorArea && !lumpSum && outdoorRate != null) {
-    const def = defaultOutdoorRate(ppm);
-    if (outdoorRate === 0) {
-      issues.push({
-        rule: "outdoor area entered as free",
-        field: "outdoor_price_per_meter",
-        current: "0",
-        conflicting: def ? `default ${Math.round(OUTDOOR_RATE_SHARE * 100)}% = ${fmtN(def)}/m²` : "",
-        fix: "Outdoor space is always charged. Keep 0 only if the quote for this property says the outdoor area is free",
-      });
-    } else if (def && Math.abs(outdoorRate - def) / def > 0.02) {
-      issues.push({
-        rule: `outdoor rate isn't the ${Math.round(OUTDOOR_RATE_SHARE * 100)}% default`,
-        field: "outdoor_price_per_meter",
-        current: `${fmtN(outdoorRate)}/m²`,
-        conflicting: `default ${fmtN(def)}/m²`,
-        fix: "Fine if this rate was quoted for this property (a quote prevails); otherwise clear it to use the default",
-        severity: "info",
-      });
-    }
+  // The extra area (outdoor/roof/terrace/garden) is priced separately with
+  // its own price per m², entered freely. It must be entered (0 if included).
+  if (outdoorArea && !lumpSum && outdoorRate == null) {
+    issues.push({
+      rule: `${extraAreaWord(l)} area has no price per m²`,
+      field: "outdoor_price_per_meter",
+      current: `${fmtN(outdoorArea)} m² ${extraAreaWord(l)}`,
+      conflicting: "",
+      fix: `Enter the ${extraAreaWord(l)} price per m² (0 if it's included in the indoor price), or tick "Price is a lump sum"`,
+      severity: "block",
+    });
   }
 
   // Rate stated in the description ("EGP 1,100 / SQM") vs price ÷ area.

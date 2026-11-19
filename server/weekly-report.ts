@@ -194,7 +194,7 @@ async function fetchListingIssues(): Promise<WeeklyMetrics["listingIssues"]> {
         .from("listings")
         .select(
           "id,title,description,area_sqm,furnishing,maintenance_status,maintenance_fees,currency,price,transaction_type," +
-            "price_per_meter,outdoor_area_sqm,outdoor_price_per_meter,price_is_lump_sum",
+            "price_per_meter,outdoor_area_sqm,outdoor_price_per_meter,outdoor_area_type,price_is_lump_sum",
         )
         .eq("is_test", false)
         .eq("property_type", "admin")

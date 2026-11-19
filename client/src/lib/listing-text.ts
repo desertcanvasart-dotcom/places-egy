@@ -34,11 +34,12 @@ export function listingSnippet(markdown: string, max = 155): string {
   return (lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut).replace(/[\s,;:–—-]+$/, "") + "…";
 }
 
-// "650 m² + 350 m² outdoor" when the unit has a terrace/roof/outdoor area,
+// "650 m² + 350 m² roof" when the unit has an extra (outdoor/roof/terrace/garden) area,
 // else "650 m²". area_sqm is always the unit itself.
-export function areaLabel(l: { area_sqm?: number | null; outdoor_area_sqm?: number | null }): string {
+export function areaLabel(l: { area_sqm?: number | null; outdoor_area_sqm?: number | null; outdoor_area_type?: string | null }): string {
   const fmt = (n: number) => Number(n).toLocaleString("en-US");
+  const word = ["roof", "terrace", "garden"].includes(l.outdoor_area_type ?? "") ? l.outdoor_area_type : "outdoor";
   const main = l.area_sqm ? `${fmt(l.area_sqm)} m²` : "";
-  const outdoor = l.outdoor_area_sqm ? `${fmt(l.outdoor_area_sqm)} m² outdoor` : "";
+  const outdoor = l.outdoor_area_sqm ? `${fmt(l.outdoor_area_sqm)} m² ${word}` : "";
   return [main, outdoor].filter(Boolean).join(" + ");
 }

@@ -66,11 +66,11 @@ export function formatRateDate(asOf: string | null): string {
   return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
 
-/** The listing's TOTAL price (indoor + outdoor, see listing-pricing.ts)
+/** The listing's TOTAL price (indoor + extra area, see listing-pricing.ts)
  *  normalised to EGP, or null when it has no price. */
 export function priceInEgp(
   listing: Pick<Listing, "price" | "currency"> &
-    Partial<Pick<Listing, "price_per_meter" | "area_sqm" | "outdoor_area_sqm" | "outdoor_price_per_meter" | "price_is_lump_sum">>,
+    Partial<Pick<Listing, "price_per_meter" | "area_sqm" | "outdoor_area_sqm" | "outdoor_price_per_meter" | "outdoor_area_type" | "price_is_lump_sum">>,
   rate = latest.rate,
 ): number | null {
   const p = totalPrice(listing);

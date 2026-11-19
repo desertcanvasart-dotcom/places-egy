@@ -13,7 +13,7 @@ import { supabase, type Listing } from "@/lib/supabase";
 import { DEVELOPER_OPTIONS, FURNISHING_OPTIONS, MAINTENANCE_STATUS_OPTIONS, getEnumLabel } from "@/lib/enums";
 import { listingUrl, parseListingId } from "@/lib/listings";
 import { formatEgpShort, formatRateDate, listingCurrency, priceInEgp, useUsdEgpRate } from "@/lib/currency";
-import { effectiveOutdoorRate, maintenanceArea, outdoorAmount, totalPrice } from "@/lib/listing-pricing";
+import { extraAreaWord, maintenanceArea, outdoorAmount, totalPrice } from "@/lib/listing-pricing";
 import { supabaseImage, supabaseImageOnError } from "@/lib/image-url";
 import { trackEvent } from "@/lib/analytics";
 import { openCalendly } from "@/lib/calendly";
@@ -125,7 +125,7 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
       const { data, error } = await supabase
         .from<Listing>("listings")
         .select(
-          "id,title,transaction_type,property_type,subtype,developer,project,location,location_area,price,currency,area_sqm,furnishing,images,rental_status,rental_end,updated_at,price_per_meter,outdoor_area_sqm,outdoor_price_per_meter,price_is_lump_sum,maintenance_fees,maintenance_status,floor,parking,delivery_date",
+          "id,title,transaction_type,property_type,subtype,developer,project,location,location_area,price,currency,area_sqm,furnishing,images,rental_status,rental_end,updated_at,price_per_meter,outdoor_area_sqm,outdoor_price_per_meter,outdoor_area_type,price_is_lump_sum,maintenance_fees,maintenance_status,floor,parking,delivery_date",
         )
         .eq("is_test", false)
         .eq("property_type", "admin")
@@ -349,9 +349,9 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
                   {outdoorAmount(listing) > 0 && (
                     <div className="text-sm text-muted-foreground mt-1 space-y-0.5">
                       <p>
-                        Indoor ({Number(listing.area_sqm).toLocaleString("en-US")} m²) · + outdoor{" "}
+                        Indoor ({Number(listing.area_sqm).toLocaleString("en-US")} m²) · + {extraAreaWord(listing)}{" "}
                         {Number(listing.outdoor_area_sqm).toLocaleString("en-US")} m² at{" "}
-                        {Number(effectiveOutdoorRate(listing)).toLocaleString("en-US")} {listingCurrency(listing)}/m²:{" "}
+                        {Number(listing.outdoor_price_per_meter).toLocaleString("en-US")} {listingCurrency(listing)}/m²:{" "}
                         {outdoorAmount(listing).toLocaleString("en-US")} {listingCurrency(listing)}
                       </p>
                       <p className="font-semibold text-primary">
@@ -485,11 +485,11 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
                   {listing.outdoor_area_sqm != null && listing.outdoor_area_sqm > 0 && (
                     <DetailRow
                       icon={Maximize}
-                      label="Outdoor area"
+                      label={extraAreaWord(listing) === "outdoor" ? "Outdoor area" : extraAreaWord(listing).replace(/^./, (c) => c.toUpperCase())}
                       value={
                         `${Number(listing.outdoor_area_sqm).toLocaleString("en-US")} m²` +
-                        (effectiveOutdoorRate(listing)
-                          ? ` at ${Number(effectiveOutdoorRate(listing)).toLocaleString("en-US")} ${listingCurrency(listing)}/m²`
+                        (listing.outdoor_price_per_meter != null
+                          ? ` at ${Number(listing.outdoor_price_per_meter).toLocaleString("en-US")} ${listingCurrency(listing)}/m²`
                           : "")
                       }
                     />
@@ -520,7 +520,7 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
                         getEnumLabel(MAINTENANCE_STATUS_OPTIONS, listing.maintenance_status) +
                         // Maintenance is charged on the outdoor area too.
                         (Number(listing.outdoor_area_sqm) > 0
-                          ? ` (on indoor + outdoor: ${maintenanceArea(listing).toLocaleString("en-US")} m²)`
+                          ? ` (on indoor + ${extraAreaWord(listing)}: ${maintenanceArea(listing).toLocaleString("en-US")} m²)`
                           : "")
                       }
                     />

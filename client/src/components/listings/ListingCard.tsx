@@ -15,7 +15,7 @@ import { listingSchema } from "@/lib/schema";
 import { listingUrl } from "@/lib/listings";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { formatEgpShort, listingCurrency, priceInEgp, useUsdEgpRate } from "@/lib/currency";
-import { outdoorAmount } from "@/lib/listing-pricing";
+import { extraAreaWord, outdoorAmount } from "@/lib/listing-pricing";
 import { supabaseImage, supabaseImageOnError } from "@/lib/image-url";
 import { trackEvent } from "@/lib/analytics";
 import { Lock } from "lucide-react";
@@ -728,12 +728,12 @@ function EgpHint({ listing, block }: { listing: Listing; block?: boolean }) {
   return block ? <p className="text-[11px] text-muted-foreground">{text}</p> : <span className="text-[11px] text-muted-foreground ml-1">{text}</span>;
 }
 
-// Outdoor space is charged separately from the indoor price (listing-pricing.ts):
-// "+ 96,250 EGP/month outdoor (350 m²)".
+// The extra area (outdoor/roof/terrace) is charged separately from the indoor price (listing-pricing.ts):
+// "+ 96,250 EGP/month roof (350 m²)".
 function OutdoorLine({ listing, block }: { listing: Listing; block?: boolean }) {
   const amount = outdoorAmount(listing);
   if (!amount) return null;
   const rent = listing.transaction_type?.toLowerCase() === "rent";
-  const text = `+ ${amount.toLocaleString("en-US")} ${listingCurrency(listing)}${rent ? "/month" : ""} outdoor (${Number(listing.outdoor_area_sqm).toLocaleString("en-US")} m²)`;
+  const text = `+ ${amount.toLocaleString("en-US")} ${listingCurrency(listing)}${rent ? "/month" : ""} ${extraAreaWord(listing)} (${Number(listing.outdoor_area_sqm).toLocaleString("en-US")} m²)`;
   return block ? <p className="text-[11px] text-muted-foreground w-full">{text}</p> : <span className="text-[11px] text-muted-foreground ml-1">{text}</span>;
 }
