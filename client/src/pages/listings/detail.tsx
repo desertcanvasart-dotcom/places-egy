@@ -15,7 +15,7 @@ import { listingUrl, parseListingId } from "@/lib/listings";
 import { formatEgpShort, formatRateDate, listingCurrency, priceInEgp, useUsdEgpRate } from "@/lib/currency";
 import { extraAreaWord, maintenanceArea, outdoorAmount, totalPrice } from "@/lib/listing-pricing";
 import { supabaseImage, supabaseImageOnError } from "@/lib/image-url";
-import { trackEvent } from "@/lib/analytics";
+import { trackEvent, listingEventParams as listingEventParamsFor } from "@/lib/analytics";
 import { openCalendly } from "@/lib/calendly";
 import { useScrollDepth } from "@/lib/use-scroll-depth";
 import { ViewingRequestModal } from "@/components/ViewingRequestModal";
@@ -167,13 +167,7 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
   // the generic page_view so you can slice "which listings get viewed" in GA4.
   useEffect(() => {
     if (!listing) return;
-    trackEvent("listing_view", {
-      listing_id: listing.id,
-      listing_title: listing.title,
-      listing_location: listing.location,
-      listing_price: listing.price,
-      transaction_type: listing.transaction_type,
-    });
+    trackEvent("listing_view", listingEventParamsFor(listing));
   }, [listing]);
 
   // Dynamic per-listing meta tags pulled from Supabase. Updates whenever the
@@ -265,13 +259,7 @@ function DetailView({ id, idSlug }: { id: number; idSlug: string }) {
     `Hi, I'm interested in the ${cleanListingTitle(listing.title ?? "")} listing on PLACES.`,
   );
 
-  const listingEventParams = {
-    listing_id: listing.id,
-    listing_title: listing.title,
-    listing_location: listing.location,
-    listing_price: listing.price,
-    transaction_type: listing.transaction_type,
-  };
+  const listingEventParams = listingEventParamsFor(listing);
   const handleCallClick = () =>
     trackEvent("call_click", { source: "listing_detail", ...listingEventParams });
   const handleWhatsappClick = () =>

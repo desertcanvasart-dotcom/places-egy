@@ -17,7 +17,7 @@ import { FavoriteButton } from "@/components/FavoriteButton";
 import { formatEgpShort, listingCurrency, priceInEgp, useUsdEgpRate } from "@/lib/currency";
 import { extraAreaWord, outdoorAmount } from "@/lib/listing-pricing";
 import { supabaseImage, supabaseImageOnError } from "@/lib/image-url";
-import { trackEvent } from "@/lib/analytics";
+import { trackEvent, listingEventParams as listingEventParamsFor } from "@/lib/analytics";
 import { Lock } from "lucide-react";
 import { areaLabel, cleanListingTitle, rentedLabel } from "@/lib/listing-text";
 
@@ -106,13 +106,7 @@ export function ListingCard({ listing, compact = false, hideSubtype = false, lis
   const displayTitle = cleanListingTitle(listing.title ?? "");
   const whatsappMessage = encodeURIComponent(`Hi, I'm interested in the ${displayTitle} listing on PLACES.`);
 
-  const listingEventParams = {
-    listing_id: listing.id,
-    listing_title: listing.title,
-    listing_location: listing.location,
-    listing_price: listing.price,
-    transaction_type: listing.transaction_type,
-  };
+  const listingEventParams = listingEventParamsFor(listing);
 
   const handleModalOpenChange = (open: boolean) => {
     setModalOpen(open);
